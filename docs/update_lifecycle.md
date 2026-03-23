@@ -42,7 +42,7 @@ The sync script automatically:
 * Downloads the latest USFS source from GitHub
 * Applies fvs-modern patches (FORMAT fixes, etc.)
 * Converts changed .f files to .f90 free form
-* Rebuilds all 22 US variant shared libraries
+* Rebuilds all 24 variant shared libraries (22 US + 2 Canadian)
 * Runs the full regression test suite
 
 ### Step 3: Handle merge conflicts

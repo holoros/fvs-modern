@@ -103,10 +103,10 @@ This scaffolds the directory structure, species mapping template, and calibratio
 
 | Category | Result |
 |----------|--------|
-| rFVS library load (22 variants) | 22/22 PASS |
+| rFVS library load (24 variants) | 24/24 PASS (22 US + 2 Canadian) |
 | Standalone simulations | 41/42 PASS (1 known segfault in iet03) |
 | rFVS API simulation | 1/1 PASS |
-| **Total** | **64/65 (98.5%)** |
+| **Total** | **66/67 (98.5%)** |
 
 ## Code modernization status
 
@@ -114,7 +114,7 @@ This scaffolds the directory structure, species mapping template, and calibratio
 |------|--------|-------|
 | Free form conversion (.f -> .f90) | Complete | 2,247 files |
 | FORMAT bug fixes | Complete | 11 instances in vbase/initre.f |
-| Computed GOTO -> SELECT CASE | 10/17 in base/vbase | 7 complex dispatchers deferred |
+| Computed GOTO -> SELECT CASE | 12/17 in base/vbase | 5 complex dispatchers deferred |
 | fvsOL namespace cleanup | Complete | dplyr removed, selective plyr/colourpicker imports |
 | COMMON -> module migration | Roadmapped | Phase 1 of modernization plan |
 

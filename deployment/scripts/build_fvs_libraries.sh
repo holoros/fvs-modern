@@ -24,7 +24,7 @@ VARIANTS=("$@")
 
 # Default: all US variants
 if [ ${#VARIANTS[@]} -eq 0 ]; then
-    VARIANTS=(ak acd bm ca ci cr cs ec em ie kt ls nc ne oc op pn sn so tt ut wc ws)
+    VARIANTS=(ak acd bm ca ci cr cs ec em ie kt ls nc ne oc op pn sn so tt ut wc ws bc on)
 fi
 
 # Compiler settings
@@ -127,14 +127,19 @@ for var in "${VARIANTS[@]}"; do
         # Collect include directories
         INCDIRS="-I$SOURCE_DIR/base -I$SOURCE_DIR/$var"
         [ -d "$SOURCE_DIR/base/common" ] && INCDIRS="$INCDIRS -I$SOURCE_DIR/base/common"
+        [ -d "$SOURCE_DIR/vbase" ] && INCDIRS="$INCDIRS -I$SOURCE_DIR/vbase"
         [ -d "$SOURCE_DIR/$var/common" ] && INCDIRS="$INCDIRS -I$SOURCE_DIR/$var/common"
         [ -d "$SOURCE_DIR/common" ] && INCDIRS="$INCDIRS -I$SOURCE_DIR/common"
         [ -d "$SOURCE_DIR/fire/base/common" ] && INCDIRS="$INCDIRS -I$SOURCE_DIR/fire/base/common"
         [ -d "$SOURCE_DIR/fire/$var/common" ] && INCDIRS="$INCDIRS -I$SOURCE_DIR/fire/$var/common"
+        # Canadian variants live under canada/ subdirectory
+        [ -d "$SOURCE_DIR/canada/$var" ] && INCDIRS="$INCDIRS -I$SOURCE_DIR/canada/$var"
+        [ -d "$SOURCE_DIR/canada/fire" ] && INCDIRS="$INCDIRS -I$SOURCE_DIR/canada/fire"
+        [ -d "$SOURCE_DIR/canada/newmist" ] && INCDIRS="$INCDIRS -I$SOURCE_DIR/canada/newmist"
         [ -d "$srcdir" ] && INCDIRS="$INCDIRS -I$srcdir"
         INCDIRS="$INCDIRS -I$SOURCE_DIR/dbs -I$SOURCE_DIR/dbsqlite"
 
-        if compile_file "$srcfile" "$objpath" "$INCDIRS" 2>/dev/null; then
+        if compile_file "$srcfile" "$objpath" "$INCDIRS" 2>/dev/null && [ -f "$objpath" ]; then
             OBJECTS+=("$objpath")
         else
             COMPILE_ERRORS=$((COMPILE_ERRORS + 1))
