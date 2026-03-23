@@ -1,0 +1,22 @@
+! Region 3
+! Reference number 20
+!
+! Establish regeneration (no treatment type) in Region 3 national forests
+!
+! Created by Erin Hooten, USDA Forest Service, 2021
+! Proofed by Rachel Houtman, Oregon State University, 2022 
+! 
+! For complete assignment recommendations and caveats, see: \Supplements\SilvicultureCompendium.pdf
+!
+!
+!
+!
+
+
+Estab           2020
+Sprout
+Natural         2021        DF       240       100                             0
+Natural         2021        SW        15       100                             0
+Natural         2021        LM        15       100                             0
+Natural         2021        BS        30       100                             0
+End

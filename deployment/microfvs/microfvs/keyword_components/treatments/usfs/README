@@ -1,0 +1,41 @@
+The files in this folder were prepared using funding from the U.S. Government
+and can be used without additional permissions or fees.
+
+Citation:
+    Houtman, Rachel M.; Day, Michelle A.; Hooten, Erin; Ritchie, Martin W.;
+    Jain, Theresa B.; Schuler, Thomas M. 2023. Forest Vegetation Simulator
+    keyword component (KCP) files associated with the compendium of
+    silvicultural treatments for forest types in the United States. Updated 04
+    June 2024. Fort Collins, CO: Forest Service Research Data Archive.
+    https://doi.org/10.2737/RDS-2022-0037
+
+Abstract:
+    The national silviculture compendium is the first-ever compendium of
+    silviculture treatments that cover most commercially operable forest types
+    in the United States, built with input from a national team of silviculture
+    experts from each National Forest System Region and Research Station of the
+    USDA Forest Service. The compendium contains 240 silvicultural treatments,
+    and 266 associated keyword component files (KCP) that are used with the
+    Forest Service-supported Forest Vegetation Simulator (FVS), covering all
+    regions and most commercial forest types in the United States in 2020. The
+    treatments are based on current national forest plans and objectives but are
+    relevant to other forested lands with similar conditions and management
+    objectives. In part, the silvicultural compendium provides plausible
+    real-world treatments to be used by planners, modelers, for training
+    purposes (e.g., National Advanced Silviculture Program), and by others
+    needing to simulate management-driven treatments with validated
+    silvicultural parameters defined by silviculture experts from each region.
+    Currently, KCP files for Regions 1-6 are available (Regions 8, 9 and 10 will
+    be added as they are finalized). This data publication also includes
+    information files such as a complete description of the 8 main treatment
+    types and a list of each national forest and their organization code and
+    region. Also included is a crosswalk between the KCP files and vegetation
+    characteristics which can be used to apply KCPs to stands within each
+    national forest in the United States, assigning treatments by biophysical
+    setting, NVC and Forest Inventory and Analysis (FIA) cover type is included.
+    Additionally, a table documenting a broad potential application of KCP files
+    to appropriate National Vegetation Classifications (NVC) that are not
+    represented in the compendium but exist within a given national forest is
+    provided. This list of treatments by NVC and forest can be used to assign
+    treatments to areas that are otherwise unassigned treatments within the
+    compendium.

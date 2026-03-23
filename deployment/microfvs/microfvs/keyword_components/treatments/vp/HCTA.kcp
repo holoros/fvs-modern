@@ -1,0 +1,25 @@
+********************************************************************************
+** HERBICIDES TARGETED (HCTA)
+** Herbicide spraying is sometimes the most effective and efficient method of
+** managing weed or undesired plant species. Aerial spraying may be the only
+** practical method for inaccessible locations or when the scale of the problem
+** is large and is only considered when there is the presence of invasive
+** species in areas of 10 acres or larger. Spraying is limited to a defined
+** operational area and methods are established to prevent drift outside of the
+** area. Spraying is implemented around weather (ex: when winds are low) to
+** prevent drift. All herbicides are regulated by the EPA and all applicable
+** rules and guidelines are followed. Depending on what the target species is,
+** the herbicide may kill similar life forms (ex: if the target is a herbaceous
+** species, other non-target herbaceous species will also be affected) by up to
+** 95%. In California, this method is not allowed as part of VTP.
+**
+** COMPONENTS
+** --  THINNING & PRUNING OPERATIONS
+**     None.
+** --  FUEL TREATMENT OPERATIONS
+**     90% mortality imposed on Other Hardwood species with DBH <9" in addition
+**     to mortality rate that FVS would have predicted.
+********************************************************************************
+MGMTID
+HCTA
+FixMort         2030        OH       0.9       0.0         9         1         1

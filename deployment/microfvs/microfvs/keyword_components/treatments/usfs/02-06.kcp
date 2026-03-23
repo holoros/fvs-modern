@@ -1,0 +1,37 @@
+! Region 2
+! Reference number 6
+!
+! Uneven-aged single tree in the Black Hills National Forest
+!
+! Created by Erin Hooten, USDA Forest Service, 2021
+! Proofed by Rachel Houtman, Oregon State University, 2022 
+! 
+! For complete assignment recommendations and caveats, see: \Supplements\SilvicultureCompendium.pdf
+!
+!
+!
+!
+
+! Merchantability threshold defined as 9 in DBH.
+BFVolume           0         0        9.                                       6
+Volume             0         0        9.                                       6
+
+SpecPref        2020        PP       -10
+SpecPref        2020        DF         5
+SpecPref        2020        ES        10
+SpecPref        2020        WF        15
+
+* Arguments: SmDBH, LgDBH, Species, Q-Factor, D-class, ResDensity, DensityUnits
+ThinQFA         2020     Parms(9,99,All,1.2,5,50.,0)
+
+* Arguments: SmDBH, LgDBH, CutEff, Species, ResTPA, ResBA
+thinBBA         2020       50.        1.        0.       8.9        0.      999.
+YardLoss        2020        .1        0.         0
+
+FMIN
+PileBurn        2021    Parms(1,100,5,0.7*100,0)
+END
+FixMort         2021    Parms(All,0.05,0,3.,1,0)
+Estab           2020
+Sprout
+Plant           2021        PP       250       100                             0

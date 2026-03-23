@@ -1,0 +1,33 @@
+! Region 3
+! Reference number 17
+!
+! Improvement cut in Region 3 national forests
+!
+! Created by Erin Hooten, USDA Forest Service, 2021
+! Proofed by Rachel Houtman, Oregon State University, 2022 
+! 
+! For complete assignment recommendations and caveats, see: \Supplements\SilvicultureCompendium.pdf
+!
+!
+!
+!
+
+
+SpGroup   WhitePines
+SW LM
+SpecPref        2020    Parms(PP,-20.)
+SpecPref        2020    Parms(WhitePines,-15.)
+SpecPref        2020    Parms(DF,-10)
+YardLoss        2020       0.1        1.      0.07
+
+Compute         0
+BAOut = SPMCDBH(2,All,0,24,999,0,999)
+targ = max(0, 120-BAOut)
+End
+
+thinBBA         2020    Parms(targ,1,0,24,0,999)
+
+FMIN
+SimFire         2021        8.         2       70.         1       70.         1
+END
+FixMort         2021    Parms(All,0.05,0,3.,1,0)

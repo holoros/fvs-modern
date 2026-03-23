@@ -1,0 +1,48 @@
+! Region 6
+! Reference number 1
+!
+! Two-aged regeneration on the Colville National Forest
+!
+! Created by Erin Hooten, USDA Forest Service, 2021
+! Updated by Rachel Houtman, Oregon State University, 2022 
+! 
+! For complete assignment recommendations and caveats, see: \Supplements\SilvicultureCompendium.pdf
+!
+!
+!
+!
+
+SpecPref           0     Parms(PP, -25)
+SpecPref           0     Parms(WL, -20)
+SpecPref           0     Parms(WP, -15)
+SpecPref           0     Parms(DF, -10)
+SpecPref           0     Parms(OH, -5)
+SpecPref           0     Parms(LP, 5)
+SpecPref           0     Parms(RC, 5)
+SpecPref           0     Parms(AF, 5)
+SpecPref           0     Parms(GF, 5)
+SpecPref           0     Parms(ES, 5)
+SpecPref           0     Parms(WH, 5)
+
+Compute         0 
+BAIN = SPMCDBH(2, ALL, 0, 7, 21, 0, 999)
+BALOW = SPMCDBH(2, ALL, 0, 0, 1, 0, 999)
+BAHI = SPMCDBH(2, ALL, 0, 21, 999, 0 ,999)
+BAOUT = BALOW + BAHI
+BATarg = MAX(0.,20-BAOUT)
+END
+
+YardLoss        2020    Parms(0.1,1,0.07)
+thinBTA         2020    Parms(100.,1.,1.,7,0.,999.)
+thinBBA         2020    Parms(max(0, 20-BAOUT),1.,7,21,0.,999.)
+
+FMIN
+FuelMove        2020    Parms(9,1,0,0.7,999,0)
+FuelMove        2020    Parms(8,1,0,0.7,999,0)
+FuelMove        2020    Parms(7,1,0,0.7,999,0)
+FuelMove        2020    Parms(6,1,0,0.7,999,0)
+FuelMove        2020    Parms(5,1,0,0.7,999,0)
+FuelMove        2020    Parms(4,1,0,max(0,min(0.7,4-1)),999,0)
+FuelMove        2020    Parms(3,1,0,max(0,min(0.7,3-1)),999,0)
+FuelMove        2020    Parms(2,1,0,max(0,min(0.7,2-1)),999,0)
+END

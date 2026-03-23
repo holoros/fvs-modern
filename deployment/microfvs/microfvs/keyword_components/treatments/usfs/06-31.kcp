@@ -1,0 +1,27 @@
+! Region 6
+! Reference number 31
+!
+! Improvement cut in the Gifford Pinchot National Forest
+!
+! Created by Erin Hooten, USDA Forest Service, 2021
+! Proofed by Rachel Houtman, Oregon State University, 2022 
+! 
+! For complete assignment recommendations and caveats, see: \Supplements\SilvicultureCompendium.pdf
+!
+!
+!
+!
+
+SpGroup    TrueFirs
+AF SF NF WF SH GF
+
+SpecPref        2020     Parms(PP, -10.)
+SpecPref        2020     Parms(WL, -5.)
+SpecPref        2020     Parms(DF, 5.)
+SpecPref        2020     Parms(WH, 5.)
+SpecPref        2020     Parms(MH, 5.)
+SpecPref        2020     Parms(LP, 10.)
+SpecPref        2020     Parms(TrueFirs, 15.)
+YardLoss        2020       0.1        1.      0.07
+
+ThinRDen        2020        35        1.       All         1      999.         1

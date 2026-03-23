@@ -1,0 +1,27 @@
+! Region 4
+! Reference number 18
+!
+! Two-aged regeneration in Region 4 national forests
+!
+! Created by Erin Hooten, USDA Forest Service, 2021
+! Updated by Rachel Houtman, USDA Forest Service, 2024
+! 
+! For complete assignment recommendations and caveats, see: \Supplements\SilvicultureCompendium.pdf
+!
+!
+!
+
+! Merchantability threshold defined as 7 in DBH.
+BFVolume           0         0        7.                                       6
+Volume             0         0        7.                                       6
+
+SpecPref        2020    Parms(PP,-10)
+SpecPref        2020    Parms(DF,-5)
+SpecPref        2020    Parms(AF,5)
+YardLoss        2020       0.1         1         1
+ThinSDI         2020       180        1.       All         7      999.         1
+thinBBA         2020         0        1.         0         7        0.      999.
+FMIN
+PileBurn        2021    Parms(1,100,5,0.7*100,0)
+END
+FixMort         2021    Parms(All,0.05,0,3.,1,0)

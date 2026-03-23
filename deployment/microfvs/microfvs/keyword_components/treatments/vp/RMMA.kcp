@@ -1,0 +1,37 @@
+********************************************************************************
+** MECHANICAL REARRANGEMENT - MASTICATION (RMMA)
+** Treatment is generally applied to focused areas of vegetation on a site
+** specific basis within the urban environment and is designed to significantly
+** reduce the effects of wildfire to urban resources. Defensible space
+** requirements and incorporation of some aesthetic value is assumed to drive
+** vegetation treatment prescriptions which increases the level of uncertainty
+** for this treatment method's efficacy. Treatments are typically implemented by
+** certified arborists due to urban complexities. Dominant woody vegetation is
+** generally unaffected. Canopy cover is minimally affected. Dominant vegetation
+** is affected by up to 5%. Codominant vegetation is affected by up to 10%.
+** Subdominant vegetation is affected by up to 25%. Herbaceous vegetation is
+** disturbed by as much as 20% through foot traffic and the dragging or chipping
+** of cut woody debris. Soil disturbance is minimal.
+**
+** COMPONENTS
+** --  THINNING & PRUNING OPERATIONS
+**     None.
+** --  FUEL TREATMENT OPERATIONS
+**     Masticate 70% of trees with DBH between 1-12", generating masticated
+**     pieces 1-3" in size, and with 70% of surface fuel composed of masticated
+**     pieces.
+********************************************************************************
+MGMTID
+RMMA
+YardLoss        2030    Parms(1,1,1)
+ThinDBH         2030    Parms(1,12,0.7,All,0,0)
+FMIN
+FuelMove        2030    Parms(9,3,0,0.70,999,0)
+FuelMove        2030    Parms(8,3,0,0.70,999,0)
+FuelMove        2030    Parms(7,3,0,0.70,999,0)
+FuelMove        2030    Parms(6,3,0,0.70,999,0)
+FuelMove        2030    Parms(5,3,0,0.70,999,0)
+FuelMove        2030    Parms(4,3,0,max(0,min(0.70,4-3)),999,0)
+FuelMove        2030    Parms(3,3,0,max(0,min(0.70,3-3)),999,0)
+FuelMove        2030    Parms(2,3,0,max(0,min(0.70,2-3)),999,0)
+END

@@ -1,0 +1,40 @@
+! Region 1
+! Reference number 30
+!
+! Improvement cut in the Lolo, Flathead, Bitterroot National Forests (minor - grand fir component on forest, minor western red cedar (RC) in drainages)
+!
+! Created by Erin Hooten, USDA Forest Service, 2021
+! Proofed by Rachel Houtman, Oregon State University, 2022 
+! 
+! For complete assignment recommendations and caveats, see: \Supplements\SilvicultureCompendium.pdf
+!
+!
+!
+!
+
+! Merchantability threshold defined as 8 in DBH.
+BFVolume           0         0        8.                                       6
+Volume             0         0        8.                                       6
+
+SpecPref        2020    Parms(GF,10)
+SpecPref        2020    Parms(WH,10)
+SpecPref        2020    Parms(DF,5)
+SpecPref        2020    Parms(PP,-5)
+SpecPref        2020    Parms(RC,-10)
+SpecPref        2020    Parms(WL,-10)
+
+Compute         0 
+BALOW = SPMCDBH(2, ALL, 0, 0, 8, 0 ,999)
+BATarg = max(0,80-(BALOW*.1))
+!TPASm = SPMCDBH(1, ALL, 0, 0, 8, 0, 999)
+BSmTarg = BALOW * .1
+END
+
+YardLoss        2020        .1         1       .07
+thinBBA         2020    Parms(BATarg, 1., 8., 999., 0., 999.)
+thinDBH         2020    Parms(0, 8, 1, ALL, 0, BSmTarg )
+   
+FMIN
+PileBurn        2021    Parms(1,100,5,0.7*100,0)
+END
+FixMort         2021    Parms(All,0.05,0,3.,1,0)

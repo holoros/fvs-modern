@@ -1,0 +1,34 @@
+! Region 6
+! Reference number 27
+!
+! Commercial thin in the Gifford Pinchot National Forest
+!
+! Created by Erin Hooten, USDA Forest Service, 2021
+! Updated by Rachel Houtman, Oregon State University, 2022 
+! 
+! For complete assignment recommendations and caveats, see: \Supplements\SilvicultureCompendium.pdf
+!
+!
+!
+!
+
+! Merchantability threshold defined as 7 in DBH.
+BFVolume           0         0        7.                                       6
+Volume             0         0        7.                                       6
+
+SpGroup  Firs
+GF NF SF AF WF
+
+SpecPref        2020     Parms(WRC, -25.)
+SpecPref        2020     Parms(WWP, -20.)
+SpecPref        2020     Parms(WH, -15.)
+SpecPref        2020     Parms(DF, -10.)
+SpecPref        2020     Parms(Firs, -5.)
+
+YardLoss        2020       0.1        1.      0.07
+
+Compute         0
+DENl = SPMCDBH(14, ALL, 0, 0, 7, 0, 999)
+END
+
+ThinRDen        2020     Parms(max(0,35-DENl),1.,All,7,999.,0)

@@ -1,0 +1,37 @@
+! Region 2
+! Reference number 22a
+!
+! Uneven-aged group selection in Region 2 national forests except Black Hills
+!
+! Created by Erin Hooten, USDA Forest Service, 2021
+! Proofed by Rachel Houtman, Oregon State University, 2022 
+! 
+! For complete assignment recommendations and caveats, see: \Supplements\SilvicultureCompendium.pdf
+!
+!
+!
+!
+
+
+* 02-22a and 02-22b: Uneven-aged group selection -- 15% of stand in groups, 85% in matrix
+* Common cycle boundary (or start year) of 2020 
+* Stand is added twice -- once for groups, once for matrix. 
+* FVS compiles results into composite tables. Composite tables will need to created for other models outside FVS
+
+! Merchantability threshold defined as 8 in DBH.
+BFVolume           0         0        8.                                       6
+Volume             0         0        8.                                       6
+
+* GROUPS: 15% of stand
+SpecPref        2020    Parms(ES,-5)
+SpecPref        2020    Parms(AF,5)
+SpecPref        2020    Parms(WF,5)
+ThinBTA         2020       100         1         0       7.9         0       999
+ThinBBA         2020         0         1         8       999         0       999
+
+YardLoss        2020        .1         0         1
+
+FMIN
+PileBurn        2021    Parms(1,100,5,.70*100,0)
+END
+FixMort         2021    Parms(All,.05,0,3,1,0)

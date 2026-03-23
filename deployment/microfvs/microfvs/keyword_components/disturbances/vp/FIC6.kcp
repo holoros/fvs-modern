@@ -1,0 +1,12 @@
+********************************************************************************
+** NATURAL DISTURBANCE - WILDFIRE VI (FIC6)
+** High-intensity fire implemented in 2035. Fire simulated using a wind speed of
+** 38mph, very dry moisture level, temperature of 70F, with FVS-FFE calculating
+** mortality. 100% of stand area shall be burned, timed after greenup. Flame
+** length modified to have flame length multiplier of 2.0, flame length of 20ft,
+** 90% of crowns burning, and a maximum scorch height of 30ft.
+********************************************************************************
+FMIN
+SIMFIRE         2035        38         1        70         1       100         3
+FLAMEADJ        2035         2        20        90        30
+END

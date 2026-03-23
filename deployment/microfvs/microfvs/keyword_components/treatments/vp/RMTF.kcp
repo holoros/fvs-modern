@@ -1,0 +1,31 @@
+*******************************************************************************
+** MECHANICAL REARRANGEMENT - MOWING (RMTF)
+** Predominantly achieved by mowers or possibly discing. Treatment is generally
+** consistently and equally applied across an area and is focused on
+** significantly reducing fine fuels and a fire's rate of spread. Woody
+** vegetation is generally unaffected. Herbaceous vegetation is significantly
+** affected by 90 to 100%. Rearranged material is left on site. Soil is
+** disturbed by as much as 10%.
+
+**
+** COMPONENTS
+** --  THINNING & PRUNING OPERATIONS
+**     None.
+** --  FUEL TREATMENT OPERATIONS
+**     Masticate all trees with DBH < 1", generating masticated pieces 1" in
+**     size, and with 70% of surface fuel composed of masticated pieces.
+********************************************************************************
+MGMTID
+RMTF
+YardLoss        2034    Parms(1,1,1)
+ThinDBH         2034    Parms(0,1,1,All,0,0)
+FMIN
+FuelMove        2034    Parms(9,1,0,0.70,999,0)
+FuelMove        2034    Parms(8,1,0,0.70,999,0)
+FuelMove        2034    Parms(7,1,0,0.70,999,0)
+FuelMove        2034    Parms(6,1,0,0.70,999,0)
+FuelMove        2034    Parms(5,1,0,0.70,999,0)
+FuelMove        2034    Parms(4,1,0,max(0,min(0.70,4-1)),999,0)
+FuelMove        2034    Parms(3,1,0,max(0,min(0.70,3-1)),999,0)
+FuelMove        2034    Parms(2,1,0,max(0,min(0.70,2-1)),999,0)
+END

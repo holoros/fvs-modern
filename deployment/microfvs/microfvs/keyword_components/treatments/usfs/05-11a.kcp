@@ -1,0 +1,50 @@
+! Region 5
+! Reference number 11a
+!
+! Group selection in the following Region 5 national forests: Sierra Nevada Forest Plan Amendment national forests (2004 Record of Decision): Humboldt-Toiyabe, Modoc, Lassen, Plumas, Tahoe, 
+!	Eldorado, Stanislaus, Sierra, Inyo, Sequoia, Lake Tahoe Basin Management Unit; plus Northwest Forest Plan national forests: Six Rivers, Mendocino, Shasta-Trinity, and Klamath
+!
+! Created by Erin Hooten, USDA Forest Service, 2021
+! Proofed by Rachel Houtman, Oregon State University, 2022 
+! 
+! For complete assignment recommendations and caveats, see: \Supplements\SilvicultureCompendium.pdf
+!
+!
+!
+!
+
+
+* 05-11a and 05-11b Group Selection -- 15% of stand in groups, 85% in matrix
+* Common cycle boundary (or start year) of 2020 
+* Stand is added twice -- once for groups, once for matrix. FVS compiles results into composite tables. Composite tables will need to created for other models outside FVS
+
+* GROUPS: 15% of stand
+SpGroup      RedFirs
+RF SH
+SpecPref        2020    Parms(RedFirs,-10)
+SpecPref        2020    Parms(WF,-5)
+SpecPref        2020    Parms(IC,5)
+YardLoss        2020        .1         0       .07
+
+! Assume the BAMid - in the non-commercial trees is 16 (average of fifty 4 inch DBH BA and fifty 10 inch DBH BA)
+
+Compute         0 
+BAHI = SPMCDBH(2, ALL, 0, 30, 999, 0 ,999) 
+BALow = 16
+BATarg = MAX(0.,160-BAHI-BALow)
+END
+
+ThinBBA         2020        50         1         0        10         0       999
+ThinBBA         2020    Parms(BATarg,1,10,30,0,999)
+
+FMIN
+PileBurn        2021    Parms(1,100,5,.70*100,0)
+END
+FixMort         2021    Parms(All,.05,0,3,1,0)
+
+Estab           2021
+Sprout
+Plant           2021        RF        50       50.                             0
+Plant           2021        SH        50       50.                             0
+Plant           2021        WF        50       34.                             0
+End

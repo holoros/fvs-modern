@@ -1,0 +1,32 @@
+! Region 2
+! Reference number 10
+!
+! Biomass removal in Region 2 national forests
+!
+! Created by Erin Hooten, USDA Forest Service, 2021
+! Proofed by Rachel Houtman, Oregon State University, 2022 
+! 
+! For complete assignment recommendations and caveats, see: \Supplements\SilvicultureCompendium.pdf
+!
+!
+!
+!
+
+
+SpecPref        2020    Parms(PP,-10)
+SpecPref        2020    Parms(LM,-10)
+SpecPref        2020    Parms(DF,-5.)
+
+Compute         0 
+TPAHi = SPMCDBH(1, ALL, 0, 7.9, 999, 0 ,999)
+TTarg = max(0,100-TPAHi)
+END
+
+thinBTA         2020    Parms(TTarg, 1, 0, 7.9, 0, 999)
+
+YardLoss        2020       0.1        0.        0.
+
+FMIN
+PileBurn        2021    Parms(1,100,5,.70*100,0)
+END
+FixMort         2021    Parms(All,.05,0,3,1,0)

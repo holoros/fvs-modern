@@ -1,0 +1,33 @@
+! Region 6
+! Reference number 14
+!
+! Biomass removal in the Fremont-Winema National Forest
+!
+! Created by Erin Hooten, USDA Forest Service, 2021
+! Updated by Rachel Houtman, Oregon State University, 2022 
+! 
+! For complete assignment recommendations and caveats, see: \Supplements\SilvicultureCompendium.pdf
+!
+!
+!
+!
+
+SpecPref        2020     Parms(SP,-5)
+SpecPref        2020     Parms(IC,-5)
+SpecPref        2020     Parms(PP,5)
+SpecPref        2020     Parms(WF,5)
+YardLoss        2020        .1         1       .07
+
+thinBTA         2020        70        1.         4         7        0.      999.
+
+FMIN
+FuelMove        2020    Parms(9,4,0,0.7,999,0)
+FuelMove        2020    Parms(8,4,0,0.7,999,0)
+FuelMove        2020    Parms(7,4,0,0.7,999,0)
+FuelMove        2020    Parms(6,4,0,0.7,999,0)
+FuelMove        2020    Parms(5,4,0,0.7,999,0)
+FuelMove        2020    Parms(4,4,0,max(0,min(0.7,4-4)),999,0)
+FuelMove        2020    Parms(3,4,0,max(0,min(0.7,3-4)),999,0)
+FuelMove        2020    Parms(2,4,0,max(0,min(0.7,2-4)),999,0)
+END
+

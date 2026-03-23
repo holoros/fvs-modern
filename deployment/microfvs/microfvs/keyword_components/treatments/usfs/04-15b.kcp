@@ -1,0 +1,40 @@
+! Region 4
+! Reference number 15b
+!
+! Group selection in Region 4 national forests
+!
+! Created by Erin Hooten, USDA Forest Service, 2021
+! Updated by Rachel Houtman, USDA Forest Service, 2023
+! 
+! For complete assignment recommendations and caveats, see: \Supplements\SilvicultureCompendium.pdf
+!
+!
+!
+
+
+* 04-15a and 04-15b: Group Selection -- 50% of stand in groups, 50% in matrix
+* Common cycle boundary (or start year) of 2020 
+* Stand is added twice -- once for groups, once for matrix. 
+* FVS compiles results into composite tables. Composite tables will need to created for other models outside FVS
+
+
+* MATRIX: 50% of stand
+SpGroup          P-J
+PI PM RM UJ WJ
+SpecPref        2020    Parms(PP,-10)
+SpecPref        2020    Parms(DF,-5)
+SpecPref        2020    Parms(P-J,5)
+YardLoss        2020        .1         1         1
+
+ThinSDI         2020       260         1       All         0       999         1
+
+FMIN
+PileBurn        2021    Parms(1,100,5,.70*100,0)
+END
+FixMort         2021    Parms(All,.05,0,3,1,0)
+
+Estab           2021
+Sprout
+Plant           2021        PP       150      100.                             0
+Plant           2021        DF        50      100.                             0
+End

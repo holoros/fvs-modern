@@ -1,0 +1,33 @@
+! Region 6
+! Reference number 28
+!
+! Improvement cut in the Gifford Pinchot National Forest
+!
+! Created by Erin Hooten, USDA Forest Service, 2021
+! Updated by Rachel Houtman, Oregon State University, 2022 
+! 
+! For complete assignment recommendations and caveats, see: \Supplements\SilvicultureCompendium.pdf
+!
+!
+!
+!
+
+SpGroup     Firs
+GF NF SF AF WF
+
+SpecPref        2020     Parms(PP, -15.)
+SpecPref        2020     Parms(WL, -20.)
+SpecPref        2020     Parms(DF, -15.)
+SpecPref        2020     Parms(WH, -10.)
+SpecPref        2020     Parms(MH, -5.)
+SpecPref        2020     Parms(DF, 5.)
+SpecPref        2020     Parms(WH, 10.)
+SpecPref        2020      Firs       15.
+
+YardLoss        2020       0.1        1.      0.07
+
+Compute         0
+DENl = SPMCDBH(14, ALL, 0, 0, 1, 0, 999)
+END
+
+ThinRDen        2020     Parms(max(0,35-DENl),1.,All,1,999.,0)

@@ -39,6 +39,7 @@ fvs-modern/
             add_variant.sh          New variant scaffolding
             run_regression_tests.sh Full test suite (64/65 passing)
         config/                 NAMESPACE files, DESCRIPTION, YAML config
+        microfvs/               REST API integration (FastAPI, based on microFVS)
 
     modernization/              Conversion tools and analysis reports
     variant-tools/              Templates for new regional variants
@@ -50,9 +51,15 @@ fvs-modern/
 ### Option A: Docker (recommended for servers)
 
 ```bash
+# fvsOL Shiny interface only
 cd deployment/docker
 docker compose up --build
 # FVS-Online available at http://localhost:3838
+
+# Combined: fvsOL + REST API
+docker compose -f deployment/microfvs/docker-compose.yml up --build
+# FVS-Online at http://localhost:3838
+# REST API at http://localhost:8000 (Swagger docs at /docs)
 ```
 
 ### Option B: Platform-specific install

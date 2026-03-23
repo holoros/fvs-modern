@@ -1,0 +1,35 @@
+! Region 6
+! Reference number 33
+!
+! Two-aged regeneration in the Willamette National Forest
+!
+! Created by Erin Hooten, USDA Forest Service, 2021
+! Updated by Rachel Houtman, Oregon State University, 2022 
+! 
+! For complete assignment recommendations and caveats, see: \Supplements\SilvicultureCompendium.pdf
+!
+!
+!
+!
+
+! Merchantability threshold defined as 7 in DBH.
+BFVolume           0         0        7.                                       6
+Volume             0         0        7.                                       6
+
+SpecPref        2020     Parms(SP, -15)
+SpecPref        2020     Parms(WP, -10)
+SpecPref        2020     Parms(DF, 5)
+SpecPref        2020     Parms(WH, 5)
+
+YardLoss        2020       0.1        1.      0.07
+  
+ThinBTA         2020     Parms(60,1,0,999,0,999) 
+
+FMIN
+SimFire         2021        8.         2       70.         1       70.         1
+END
+
+Estab           2021
+Sprout
+Plant           2022     Parms(SP,75,100)
+Plant           2022     Parms(WP,75,100)

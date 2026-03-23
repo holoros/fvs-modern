@@ -1,0 +1,20 @@
+********************************************************************************
+** GROUND-BASED MECHANICAL REMOVAL - CLEARCUT (MRCC)
+** Treatment is generally consistently and equally applied across an area and is
+** focused on eliminating effects of high intensity fire, for development, or
+** maximizing timber value utilizing ground based logging methods. Effects are
+** substantial and often equate to a site change or ecological succession reset
+** done. Canopy cover is affected by approximately 90%. dominant vegetation is
+** affected by ≥95%. Codominant vegetation is affected by ≥95%. Subdominant
+** vegetation is affected by ≥95%. Herbaceous vegetation is disturbed by as much
+** as 75%. Soil is disturbed by as much as 60%.
+**
+** COMPONENTS
+** --  THINNING & PRUNING OPERATIONS
+**     Harvest all trees between with DBH between 4-30".
+** --  FUEL TREATMENT OPERATIONS
+**     None.
+********************************************************************************
+MGMTID
+MRCC
+ThinDBH         2030         4        30       1.0       All       00.

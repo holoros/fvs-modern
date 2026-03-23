@@ -1,0 +1,33 @@
+! Region 2
+! Reference number 17
+!
+! Even-aged regeneration, biomass removal all national forests in Colorado: Arapaho, Grand Mesa, Gunnison, Pike, Rio Grande, Roosevelt, Routt, San Isabel, San Juan, Uncompahgre, White River
+!
+! Created by Erin Hooten, USDA Forest Service, 2021
+! Proofed by Rachel Houtman, Oregon State University, 2022 
+! 
+! For complete assignment recommendations and caveats, see: \Supplements\SilvicultureCompendium.pdf
+!
+!
+!
+!
+
+! Merchantability threshold defined as 8 in DBH.
+BFVolume           0         0        8.                                       6
+Volume             0         0        8.                                       6
+
+YardLoss        2020        .1        0.         0
+FMIN
+SalvSP          2020       All         0
+Salvage         2020        8.      999.        5.         1       0.9        0.
+SalvSP          2020       All         0
+Salvage         2020        5.       7.9        5.         1       0.9        0.
+PileBurn        2021    Parms(1,100,5,0.7*100,0)
+END
+FixMort         2021    Parms(All,0.05,0,3.,1,0)
+Estab           2021
+Sprout
+Natural         2022        ES       100       100                             0
+Estab           2021
+Sprout
+Natural         2022        ES       100       100                             0

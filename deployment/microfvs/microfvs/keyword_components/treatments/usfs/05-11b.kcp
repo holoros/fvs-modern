@@ -1,0 +1,36 @@
+! Region 5
+! Reference number 11b
+!
+! Group selection in the following Region 5 national forests: Sierra Nevada Forest Plan Amendment national forests (2004 Record of Decision): Humboldt-Toiyabe, Modoc, Lassen, Plumas, Tahoe, 
+!	Eldorado, Stanislaus, Sierra, Inyo, Sequoia, Lake Tahoe Basin Management Unit; plus Northwest Forest Plan national forests: Six Rivers, Mendocino, Shasta-Trinity, and Klamath
+!
+! Created by Erin Hooten, USDA Forest Service, 2021
+! Proofed by Rachel Houtman, Oregon State University, 2022 
+! 
+! For complete assignment recommendations and caveats, see: \Supplements\SilvicultureCompendium.pdf
+!
+!
+!
+!
+
+
+* 05-11a and 05-11b Group Selection -- 15% of stand in groups, 85% in matrix
+* Common cycle boundary (or start year) of 2020 
+* Stand is added twice -- once for groups, once for matrix. FVS compiles results into composite tables. Composite tables will need to created for other models outside FVS
+
+
+* MATRIX: 85% of stand
+SpGroup      RedFirs
+RF SH
+
+SpecPref        2020   RedFirs       -10
+SpecPref        2020        WF        -5
+SpecPref        2020        IC         5
+YardLoss        2020        .1         0       .07
+
+ThinCC          2020    Parms(40, 1, All, 0, 999, 1)
+
+FMIN
+PileBurn        2021    Parms(1,100,5,.70*100,0)
+END
+FixMort         2021    Parms(All,.05,0,3,1,0)

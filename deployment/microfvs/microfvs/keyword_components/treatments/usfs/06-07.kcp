@@ -1,0 +1,35 @@
+! Region 6
+! Reference number 7
+!
+! Commercial thin in the Wallowa-Whitman National Forest
+!
+! Created by Erin Hooten, USDA Forest Service, 2021
+! Updated by Rachel Houtman, Oregon State University, 2022 
+! 
+! For complete assignment recommendations and caveats, see: \Supplements\SilvicultureCompendium.pdf
+!
+!
+!
+!
+
+SpecPref        2020    Parms(PP, -35)
+SpecPref        2020    Parms(WL, -30)
+SpecPref        2020    Parms(DF, -25)
+SpecPref        2020    Parms(ES, -20)
+SpecPref        2020    Parms(AF, -10)
+SpecPref        2020    Parms(LP, -5)
+YardLoss        2020        .1         1       .07
+
+! Before thin SDI max is BSDIMAX.
+! User may choose to set the Max SDI based on known sites.
+Compute         0
+targ = 0.25 * BSDIMAX
+END
+
+ThinSDI         2020    Parms(targ, 1, ALL, 7, 21, 1)
+thinBTA         2020        50        1.         0         7        0.      999.
+
+FMIN
+PileBurn        2021    Parms(1,100,5,0.7*100,0)
+END
+FixMort         2021    Parms(All,0.05,0,3.,1,0)

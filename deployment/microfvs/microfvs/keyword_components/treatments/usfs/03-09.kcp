@@ -1,0 +1,21 @@
+! Region 3
+! Reference number 9
+!
+! Variable density shelterwood (but varies) in Region 3 national forests
+!
+! Created by Erin Hooten, USDA Forest Service, 2021
+! Proofed by Rachel Houtman, Oregon State University, 2022 
+! 
+! For complete assignment recommendations and caveats, see: \Supplements\SilvicultureCompendium.pdf
+!
+!
+!
+!
+
+
+Estab           2020
+Sprout
+Plant           2021        PP       150       100                             0
+Plant           2021        SW        50       100                             0
+Plant           2021        LM        50       100                             0
+END

@@ -1,0 +1,29 @@
+********************************************************************************
+** PRESCRIBED FIRE - GROUND (RXGF)
+** Ignition of fuels by hand with drip torch or other incendiary device.
+** Treatment is variably distributed based on fuels, topography and season.
+** Rx fire preparation activities may affect other resources depending on
+** preparation activities and are not reflected as part of this treatment. Soil
+** disturbance is insignificant from direct action, but soil impacts may occur
+** when there are high intensity fire patches. Canopy cover is affected by
+** approximately 10%. dominant vegetation is affected by up to 15%. Codominant
+** vegetation is affected by up to 15%. Subdominant vegetation may be affected
+** by up to 75%. Herbaceous vegetation may be disturbed by as much as 75%. Basal
+** area predictor variable for drought intensity modeling is calculated using a
+** 10% reduction in basal area.
+
+**
+** COMPONENTS
+** --  THINNING & PRUNING OPERATIONS
+**     None.
+** --  FUEL TREATMENT OPERATIONS
+**     Burn with 8mph windspeed with very dry fuel moisture, 60F temperature,
+**     70% of stand area burned, with fire timed for early spring, flame length
+**     specified as 2ft, with 2% of crowns burning and 1ft scorch height.
+********************************************************************************
+MGMTID
+RXGF
+FMIN
+SimFire         2030         8         1        60         1        70         1
+FlameAdj        2030       1.0         2         2         1
+END

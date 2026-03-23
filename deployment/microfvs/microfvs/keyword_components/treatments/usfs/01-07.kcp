@@ -1,0 +1,35 @@
+! Region 1
+! Reference number 7
+!
+! Two-aged regeneration in the Bitterroot, Lolo, and Flathead National Forests
+!
+! Created by Erin Hooten, USDA Forest Service, 2021
+! Proofed by Rachel Houtman, Oregon State University, 2022 
+! 
+! For complete assignment recommendations and caveats, see: \Supplements\SilvicultureCompendium.pdf
+!
+!
+!
+!
+
+
+SpecPref        2020    Parms(PP,10)
+SpecPref        2020    Parms(DF,-10.)
+YardLoss        2020        .1        0.        1.
+
+Compute         0 
+BALOW = SPMCDBH(2, ALL, 0, 0, 8, 0 ,999)
+BATarg = max(0,25.-BALOW)
+END
+
+thinBBA         2020    Parms(BATarg,1.,8.,999.,0.,999.)
+
+FMIN
+SimFire         2021        8.         2       70.         1       70.         1
+END
+
+Estab           2021
+Sprout          2021
+InGrow
+StockAdj        2021       0.0
+Plant           2022        PP       250       100                             0

@@ -1,0 +1,35 @@
+! Region 1
+! Reference number 23
+!
+! Biomass removal in the Lolo, Flathead, Bitterroot National Forests (minor - grand fir component on forest, minor western red cedar (RC) in drainages)
+!
+! Created by Erin Hooten, USDA Forest Service, 2021
+! Proofed by Rachel Houtman, Oregon State University, 2022 
+! 
+! For complete assignment recommendations and caveats, see: \Supplements\SilvicultureCompendium.pdf
+!
+!
+!
+!
+
+SpecPref        2020    Parms(WP,-10.)
+SpecPref        2020    Parms(WL,-10.)
+SpecPref        2020    Parms(RC,-10.)
+SpecPref        2020    Parms(PP,-5.)
+SpecPref        2020    Parms(DF,5.)
+SpecPref        2020    Parms(GF,10.)
+SpecPref        2020    Parms(WH,10.)
+
+Compute         0
+TPAHi = SPMCDBH(1,ALL,0,10,999,0,999)
+TPALow = SPMCDBH(1,ALL,0,0,10,0,1)
+TPATarg = max(0, 350-TPAHi-TPALow)
+END
+
+YardLoss        2020         1         1        1.
+thinBTA         2020    Parms(TPATarg,1.,0,10,1,999)
+
+FMIN
+PileBurn        2021    Parms(1,100,5,0.7*100,0)
+END
+FixMort         2021    Parms(All,0.05,0,3.,1,0)

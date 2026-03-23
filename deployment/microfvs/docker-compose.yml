@@ -1,0 +1,39 @@
+# =============================================================================
+# docker-compose.yml for fvs-modern combined deployment
+#
+# Services:
+#   fvs-api   : microFVS REST API (FastAPI) on port 8000
+#   fvs-online: fvsOL Shiny web application on port 3838
+#
+# Usage:
+#   docker compose -f deployment/microfvs/docker-compose.yml up --build
+# =============================================================================
+
+services:
+  fvs-api:
+    build:
+      context: ../..
+      dockerfile: deployment/microfvs/Dockerfile
+    ports:
+      - "8000:80"
+    restart: unless-stopped
+    environment:
+      - WORKERS=2
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/version"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  fvs-online:
+    build:
+      context: ../..
+      dockerfile: deployment/docker/Dockerfile
+    ports:
+      - "3838:3838"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3838"]
+      interval: 30s
+      timeout: 10s
+      retries: 3

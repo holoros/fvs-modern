@@ -1,0 +1,36 @@
+! Region 3
+! Reference number 5b
+!
+! Group selection in Region 3 national forests
+!
+! Created by Erin Hooten, USDA Forest Service, 2021
+! Proofed by Rachel Houtman, Oregon State University, 2023 
+! 
+! For complete assignment recommendations and caveats, see: \Supplements\SilvicultureCompendium.pdf
+!
+!
+!
+!
+
+
+* 03-05a and 03-05b: Group Selection -- 15% of stand in groups, 85% in matrix
+* Common cycle boundary (or start year) of 2020 
+* Stand is added twice -- once for groups, once for matrix. 
+* FVS compiles results into composite tables. Composite tables will need to be created for other models outside FVS
+
+! Merchantability threshold defined as 9 in DBH.
+BFVolume           0         0        9.                                       6
+Volume             0         0        9.                                       6
+
+* MATRIX: 85% of stand
+SpecPref        2020    Parms(PP, -5)
+YardLoss        2020        .1         0         0
+
+ThinBBA         2020        60         1         9       999         0       999
+ThinBTA         2020       100         1         0       9.0         0       999
+
+
+FMIN
+PileBurn        2021    Parms(1,100,5,.70*100,0)
+END
+FixMort         2021    Parms(All,.05,0,3,1,0)

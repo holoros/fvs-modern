@@ -1,0 +1,24 @@
+! Region 1
+! Reference number 4
+!
+! Improvement cut in the Bitterroot, Lolo, and Flathead National Forests
+!
+! Created by Erin Hooten, USDA Forest Service, 2021
+! Updated by Rachel Houtman, Oregon State University, 2022 
+! 
+! For complete assignment recommendations and caveats, see: \Supplements\SilvicultureCompendium.pdf
+!
+!
+!
+!
+
+SpecPref           0     Parms(PP, -10)
+SpecPref           0     Parms(DF, 10)
+YardLoss        2020       0.1        1.       .07
+thinBBA         2020       60.        1.        8.      999.        0.      999.
+ThinDBH         2020        0.       7.9        1.       All        0.         0 
+   
+FMIN
+PileBurn           1    Parms(1,100,5,0.7*100,0)
+END
+FixMort            1    Parms(All,0.05,0,3.,1,0)

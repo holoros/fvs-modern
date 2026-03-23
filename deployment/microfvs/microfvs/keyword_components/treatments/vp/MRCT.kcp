@@ -1,0 +1,28 @@
+********************************************************************************
+** MECHANICAL REMOVAL - COMMERCIAL THINNING (MRCT)
+** Treatment can be consistently and equally applied across an area, focused on
+** significantly reducing the effects of high intensity fire by utilizing ground
+** based logging methods, or applied in a variable manner to mimic vegetation
+** structure patterns that exist in the area's intact disturbance regime. This
+** treatment may include biomass removal (non-merchantable), commercial tree
+** removal or a combination of both. While the focus would be on reducing ladder
+** fuels, to reduce risk of canopy fires and improve forest health, the dominant
+** woody vegetation is affected by as much as 15% over the treatment area. This
+** value can be as high as 90% in some areas and as low as 5% in others to
+** achieve heterogeneity in the forest structure. Co-dominant woody vegetation
+** is affected by as much as 50%, but effects are also variably distributed.
+** Overall canopy cover may be reduced by approximately 30%. As much as 75% of
+** subdominant woody vegetation is cut and removed but may also be left in
+** concentrations. Herbaceous vegetation is disturbed by as much as 40%. Soil
+** is disturbed by as much as 25%.
+**
+** COMPONENTS
+** --  THINNING & PRUNING OPERATIONS
+**     Thin from below to a residual relative density (Curtis RD) of 40, with
+**     90% cutting efficiency and limited to trees with DBH <30".
+** --  FUEL TREATMENT OPERATIONS
+**     None.
+********************************************************************************
+MGMTID
+MRCT
+ThinRDen        2030        40       0.9       All         0        30         1

@@ -1,0 +1,36 @@
+! Region 1
+! Reference number 32
+!
+! Two-aged regeneration in the Bitterroot, Lolo, Flathead, Idaho Panhandle, Nez Perce-Clearwater, Kootenai, Custer-Gallatin, Helena-Lewis & Clark, Beaverhead-Deerlodge National Forests
+!
+! Created by Erin Hooten, USDA Forest Service, 2021
+! Proofed by Rachel Houtman, Oregon State University, 2022 
+! 
+! For complete assignment recommendations and caveats, see: \Supplements\SilvicultureCompendium.pdf
+!
+!
+!
+!
+
+SpecPref        2020    Parms(LP,-5)
+SpecPref        2020    Parms(AF,5)
+SpecPref        2020    Parms(ES,5)
+
+YardLoss        2020        .1        0.        1.
+ThinDBH         2020         0         8       1.0       0.0       0.0       0.0
+ThinDBH         2020         8     999.0       1.0       0.0        10       0.0
+
+FMIN
+PileBurn        2021    Parms(1,100,5,0.7*100,0)
+END
+FixMort         2021    Parms(All,0.05,0,3.,1,0)
+
+Estab           2021
+Sprout
+InGrow
+StockAdj        2021       0.0
+Natural         2022        LP       100       100                             0
+Natural         2022        DF       100       100                             0
+Natural         2022        WL        25       100                             0
+Natural         2022        ES        25       100                             0
+Natural         2022        AF        25       100                             0

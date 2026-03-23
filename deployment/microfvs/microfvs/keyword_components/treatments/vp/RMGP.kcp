@@ -1,0 +1,25 @@
+********************************************************************************
+** MECHANICAL REARRANGEMENT - GRAPPLE PILE (RMGP)
+** Applied when high concentrations of down, dead, or lopped vegetative material
+** exist. Some small green vegetation may be removed and piled as well. Grapple
+** piling is used to concentrate residual vegetation into large piles which are
+** subsequently burned. Treatment is generally consistently and equally applied
+** across an area and is focused on significantly reducing fine fuels and a
+** fire's rate of spread. Canopy cover is affected by up to 5%. Dominant and
+** codominant vegetation is not affected. Subdominant vegetation is affected by
+** up to 25%. Herbaceous vegetation is disturbed by as much as 75%. Soil is
+** disturbed by as much as 20%. Basal area predictor variable for drought
+** intensity modeling is calculated using a 10% reduction in basal area.
+**
+** COMPONENTS
+** --  THINNING & PRUNING OPERATIONS
+**     None.
+** --  FUEL TREATMENT OPERATIONS
+**     Pile burn 70% of surface fuel killing 10% of trees with DBH <6".
+********************************************************************************
+MGMTID
+RMGP
+FMIN
+PileBurn        2030    Parms(1,100,5,.70*100,0)
+END
+FixMort         2030    Parms(All,.1,0,6,1,0)

@@ -1,0 +1,33 @@
+********************************************************************************
+** MANUAL TREATMENT - THINNING (MTTH)
+** Treatment is generally consistently and equally applied across an area and is
+** focused on significantly reducing the effects of high intensity fire by
+** increasing heterogeneity into the existing forest structure.This treatment is
+** expected to introduce a moderate level of structural variability mostly
+** accomplished as a byproduct from implementation. This treatment may include
+** biomass removal, commercial tree removal or combination of both. Treatment is
+** complex due to many factors such as steep slope and the necessity of
+** specialized equipment such as cable, tethered or helicopter logging methods.
+** Canopy cover is affected by approximately 15%. dominant vegetation is
+** affected by 5%. Codominant vegetation is affected by 40%. Subdominant
+** vegetation is affected by 75%. Herbaceous vegetation is disturbed by as much
+** as 10%. Soil is disturbed by as much as 10%. Basal area predictor variable
+** for drought intensity modeling is ≤20 square meters per hectare.
+**
+** COMPONENTS
+** --  THINNING & PRUNING OPERATIONS
+**     Thin to a residual relative density (Curtis RD) of 30, with 90% cutting
+**     efficiency and limited to trees with DBH between 1-12". Prune residual
+**     trees such that height to base of live crown is at least 8 ft.
+** --  FUEL TREATMENT OPERATIONS
+**     Pile burn surface fuel one year after thinning and pruning, piling 70% of
+**     fuels, killing 5% of small trees, and no trees killed with DBH >= 3".
+********************************************************************************
+MGMTID
+MTTH
+ThinRDen        2030        30        .9       All         1        12         1
+Prune           2030         1         8       0.5       All         2        99
+FMIN
+PileBurn        2031    Parms(1,100,5,.70*100,0)
+END
+FixMort         2031    Parms(All,.05,0,3,1,0)

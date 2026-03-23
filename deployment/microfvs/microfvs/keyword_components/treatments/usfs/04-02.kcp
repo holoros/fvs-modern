@@ -1,0 +1,39 @@
+! Region 4
+! Reference number 2
+!
+! Two-aged regeneration in Region 4 national forests
+!
+! Created by Erin Hooten, USDA Forest Service, 2021
+! Updated by Rachel Houtman, USDA Forest Service, 2024
+! 
+! For complete assignment recommendations and caveats, see: \Supplements\SilvicultureCompendium.pdf
+!
+!
+!
+
+
+* 04-02: Group Selection -- 67% of stand in groups, 33% in matrix. 
+* Common cycle boundary (or start year) of 2020 
+* Stand is added twice -- once for groups, once for matrix. Matrix has no prescription.
+* FVS compiles results into composite tables. Composite tables will need to be created for other models outside FVS.
+
+* GROUPS: 67% of stand
+
+YardLoss        2020        .1         1       .07
+ThinDBH         2020    Parms(0,999, 1, All, 0)
+
+FMIN
+FuelMove        2020    Parms(9,1,0,0.7,999,0)
+FuelMove        2020    Parms(8,1,0,0.7,999,0)
+FuelMove        2020    Parms(7,1,0,0.7,999,0)
+FuelMove        2020    Parms(6,1,0,0.7,999,0)
+FuelMove        2020    Parms(5,1,0,0.7,999,0)
+FuelMove        2020    Parms(4,1,0,max(0,min(0.7,4-1)),999,0)
+FuelMove        2020    Parms(3,1,0,max(0,min(0.7,3-1)),999,0)
+FuelMove        2020    Parms(2,1,0,max(0,min(0.7,2-1)),999,0)
+END
+
+*Estab keyword will cause aspen (and other sprouting species) to sprout post-clearcut.
+ESTAB
+Sprout         2021        AS
+END

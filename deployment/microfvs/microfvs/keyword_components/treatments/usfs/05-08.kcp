@@ -1,0 +1,42 @@
+! Region 5
+! Reference number 8
+!
+! Commercial thin in Region 5 national forests
+!
+! Created by Erin Hooten, USDA Forest Service, 2021
+! Proofed by Rachel Houtman, Oregon State University, 2022 
+! 
+! For complete assignment recommendations and caveats, see: \Supplements\SilvicultureCompendium.pdf
+!
+!
+!
+!
+
+! Merchantability threshold defined as 10 in DBH.
+BFVolume           0         0       10.                                       6
+Volume             0         0       10.                                       6
+
+SpecPref        2020    Parms(PP, -10.)
+SpecPref        2020    Parms(JP, -10.)
+SpecPref        2020    Parms(SP, -10.)
+SpecPref        2020    Parms(DF, -10.)
+SpecPref        2020    Parms(WF, 10.)
+SpecPref        2020    Parms(IC, 10.)
+YardLoss        2020        .1         1       .07
+
+Compute
+SDIHI = SPMCDBH(13, ALL, 0, 30, 999, 0, 999)
+SDILOW = SPMCDBH(13, ALL, 0, 0, 4, 0, 999)
+targ = max(0, 150-SDILOW-SDIHI)
+END
+
+ThinSDI        2020    Parms(targ, 1., All, 10, 30, 0)
+thinBTA         2020        25        1.         4        10        0.      999.
+IF                 0
+Cut eq Yes
+Then
+FMIN
+PileBurn           1    Parms(1,100,5,0.7*100,0)
+END
+FixMort            1    Parms(All,0.05,0,3.,1,0)
+ENDIF

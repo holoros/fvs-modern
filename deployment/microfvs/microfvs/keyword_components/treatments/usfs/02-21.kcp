@@ -1,0 +1,45 @@
+! Region 2
+! Reference number 21
+!
+! Two-aged regeneration, biomass removal in Region 2 Colorado and Wyoming national forests
+!
+! Created by Erin Hooten, USDA Forest Service, 2021
+! Proofed by Rachel Houtman, Oregon State University, 2022 
+! 
+! For complete assignment recommendations and caveats, see: \Supplements\SilvicultureCompendium.pdf
+!
+!
+!
+!
+! Region 2
+! Reference number 19
+!
+! Even-aged regeneration in Region 2 national forests except Black Hills
+!
+! Created by Erin Hooten, USDA Forest Service, 2021
+! Proofed by Rachel Houtman, Oregon State University, 2022 
+! 
+! For complete assignment recommendations and caveats, see: \Supplements\SilvicultureCompendium.pdf
+!
+!
+!
+!
+
+! Merchantability threshold defined as 8 in DBH.
+BFVolume           0         0        8.                                       6
+Volume             0         0        8.                                       6
+
+YardLoss        2020        .1        0.         0
+SpecPref        2020    Parms(ES,-5)
+SpecPref        2020    Parms(WF,5)
+SpecPref        2020    Parms(AF,5)
+FMIN
+SalvSP          2020       All         0
+Salvage         2020        8.      999.        5.         1       0.9        0.
+PileBurn        2021    Parms(1,100,5,0.7*100,0)
+END
+
+FixMort         2021    Parms(All,0.05,0,3.,1,0)
+Estab           2021
+Sprout
+Natural         2022        ES       200       100                             0

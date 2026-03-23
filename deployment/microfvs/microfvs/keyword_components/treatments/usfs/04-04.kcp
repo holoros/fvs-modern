@@ -1,0 +1,27 @@
+! Region 4
+! Reference number 4
+!
+! Even-aged regeneration in Region 4 national forests
+!
+! Created by Erin Hooten, USDA Forest Service, 2021
+! Updated by Rachel Houtman, USDA Forest Service, 2023
+! 
+! For complete assignment recommendations and caveats, see: \Supplements\SilvicultureCompendium.pdf
+!
+!
+!
+
+
+SpecPref        2020    Parms(LP,-10.)
+SpecPref        2020    Parms(DF,-5.)
+SpecPref        2020    Parms(ES,5.)
+SpecPref        2020    Parms(AF,10.)
+
+ThinDBH         2020         0       999       1.0       0.0       0.0       0.0
+YardLoss        2020       0.1         1         1
+
+SimFire         2021        8.         2       70.         1       70.         1
+
+Estab           2021
+Sprout
+Plant           2021        LP       400       100                             0

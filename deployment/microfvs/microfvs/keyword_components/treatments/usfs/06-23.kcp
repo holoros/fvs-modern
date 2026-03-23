@@ -1,0 +1,36 @@
+! Region 6
+! Reference number 9
+!
+! Commercial thin in the Olympic and Siuslaw National Forests
+!
+! Created by Erin Hooten, USDA Forest Service, 2021
+! Updated by Rachel Houtman, Oregon State University, 2022 
+! 
+! For complete assignment recommendations and caveats, see: \Supplements\SilvicultureCompendium.pdf
+!
+!
+!
+!
+
+! Merchantability threshold defined as 8 in DBH.
+BFVolume           0         0        8.                                       6
+Volume             0         0        8.                                       6
+
+SpecPref        2020     Parms(RC,-20)
+SpecPref        2020     Parms(BM,-15.)
+SpecPref        2020     Parms(SS, -10.)
+SpecPref        2020     Parms(RA, -5.)
+SpecPref        2020     Parms(AF,5.)
+SpecPref        2020     Parms(DF,10)
+SpecPref        2020     Parms(WH,15)
+
+Compute         0
+DENh = SPMCDBH(14, ALL, 0, 20, 999, 0, 999)
+DENl = SPMCDBH(14, ALL, 0, 0, 8, 0, 999)
+DENout = DENh + DENl
+TargD = max(0,35-DENout)
+END
+
+YardLoss        2020       0.1        1.      0.07
+
+ThinRDen        2020      Parms(TargD,1.,All,8,20,1)

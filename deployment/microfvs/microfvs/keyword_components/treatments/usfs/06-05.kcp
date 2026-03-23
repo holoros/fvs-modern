@@ -1,0 +1,30 @@
+! Region 6
+! Reference number 05
+!
+! Biomass removal in the Ochoco and Deschutes National Forests
+!
+! Created by Erin Hooten, USDA Forest Service, 2021
+! Proofed by Rachel Houtman, Oregon State University, 2022 
+! 
+! For complete assignment recommendations and caveats, see: \Supplements\SilvicultureCompendium.pdf
+!
+!
+!
+!
+
+SpecPref        2020     Parms(WL,-15.)
+SpecPref        2020     Parms(PP, -10.)
+SpecPref        2020     Parms(DF,-5.)
+SpecPref        2020     Parms(GF,5.)
+YardLoss        2020        .1         1       .07
+
+Compute         0
+TPAHI = SPMCDBH(1,ALL,0,9,999,0,999)
+targ = max(0,40-TPAHI)
+End
+
+thinBTA         2020    Parms(targ, 1., 0., 9., 0., 999.)
+
+FMIN
+SimFire         2021        8.         2       70.         1       70.         1
+END

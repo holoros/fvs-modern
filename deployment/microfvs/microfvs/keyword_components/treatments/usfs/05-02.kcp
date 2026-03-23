@@ -1,0 +1,33 @@
+! Region 5
+! Reference number 2
+!
+! Commercial thin in the following Region 5 national forests: Modoc, Lassen, Plumas, Lake Tahoe Basin Management Unit, Tahoe, 
+! 	Eldorado, Stanislaus, Sequoia, Sierra, Inyo and that portion of the Humboldt-Toiyabe that is in the Sierra Nevada
+!
+! Created by Erin Hooten, USDA Forest Service, 2021
+! Updated by Rachel Houtman, Oregon State University, 2022 
+! 
+! For complete assignment recommendations and caveats, see: \Supplements\SilvicultureCompendium.pdf
+!
+!
+!
+!
+
+
+SpecPref        2020    Parms(WF,10)
+SpecPref        2020    Parms(IC,5)
+SpecPref        2020    Parms(DF,-5)
+SpecPref        2020    Parms(SP,-10.)
+SpecPref        2020    Parms(PP,-15.)
+
+YardLoss        2020        .1         1       .07
+
+Compute         0 
+BAHI = SPMCDBH(2, ALL, 0, 30, 999, 0 ,999)
+BATarg = MAX(0.,130-BAHI)
+END
+
+thinBBA         2020    Parms(BATarg,1.,10,30,0.,999.)
+thinBTA         2020         0        1.         4        10        0.      999.
+
+SimFire         2021        8.         2       70.         1       70.         1

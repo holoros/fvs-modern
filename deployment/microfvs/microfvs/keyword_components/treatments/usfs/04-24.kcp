@@ -1,0 +1,28 @@
+! Region 4
+! Reference number 24
+!
+! Two-aged regeneration in Region 4 national forests
+!
+! Created by Erin Hooten, USDA Forest Service, 2021
+! Updated by Rachel Houtman, USDA Forest Service, 2024
+! 
+! For complete assignment recommendations and caveats, see: \Supplements\SilvicultureCompendium.pdf
+!
+!
+!
+
+
+
+SpecPref        2020    Parms(ES,-10.)
+SpecPref        2020    Parms(AF,-5.)
+YardLoss        2020       0.1        1.         1
+ThinSDI         2020       211        1.       All         0      999.         0
+
+FMIN
+PileBurn        2021    Parms(1,100,5,0.7*100,0)
+END
+FixMort         2021    Parms(All,0.05,0,3.,1,0)
+
+Estab
+Plant           2022        DF       200       100         2         2         1
+Plant           2022        ES       200       100         2         2         1

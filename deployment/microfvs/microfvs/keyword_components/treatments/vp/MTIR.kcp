@@ -1,0 +1,29 @@
+********************************************************************************
+** MANUAL TREATMENT - INVASIVES REMOVAL (MTIR)
+** Treatment is applied selectively and is focused on the hand removal of
+** invasive species such as shrubs, or herbaceous forbs and graminoids. Removal
+** may use tools such as saws, shovels, and hands. Only target species are
+** removed, however depending on species and cover of target species soil may be
+** disturbed by up to 80%, ranging from a low of 5% up to 80%.
+**
+** COMPONENTS
+** --  THINNING & PRUNING OPERATIONS
+**     None.
+** --  FUEL TREATMENT OPERATIONS
+**     Masticate all trees with DBH <= 1", generating pieces 1" in size, and
+**     with masticated pieces comprising 70% of surface fuel.
+********************************************************************************
+MGMTID
+MTIR
+YardLoss        2030    Parms(1,1,1)
+ThinDBH         2030    Parms(0,1,1,All,0,0)
+FMIN
+FuelMove        2030    Parms(9,1,0,0.70,999,0)
+FuelMove        2030    Parms(8,1,0,0.70,999,0)
+FuelMove        2030    Parms(7,1,0,0.70,999,0)
+FuelMove        2030    Parms(6,1,0,0.70,999,0)
+FuelMove        2030    Parms(5,1,0,0.70,999,0)
+FuelMove        2030    Parms(4,1,0,max(0,min(0.70,4-1)),999,0)
+FuelMove        2030    Parms(3,1,0,max(0,min(0.70,3-1)),999,0)
+FuelMove        2030    Parms(2,1,0,max(0,min(0.70,2-1)),999,0)
+END

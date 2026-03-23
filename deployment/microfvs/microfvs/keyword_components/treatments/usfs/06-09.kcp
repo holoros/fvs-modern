@@ -1,0 +1,31 @@
+! Region 6
+! Reference number 9
+!
+! Commercial thin in the Mt. Baker-Snoqualmie National Forest
+!
+! Created by Erin Hooten, USDA Forest Service, 2021
+! Updated by Rachel Houtman, Oregon State University, 2022 
+! 
+! For complete assignment recommendations and caveats, see: \Supplements\SilvicultureCompendium.pdf
+!
+!
+!
+!
+
+! Merchantability threshold defined as 7 in DBH.
+BFVolume           0         0        7.                                       6
+Volume             0         0        7.                                       6
+
+SpecPref        2020        Parms(RC,-10.)
+SpecPref        2020        Parms(DF,-5.)
+SpecPref        2020        Parms(WH,5)
+SpecPref        2020        Parms(SF,5)
+
+Compute         0 
+BAHI = SPMCDBH(2, ALL, 0, 20, 999, 0 ,999)
+BATarg = MAX(0.,140-BAHI)
+END
+
+YardLoss        2020        .1         1       .07
+
+thinBBA         2020       Parms(BATarg,1.,0,20,0.,999.)

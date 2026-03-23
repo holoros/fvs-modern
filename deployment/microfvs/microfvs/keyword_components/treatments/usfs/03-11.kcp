@@ -1,0 +1,25 @@
+! Region 3
+! Reference number 11
+!
+! Precommercial thin, biomass removal in Region 3 national forests
+!
+! Created by Erin Hooten, USDA Forest Service, 2021
+! Proofed by Rachel Houtman, Oregon State University, 2022 
+! 
+! For complete assignment recommendations and caveats, see: \Supplements\SilvicultureCompendium.pdf
+!
+!
+!
+!
+
+
+SpecPref        2020    Parms(PP,-10)
+SpecPref        2020    Parms(SW,-5.)
+SpecPref        2020    Parms(LM,-5.)
+SpecPref        2020    Parms(DF,-5.)
+YardLoss        2020       0.1        0.        0.
+
+thinBTA         2020      100.        1.        1.       3.9        0.      999.
+ThinSDI         2020        30        1.       All         9        30         1
+
+SimFire         2021        8.         2       70.         1       70.         1

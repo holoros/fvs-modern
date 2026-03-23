@@ -1,0 +1,20 @@
+********************************************************************************
+** HERBIVORY (HERB)
+** Achieved by goats or sheep herds. Grazing helps reduce fine fuels and
+** therefore a fire's rate of spread as well as some ladder fuel reduction which
+** reduces flame lengths. Woody vegetation is generally unaffected. Herbaceous
+** vegetation is affected on average by 40%, but depending on species and
+** palatability can be affected by 20-100%. Soil is disturbed by as much as 30%.
+** Basal area predictor variable for drought intensity modeling is calculated
+** using a 10% reduction in basal area.
+**
+** COMPONENTS
+** --  THINNING & PRUNING OPERATIONS
+**     Prune 80% of trees with DBH <2" and 30% of trees with DBH between 2-8".
+** --  FUEL TREATMENT OPERATIONS
+**     None.
+********************************************************************************
+MGMTID
+HERB
+Prune           2030         2         4       0.8       All         0         2
+Prune           2030         2         4       0.3       All         2         8

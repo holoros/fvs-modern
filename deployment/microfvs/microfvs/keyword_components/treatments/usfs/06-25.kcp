@@ -1,0 +1,29 @@
+! Region 6
+! Reference number 25
+!
+! Commercial thin in the Malheur National Forest
+!
+! Created by Erin Hooten, USDA Forest Service, 2021
+! Updated by Rachel Houtman, Oregon State University, 2022 
+! 
+! For complete assignment recommendations and caveats, see: \Supplements\SilvicultureCompendium.pdf
+!
+!
+!
+!
+
+SpecPref        2020     Parms(PP,-5)
+SpecPref        2020     Parms(WJ,5)
+YardLoss        2020       0.1        1.      0.07
+
+Compute         0
+BAhi = SPMCDBH(2,All,0,21,999,0,999)
+targ = max(0, 40-BAhi)
+End
+
+thinBBA         2020    Parms(targ,1,9,21,0,999)
+thinBTA         2020        90        1.        0.         9        0.      999.
+
+FMin
+SimFire         2020        8.         2       70.         1       70.         1
+End

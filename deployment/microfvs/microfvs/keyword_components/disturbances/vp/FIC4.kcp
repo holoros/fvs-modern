@@ -1,0 +1,12 @@
+********************************************************************************
+** NATURAL DISTURBANCE - WILDFIRE IV (FIC4)
+** Moderate-intensity fire implemented in 2035. Fire simulated using wind speed
+** 25mph, very dry moisture level, temperature of 70F, with FVS-FFE calculating
+** mortality. 100% of stand area shall be burned, timed after greenup. Flame
+** length modified to have flame length multiplier of 1.0, flame length of 7ft,
+** 10% of crowns burning, and a maximum scorch height of 10ft.
+********************************************************************************
+FMIN
+SIMFIRE         2035        25         1        70         1       100         3
+FLAMEADJ        2035       1.0         7        10        10
+END

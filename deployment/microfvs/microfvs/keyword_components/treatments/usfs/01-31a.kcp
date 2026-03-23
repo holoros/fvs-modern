@@ -1,0 +1,46 @@
+! Region 1
+! Reference number 31a
+!
+! Group selection in the Lolo, Flathead, Bitterroot National Forests (minor - grand fir component on forest, minor western red cedar (RC) in drainages)
+!
+! Created by Erin Hooten, USDA Forest Service, 2021
+! Proofed by Rachel Houtman, Oregon State University, 2022 
+! 
+! For complete assignment recommendations and caveats, see: \Supplements\SilvicultureCompendium.pdf
+!
+!
+!
+!
+
+* 01-31a and 01-31b: Group Selection -- 20% of stand in groups, 80% in matrix
+
+* Common cycle boundary (or start year) of 2020 
+* Stand is added twice -- once for groups, once for matrix. 
+* FVS compiles results into composite tables. Composite tables will need to created for other models outside FVS
+
+*GROUPS: Weighted 20% of stand
+
+! Merchantability threshold defined as 8 in DBH.
+BFVolume           0         0        8.                                       6
+Volume             0         0        8.                                       6
+
+SpecPref        2020     Parms(WL,-15)
+SpecPref        2020     Parms(WP, -15)
+SpecPref        2020     Parms(RC, -15)
+SpecPref        2020     Parms(PP,-10)
+SpecPref        2020     Parms(DF,5)
+SpecPref        2020     Parms(GF,5)
+SpecPref        2020     Parms(WH, 5)
+YardLoss        2020        .1         0         0
+ThinBBA         2020        20         1         0       999         0       999
+
+FMIN
+PileBurn        2021    Parms(1,100,5,.70*100,0)
+END
+FixMort         2021    Parms(All,.05,0,3,1,0)
+Estab           2021
+Sprout
+Plant           2021        WL       100      100.                             0
+Plant           2021        WP       100      100.                             0
+Plant           2021        RC       50      100.                             0
+End

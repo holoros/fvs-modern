@@ -1,0 +1,23 @@
+********************************************************************************
+** REVEGETATION (REVA)
+** Revegetation, including all growth forms, herbaceous, shrubs and trees are
+** focused in areas where natural revegetation is not predicted to occur within
+** a target time frame and/or where specific species are desired. Revegetation
+** alone does not impact existing vegetation or soil, but when used in
+** combination with other techniques to prepare the site can have more impact.
+**
+** COMPONENTS
+** --  THINNING & PRUNING OPERATIONS
+**     None.
+** --  FUEL TREATMENT OPERATIONS
+**     None.
+** --  PLANTING OPERATIONS
+**     Plant 200 trees per acre of Other Softwood with 60% survival rate, with
+**     seedlings distributed uniformly across plots in the stand.
+********************************************************************************
+MGMTID
+REVA
+ESTAB           2025
+NoSprout
+Plant           2030        OS       200       60.         2                   0
+END

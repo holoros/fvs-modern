@@ -1,0 +1,41 @@
+********************************************************************************
+** MANUAL TREATMENT - URBAN CLEARING (MTUR)
+** Treatment is generally applied to focused areas of vegetation on a site
+** specific basis within the urban environment and is designed to significantly
+** reduce the effects of wildfire to urban resources. Defensible space
+** requirements and incorporation of some aesthetic value is assumed to drive
+** vegetation treatment prescriptions which increases the level of uncertainty
+** for this treatment method's efficacy. Treatments are typically implemented by
+** certified arborists due to urban complexities. Dominant woody vegetation is
+** generally unaffected. Canopy cover is minimally affected. Dominant vegetation
+** is affected by up to 5%. Codominant vegetation is affected by up to 10%.
+** Subdominant vegetation is affected by up to 25%. Herbaceous vegetation is
+** disturbed by as much as 20% through foot traffic and the dragging or chipping
+** of cut woody debris. Soil disturbance is minimal.
+**
+** COMPONENTS
+** --  THINNING & PRUNING OPERATIONS
+**     Thin from below to a spacing of 20 ft between trees, with cutting
+**     efficiency of 80% for trees with DBH between 1-18" and height >= 12 ft.
+**     Prune residual trees such that height to base of live crown is at least 8
+**     ft.
+** --  FUEL TREATMENT OPERATIONS
+**     Masticate 80% of trees with DBH <= 1", generating pieces 1" in size, and
+**     with masticated pieces comprising 70% of surface fuel.
+********************************************************************************
+MGMTID
+MTUR
+ThinBTA         2030     108.9       0.8         1        12        12       999
+Prune           2030         1         8       0.5       All         0        99
+YardLoss        2030    Parms(1,1,1)
+ThinDBH         2030    Parms(0,1,0.8,All,0,0)
+FMIN
+FuelMove        2030    Parms(9,1,0,0.70,999,0)
+FuelMove        2030    Parms(8,1,0,0.70,999,0)
+FuelMove        2030    Parms(7,1,0,0.70,999,0)
+FuelMove        2030    Parms(6,1,0,0.70,999,0)
+FuelMove        2030    Parms(5,1,0,0.70,999,0)
+FuelMove        2030    Parms(4,1,0,max(0,min(0.70,4-1)),999,0)
+FuelMove        2030    Parms(3,1,0,max(0,min(0.70,3-1)),999,0)
+FuelMove        2030    Parms(2,1,0,max(0,min(0.70,2-1)),999,0)
+END

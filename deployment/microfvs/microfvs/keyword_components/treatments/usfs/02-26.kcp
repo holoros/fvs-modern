@@ -1,0 +1,25 @@
+! Region 2
+! Reference number 26
+!
+! Biomass removal in Region 2 national forests except Black Hills
+!
+! Created by Erin Hooten, USDA Forest Service, 2021
+! Proofed by Rachel Houtman, Oregon State University, 2022 
+! 
+! For complete assignment recommendations and caveats, see: \Supplements\SilvicultureCompendium.pdf
+!
+!
+!
+!
+
+! Merchantability threshold defined as 7 in DBH.
+BFVolume           0         0        7.                                       6
+Volume             0         0        7.                                       6
+
+Compute         0
+TPAHi = SPMCDBH(1, 0, 1, 5, 999, 0, 999, 0)
+TPATarg = max(0, 400 - TPAHi)
+End
+
+thinBTA         2020    Parms(TPATarg, 1, 1, 5, 0, 999)
+YardLoss        2020         1         1        1.

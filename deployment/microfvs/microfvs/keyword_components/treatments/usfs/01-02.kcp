@@ -1,0 +1,36 @@
+! Region 1
+! Reference number 2
+!
+! Biomass removal in the Bitterroot, Lolo, and Flathead National Forests
+!
+! Created by Erin Hooten, USDA Forest Service, 2021
+! Updated by Rachel Houtman, Oregon State University, 2022 
+! 
+! For complete assignment recommendations and caveats, see: \Supplements\SilvicultureCompendium.pdf
+!
+!
+!
+!
+
+
+Compute
+! Target defined by silviculturists
+targ = 150
+! Trees per acre above the defined treatment subset
+TPAh = SPMCDBH(1,0,0,10,999,0,999)
+! Trees per acre below the defined treatment subset
+TPAl = SPMCDBH(1,0,0,0,999,1,999)
+! Trees per acre within the defined treatment subset
+TPAout = TPAh + TPAl
+END
+
+SpecPref           0     Parms(PP, -5)
+SpecPref           0     Parms(DF, 5)
+YardLoss      2020        .1        0.        1.
+
+ThinBTA         2020    Parms(max(0,targ-TPAout), 1, 0, 10, 1, 999)
+
+FMIN
+PileBurn        2021    Parms(1,100,5,0.7*100,0)
+END
+FixMort         2021    Parms(All,0.05,0,3.,1,0)

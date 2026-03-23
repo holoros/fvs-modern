@@ -1,0 +1,36 @@
+! Region 2
+! Reference number 16
+!
+! Commercial thin in all national forests in Colorado: Arapaho, Grand Mesa, Gunnison, Pike, Rio Grande, Roosevelt, Routt, San Isabel, San Juan, Uncompahgre, White River
+!
+! Created by Erin Hooten, USDA Forest Service, 2021
+! Proofed by Rachel Houtman, Oregon State University, 2022 
+! 
+! For complete assignment recommendations and caveats, see: \Supplements\SilvicultureCompendium.pdf
+!
+!
+!
+!
+! Merchantability threshold defined as 8 in DBH.
+BFVolume           0         0        8.                                       6
+Volume             0         0        8.                                       6
+
+SpecPref        2020    Parms(PP,5)
+SpecPref        2020    Parms(DF,10)
+SpecPref        2020    Parms(ES,15)
+SpecPref        2020    Parms(WF,20)
+
+Compute         0 
+BALow = SPMCDBH(2, ALL, 0, 5, 8, 0 ,999)
+BATarg = MAX(0.,60-BALow)
+END
+
+YardLoss        2020       0.1        1.       .07
+thinBBA         2020    Parms(BATarg, 1, 8, 999, 0, 999)
+thinBTA         2020    Parms(60, 1, 5, 8, 0, 999)
+thinBBA         2020    Parms(0, 1, 0, 5, 0, 999)
+
+FMIN
+PileBurn           1    Parms(1,100,5,0.7*100,0)
+END
+FixMort            1    Parms(All,0.05,0,3.,1,0)

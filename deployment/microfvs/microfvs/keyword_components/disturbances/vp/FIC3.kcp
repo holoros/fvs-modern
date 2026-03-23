@@ -1,0 +1,12 @@
+********************************************************************************
+** NATURAL DISTURBANCE - WILDFIRE III (FIC3)
+** Moderate-intensity fire implemented in 2035. Fire simulated using a wind speed of
+** 15mph, very dry moisture level, temperature of 70F, with FVS-FFE calculating
+** mortality. 100% of stand area shall be burned, timed after greenup. Flame
+** length modified to have flame length multiplier of 1.0, flame length of 5ft,
+** 5% of crowns burning, and a maximum scorch height of 7ft.
+********************************************************************************
+FMIN
+SIMFIRE         2035        15         1        70         1       100         3
+FLAMEADJ        2035       1.0         5         5         7
+END

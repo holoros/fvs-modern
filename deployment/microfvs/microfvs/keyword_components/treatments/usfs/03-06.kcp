@@ -1,0 +1,19 @@
+! Region 3
+! Reference number 6
+!
+! Uneven-aged single tree in Region 3 national forests
+!
+! Created by Erin Hooten, USDA Forest Service, 2021
+! Proofed by Rachel Houtman, Oregon State University, 2022 
+! 
+! For complete assignment recommendations and caveats, see: \Supplements\SilvicultureCompendium.pdf
+!
+!
+!
+!
+
+
+SpecPref        2020    Parms(PP,-20.)
+YardLoss        2020        .1         1       .07
+* Arguments: SmDBH, LgDBH, Species, Q-Factor, D-class, ResDensity, DensityUnits
+ThinQFA         2020     Parms(0,30,All,1.2,5,60,0)

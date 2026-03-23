@@ -1,0 +1,23 @@
+! Region 6
+! Reference number 36
+!
+! Biomass removal in all Region 6 national forests
+!
+! Created by Erin Hooten, USDA Forest Service, 2021
+! Updated by Rachel Houtman, Oregon State University, 2022 
+! 
+! For complete assignment recommendations and caveats, see: \Supplements\SilvicultureCompendium.pdf
+!
+!
+!
+!
+
+
+YardLoss        2020       0.1        1.      0.07
+
+Compute         0 
+TPAHI = SPMCDBH(1, ALL, 0, 7, 999, 0 ,999)
+TTarg = MAX(0.,140-TPAHI)
+END
+
+thinBTA         2020     Parms(TTarg,1.,0,7,0.,999.)
