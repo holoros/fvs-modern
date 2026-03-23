@@ -29,6 +29,14 @@ __pycache__/
 *.pyc
 .venv/
 
+# Credentials and secrets
+.env
+*.env
+.env.*
+credentials.*
+*.pem
+*.key
+
 # Docker build context
 deployment/docker/.env
 
