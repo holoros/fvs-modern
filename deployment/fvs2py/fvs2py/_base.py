@@ -1,0 +1,610 @@
+import ctypes as ct
+import logging
+import os
+import warnings
+from pathlib import Path
+
+import numpy as np
+import numpy.typing as npt
+import pandas as pd
+
+from fvs2py._core import FvsCore
+from fvs2py.common import class_requires_fvs_library, fvs_property
+from fvs2py.constants import (
+    FVS_ITRNCD_FINISHED_ALL_STANDS,
+    FVS_ITRNCD_NOT_STARTED,
+    MGMT_ID_COLUMN_NAME,
+    SPECIES_ATTRS,
+    SPECIES_COLUMN_NAMES,
+    STAND_CN_COLUMN_NAME,
+    STAND_ID_COLUMN_NAME,
+    STR_C_CONTIGUOUS,
+    STR_MAXCYCLES,
+    STR_MAXPLOTS,
+    STR_MAXSPECIES,
+    STR_MAXTREES,
+    STR_NCYCLES,
+    STR_NPLOTS,
+    STR_NTREES,
+    SUMMARY_COLS,
+)
+from fvs2py.enums import FvsAttributeAccessor
+
+
+@class_requires_fvs_library
+class FVS(FvsCore):
+    """Main class for interacting with FVS at runtime."""
+
+    def __init__(self, lib_path: str | os.PathLike):
+        super().__init__(lib_path=lib_path)
+        self._initialize_attributes()
+        return
+
+    def _initialize_attributes(self) -> None:
+        self.keyfile_path: Path | None = None
+        self.keyfile: str | None = None
+        self._exit_code = ct.c_int(0)
+        self._itrncd = ct.c_int(-1)
+        self._maxcycles = ct.c_int(0)
+        self._maxplots = ct.c_int(0)
+        self._maxspecies = ct.c_int(0)
+        self._maxtrees = ct.c_int(0)
+        self._mgmt_id = ct.create_string_buffer(4)
+        self._ncycles = ct.c_int(0)
+        self._nplots = ct.c_int(0)
+        self._ntrees = ct.c_int(0)
+        self._restart_code = ct.c_int(0)
+        self._species_attrs = dict.fromkeys(SPECIES_ATTRS)
+        self._stand_cn = ct.create_string_buffer(40)
+        self._stand_id = ct.create_string_buffer(26)
+        self._stop_point_code = None
+        self._stop_point_year = None
+
+    @fvs_property
+    def dims(self) -> dict:
+        """Return the max dimensions of important FVS data storage."""
+        self._fvsDimSizes.argtypes = [
+            ct.POINTER(ct.c_int),
+            ct.POINTER(ct.c_int),
+            ct.POINTER(ct.c_int),
+            ct.POINTER(ct.c_int),
+            ct.POINTER(ct.c_int),
+            ct.POINTER(ct.c_int),
+            ct.POINTER(ct.c_int),
+        ]
+        self._fvsDimSizes.restype = None
+
+        self._dims = {
+            STR_NTREES: self._ntrees,
+            STR_NCYCLES: self._ncycles,
+            STR_NPLOTS: self._nplots,
+            STR_MAXTREES: self._maxtrees,
+            STR_MAXSPECIES: self._maxspecies,
+            STR_MAXPLOTS: self._maxplots,
+            STR_MAXCYCLES: self._maxcycles,
+        }
+
+        self._fvsDimSizes(
+            self._ntrees,
+            self._ncycles,
+            self._nplots,
+            self._maxtrees,
+            self._maxspecies,
+            self._maxplots,
+            self._maxcycles,
+        )
+        return {key: val.value for key, val in self._dims.items()}
+
+    @fvs_property
+    def exit_code(self) -> int:
+        """Gets the integer code returned when FVS exits.
+
+        Possible values are:
+          0 - No serious errors occurred.
+          1 - Input data error.
+          2 - Keyword or expression error.
+          3 - Extension or group activities error.
+          4 - Scratch file error.
+        """
+        self._fvsGetICCode.argtypes = [ct.POINTER(ct.c_int)]
+        self._fvsGetICCode.restype = None
+        self._fvsGetICCode(self._exit_code)
+
+        return self._exit_code.value
+
+    @fvs_property
+    def itrncd(self) -> int:
+        """Returns with the current return code value in FVS.
+
+        -1: indicates that FVS has not been started.
+         0: indicates that FVS is in good running state.
+         1: indicates that FVS has detected an error of some kind and should not
+                be used until reset by specifying new input.
+         2: indicates that FVS has finished processing all the stands; new input
+                can be specified.
+        """
+        self._fvsGetRtnCode.argtypes = [ct.POINTER(ct.c_int)]
+        self._fvsGetRtnCode.restype = None
+
+        self._fvsGetRtnCode(self._itrncd)
+
+        return self._itrncd.value
+
+    @fvs_property
+    def restart_code(self) -> int:
+        """A code indicating when FVS stopped.
+
+          1: Stop was done just before the first call to the Event Monitor.
+          2: Stop was done just after the first call to the Event Monitor.
+          3: Stop was done just before the second call to the Event Monitor.
+          4: Stop was done just after the second call to the Event Monitor.
+          5: Stop was done after growth and mortality has been computed, but
+                prior to applying them.
+          6: Stop was done just before the ESTAB routines are called.
+        100: Stop was done after a stand has been simulated but prior to
+                starting a subsequent stand.
+        """
+        self._fvsGetRestartCode.argtypes = [ct.POINTER(ct.c_int)]
+        self._fvsGetRestartCode.restype = None
+        self._fvsGetRestartCode(self._restart_code)
+
+        return self._restart_code.value
+
+    @fvs_property
+    def species(self) -> pd.DataFrame:
+        """Returns species codes and attributes for all species."""
+        codes = self.species_codes
+        attrs = self.species_attrs
+        return codes.merge(attrs, left_index=True, right_index=True, copy=False)
+
+    @fvs_property
+    def species_codes(self) -> pd.DataFrame:
+        """Fetch the various codes used to refer to different tree species."""
+        self._fvsSpeciesCode.argtypes = [
+            ct.c_char_p,  # FVS species code
+            ct.c_char_p,  # FIA species code
+            ct.c_char_p,  # PLANTS code
+            ct.POINTER(ct.c_int),  # species index for this variant
+            ct.POINTER(ct.c_int),  # num char for fvs code
+            ct.POINTER(ct.c_int),  # num char for fia code
+            ct.POINTER(ct.c_int),  # num char for plants code
+            ct.POINTER(ct.c_int),  # return code
+        ]
+        self._fvsSpeciesCode.restype = None
+        dims = self.dims
+
+        _fvs_spp = ct.create_string_buffer(4)
+        _fia_spp = ct.create_string_buffer(4)
+        _plants_spp = ct.create_string_buffer(6)
+        returncd = ct.c_int(0)
+
+        spp_codes = pd.DataFrame(
+            index=range(dims[STR_MAXSPECIES]),
+            columns=SPECIES_COLUMN_NAMES,
+        )
+
+        for i in range(dims[STR_MAXSPECIES]):
+            self._fvsSpeciesCode(
+                _fvs_spp,
+                _fia_spp,
+                _plants_spp,
+                ct.c_int(i + 1),
+                ct.c_int(0),
+                ct.c_int(0),
+                ct.c_int(0),
+                ct.c_int(0),
+            )
+            if returncd.value != 0:
+                msg = f"Index {i + 1} out of range"
+                raise IndexError(msg)
+            spp_codes.iloc[i] = (
+                i + 1,
+                _fvs_spp.value.decode().strip(),
+                _fia_spp.value.decode().strip(),
+                _plants_spp.value.decode().strip(),
+            )
+
+        return spp_codes
+
+    @fvs_property
+    def species_attrs(self) -> pd.DataFrame:
+        """Returns a dataframe of species attributes.
+
+        Fields returned are:
+            spccf: CCF for each species, recomputed in FVS so setting will
+                likely have no effect
+            spsdi: SDI maximums for each species
+            spsiteindx: Species site indices
+            bfmind: Min diameter related to BFVOLUME keyword
+            bftopd: Top diameter related to BFVOLUME keyword
+            bfstmp: Stump height related to BFVOLUME keyword
+            frmcls: Form class related to BFVOLUME keyword
+            bfmeth: Volume calculation code related to BFVOLUME keyword
+                (internal FVS variable methb)
+            mcmind: Min diameter related to VOLUME keyword (internal FVS
+                variable dbhmin)
+            mctopd: Top diameter related to VOLUME keyword (internal FVS
+                variable topd)
+            mcstmp: Stump height related to VOLUME keyword (internal FVS
+                variable stmp)
+            mcmeth: Volume calculation code related to VOLUME keyword (internal
+                FVS variable methc)
+            baimult: Basal area increment multiplier for large trees (internal
+                FVS variable xdmult)
+            htgmult: Height growth multiplier for large trees (internal FVS
+                variable xhmult)
+            mortmult: Mortality rate multiplier (internal FVS variable xmmult)
+            mortdia1: Lower diameter limit for mortality multiplier (internal
+                FVS variable xmdia1)
+            mortdia2: Upper diameter limit for mortality multiplier (internal
+                FVS variable xmdia2)
+            regdmult: Diameter growth mulitplier for regeneration (internal FVS
+                variable xrdmlt)
+            reghmult: Height growth multiplier for regeneration (internal FVS
+                variable xrhmlt)
+        """
+        for attr in self._species_attrs:
+            _ = self.get_species_attr(attr)
+
+        attrs = pd.DataFrame(self._species_attrs, copy=False)
+        if (attrs == 0).all().all():
+            warnings.warn("No species attributes initialized yet.")
+            return attrs.replace(0, None)
+
+        return attrs
+
+    @fvs_property
+    def stand_ids(self) -> dict:
+        """Return stand identification codes."""
+        self._fvsStandID.argtypes = [
+            ct.c_char_p,  # stand id
+            ct.c_char_p,  # database control number
+            ct.c_char_p,  # management id
+            ct.POINTER(ct.c_int),  # length of stand id
+            ct.POINTER(ct.c_int),  # length of control number
+            ct.POINTER(ct.c_int),  # length of management id
+        ]
+        self._fvsStandID.restype = None
+
+        if self.keyfile is None:
+            msg = "Keyfile not loaded yet."
+            raise AttributeError(msg)
+        if self.stop_point_code is None:
+            msg = "No inventory data loaded yet. Call `run` method."
+            raise RuntimeError(msg)
+
+        self._fvsStandID(
+            self._stand_id,
+            self._stand_cn,
+            self._mgmt_id,
+            ct.c_int(0),
+            ct.c_int(0),
+            ct.c_int(0),
+        )
+
+        return {
+            STAND_ID_COLUMN_NAME: self._stand_id.value.decode().strip(),
+            STAND_CN_COLUMN_NAME: self._stand_cn.value.decode().strip(),
+            MGMT_ID_COLUMN_NAME: self._mgmt_id.value.decode().strip(),
+        }
+
+    @property
+    def stop_point_code(self) -> int | None:
+        """A code used to instruct FVS when to stop during a cycle.
+
+        -1 : Stop at every stop location.
+         0 : Never stop.
+         1 : Stop just before the first call to the Event Monitor.
+         2 : Stop just after the first call to the Event Monitor.
+         3 : Stop just before the second call to the Event Monitor.
+         4 : Stop just after the second call to the Event Monitor.
+         5 : Stop after growth and mortality has been computed, but prior to
+                applying them.
+         6 : Stop just before the ESTAB routines are called.
+         7 : Stop just after input is read but before missing values are imputed
+                (tree heights and crown ratios, for example) and model
+                calibration (argument stptyr is ignored).
+        """
+        if self._stop_point_code is not None:
+            return self._stop_point_code.value
+        return None
+
+    @property
+    def stop_point_year(self) -> int | None:
+        """A code indicating which cycles FVS should stop at.
+
+        0 : Never stop.
+        1 : Stop at every cycle.
+        YYYY : A specific year during the simulation period.
+        """
+        if self._stop_point_year is not None:
+            return self._stop_point_year.value
+        return None
+
+    @fvs_property
+    def summary(self) -> pd.DataFrame:
+        """Return a dataframe with FVS Summary Statistics for all initiated cycles.
+
+        The returned dataframe omits cycles that have not yet been initiated, which are
+        identifiable where all values in that row are zero.
+        """
+        self._fvsSummary.argtypes = [
+            np.ctypeslib.ndpointer(np.intc, flags=STR_C_CONTIGUOUS),
+            ct.POINTER(ct.c_int),
+            ct.POINTER(ct.c_int),
+            ct.POINTER(ct.c_int),
+            ct.POINTER(ct.c_int),
+            ct.POINTER(ct.c_int),
+        ]
+        self._fvsSummary.restype = None
+
+        dims = self.dims
+        if dims[STR_NCYCLES] == 0:
+            return None
+        summary = np.zeros(
+            dtype=np.intc,
+            shape=(dims[STR_NCYCLES] + 1, len(SUMMARY_COLS)),
+        )
+        for i in range(dims[STR_NCYCLES] + 1):
+            self._fvsSummary(
+                summary[i],
+                ct.c_int(i + 1),  # icycle
+                ct.c_int(dims[STR_NCYCLES]),  # ncycles
+                ct.c_int(0),  # maxrow
+                ct.c_int(0),  # maxcol
+                ct.c_int(0),  # rtncode
+            )
+
+        empty_years = (summary == 0).all(axis=1)
+        return pd.DataFrame(
+            summary[~empty_years, :], columns=SUMMARY_COLS
+        ).copy()
+
+    def load_keyfile(self, keywordfile: str | os.PathLike) -> None:
+        """Sets the keywordfile as a command line argument to FVS.
+
+        Args:
+          keywordfile (str | os.PathLike): path to the FVS keyword file
+        """
+        if self.itrncd != FVS_ITRNCD_NOT_STARTED:
+            if self.itrncd != FVS_ITRNCD_FINISHED_ALL_STANDS:
+                msg = (
+                    "FVS had not completed the previous simulation. "
+                    "Outputs from that simulation may be incomplete."
+                )
+                warnings.warn(msg)
+            logging.debug("FVS was already started. Resetting.")
+            self._reload_fvs()
+
+        self._fvsSetCmdLine.argtypes = [
+            ct.c_char_p,
+            ct.POINTER(ct.c_int),
+            ct.POINTER(ct.c_int),
+        ]
+        self._fvsSetCmdLine.restype = None
+
+        self.keyfile_path = Path(os.path.abspath(keywordfile))
+        with open(self.keyfile_path) as f:
+            self.keyfile = f.read()
+
+        cmdline = f"--keywordfile={self.keyfile_path}"
+        nch = len(cmdline)
+
+        self._fvsSetCmdLine(cmdline.encode(), ct.c_int(nch), self._itrncd)
+        logging.debug(f"Return code updated to {self.itrncd}")
+
+        return
+
+    def set_stop_point_codes(
+        self,
+        stop_point_code: int | None = None,
+        stop_point_year: int | None = None,
+    ) -> None:
+        """Sets FVS stop point codes.
+
+        Args:
+            stop_point_code (int): Optional code for when FVS should stop during
+                a cycle:
+               -1 : Stop at every stop location
+                0 : Never stop
+                1 : Stop just before the first call to the Event Monitor
+                2 : Stop just after the first call to the Event Monitor
+                3 : Stop just before the second call to the Event Monitor
+                4 : Stop just after the second call to the Event Monitor
+                5 : Stop after growth and mortality has been computed, but
+                        prior to applying them
+                6 : Stop just before the ESTAB routines are called
+                7 : Stop just after input is read but before missing values
+                        are imputed
+            stop_point_year (int): Optional, years FVS should stop, options are:
+                0 : Never stop
+               -1 : Stop at every cycle
+               YYYY : A specific year during the simulation period
+        """
+        self._fvsSetStoppointCodes.argtypes = [
+            ct.POINTER(ct.c_int),
+            ct.POINTER(ct.c_int),
+        ]
+        self._fvsSetStoppointCodes.restype = None
+
+        if stop_point_code is not None:
+            if stop_point_code in range(-1, 8):
+                self._stop_point_code = ct.c_int(stop_point_code)  # type: ignore[assignment]
+            else:
+                msg = "Invalid value for stop_point_code"
+                raise ValueError(msg)
+        elif self._stop_point_code is None:
+            self._stop_point_code = ct.c_int(0)  # type: ignore[assignment]
+
+        if stop_point_year is not None:
+            if stop_point_code is not None:
+                self._stop_point_year = ct.c_int(stop_point_year)  # type: ignore[assignment]
+            else:
+                msg = (
+                    "Must specify stop_point_year if also specifying "
+                    "stop_point_code"
+                )
+                raise ValueError(msg)
+        elif self._stop_point_year is None:
+            self._stop_point_year = ct.c_int(0)  # type: ignore[assignment]
+
+        self._fvsSetStoppointCodes(self._stop_point_code, self._stop_point_year)
+
+        return
+
+    def get_species_attr(self, attr: str) -> npt.NDArray[np.float64]:
+        """Gets a single attribute for all existing species.
+
+        Args:
+            attr (str): name of species attribute to fetch
+
+        Returns:
+            array with values of requested attribute for all trees
+
+        """
+        self._species_attr(attr, FvsAttributeAccessor.GET)
+        return self._species_attrs[attr]
+
+    def set_species_attr(self, attr: str, arr: npt.NDArray[np.float64]) -> None:
+        """Sets a single attribute for all existing species.
+
+        Args:
+            attr (str): name of species attribute to fetch
+            arr (npt.NDArray[np.float64]): array of values to set
+
+        """
+        return self._species_attr(attr, FvsAttributeAccessor.SET, arr)
+
+    def run(
+        self,
+        stop_point_code: int = 0,
+        stop_point_year: int = 0,
+    ) -> None:
+        """Runs FVS.
+
+        Note that stopping after the simulation of each stand in a simulation is
+        done even when no stop request has been scheduled (that is, FVS will
+        return at the end of each stand in a simulation even if there are no
+        stop codes specified). Once a stand has been fully processed by FVS, the
+        FVS `restart_code` is set to 100 and the call to run() returns.
+
+        If there are multiple stands in a single keyfile, the simulation of the
+        next stand can be triggered by calling run() again.
+
+        The main output text file may be truncated even after the last stand has
+        been simulated. To conclude FVS writing to the main output file, call
+        run() one last time. The `itrncd` attribute should then change to a
+        value of 2, indicating all stands have been processed.
+
+        Args:
+            stop_point_code (optional, int): when FVS should stop during a cycle:
+               -1 : Stop at every stop location
+                0 : Never stop
+                1 : Stop just before the first call to the Event Monitor
+                2 : Stop just after the first call to the Event Monitor
+                3 : Stop just before the second call to the Event Monitor
+                4 : Stop just after the second call to the Event Monitor
+                5 : Stop after growth and mortality has been computed, but
+                        prior to applying them
+                6 : Stop just before the ESTAB routines are called
+                7 : Stop just after input is read but before missing values
+                        are imputed
+            stop_point_year (optional, int): years FVS should stop, options are:
+                0 : Never stop
+               -1 : Stop at every cycle
+               YYYY : A specific year during the simulation period
+        """
+        self._fvs.argtypes = [ct.POINTER(ct.c_int)]
+        self._fvs.restype = None
+
+        if self.keyfile is None:
+            msg = "No keyfile loaded yet."
+            raise AttributeError(msg)
+        logging.debug("Found keyfile.")
+        self.set_stop_point_codes(stop_point_code, stop_point_year)
+        logging.debug(
+            f"Set stop point codes, {stop_point_code}:{self.stop_point_code}, {stop_point_year}:{self.stop_point_year}"
+        )
+        while self.itrncd == 0:
+            logging.debug("itrncd still zero.")
+            self._fvs(self._itrncd)
+            logging.debug(f"Ran _fvs routine, itrncd is {self.itrncd}")
+            if self.restart_code != 0:
+                logging.debug("restart code not zero... halting run.")
+                break
+
+        return
+
+    def _species_attr(
+        self,
+        attr: str,
+        action: FvsAttributeAccessor,
+        arr: npt.NDArray[np.float64] | None = None,
+    ) -> None:
+        """Gets or sets a single attribute for all existing species.
+
+        Args:
+            attr (str): name of species attribute to get or set
+            action (FvsAttributeAccessor): 'get' or 'set'
+            arr (optional, npt.NDArray[np.float64]): array of values to set
+        """
+        if attr not in self._species_attrs:
+            msg = "Invalid variable requested. Valid options are"
+            raise NameError(msg, self._species_attrs)
+
+        dims = self.dims
+        if (
+            action == FvsAttributeAccessor.GET
+            and self._species_attrs[attr] is None
+        ):
+            self._species_attrs[attr] = np.empty(
+                dtype=np.float64, shape=(dims[STR_MAXSPECIES])
+            )
+        elif action == FvsAttributeAccessor.SET:
+            if arr is None:
+                msg = "Must provide `arr` if `action` is 'set'"
+                raise TypeError(msg)
+            if arr.shape != (dims[STR_MAXSPECIES],):
+                msg = (
+                    "`arr` must be same shape as `maxspecies` "
+                    f"({dims[STR_MAXSPECIES]},)"
+                )
+                raise ValueError(msg)
+            self._species_attrs[attr] = arr
+
+        self._fvsSpeciesAttr.argtypes = [
+            ct.POINTER(ct.c_char),  # attr name
+            ct.POINTER(ct.c_int),  # number of characters in attr name
+            ct.POINTER(ct.c_char),  # action (set or get)
+            np.ctypeslib.ndpointer(
+                np.float64, shape=(dims[STR_MAXSPECIES]), flags=STR_C_CONTIGUOUS
+            ),  # array to fill
+            ct.POINTER(ct.c_int),  # return code
+        ]
+        self._fvsSpeciesAttr.restype = None
+
+        rtncode = ct.c_int(0)
+        self._fvsSpeciesAttr(
+            ct.c_char_p(attr.encode()),  # attribute requested
+            ct.c_int(len(attr)),  # number of characters in attr name
+            ct.c_char_p(action.encode()),  # "set" or "get"
+            self._species_attrs[attr],  # array to fill
+            rtncode,  # return code of setting/getting operation
+        )
+        ERRS = {
+            0: "OK",
+            1: "name not found",
+            4: "length of name string was too large or small",
+        }
+
+        if rtncode.value != 0:
+            if rtncode.value == 1:
+                msg = f"{attr} not found among species attributes"
+                raise NameError(msg)
+            raise RuntimeError(ERRS[rtncode.value])
+
+    def _reload_fvs(self) -> None:
+        self._unload_fvs()
+        self._load_fvs()
+        self._initialize_attributes()
+        return

@@ -36,6 +36,7 @@ __pycache__/
 credentials.*
 *.pem
 *.key
+!deployment/fvs2py/fvs2py/tests/keyfiles/*.key
 
 # Docker build context
 deployment/docker/.env

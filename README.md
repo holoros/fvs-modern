@@ -40,6 +40,7 @@ fvs-modern/
             run_regression_tests.sh Full test suite (64/65 passing)
         config/                 NAMESPACE files, DESCRIPTION, YAML config
         microfvs/               REST API integration (FastAPI, based on microFVS)
+        fvs2py/                 Python ctypes wrapper (based on Vibrant Planet fvs2py)
 
     modernization/              Conversion tools and analysis reports
     variant-tools/              Templates for new regional variants
@@ -56,10 +57,11 @@ cd deployment/docker
 docker compose up --build
 # FVS-Online available at http://localhost:3838
 
-# Combined: fvsOL + REST API
+# Combined: fvsOL + REST API + fvs2py
 docker compose -f deployment/microfvs/docker-compose.yml up --build
 # FVS-Online at http://localhost:3838
 # REST API at http://localhost:8000 (Swagger docs at /docs)
+# Jupyter + fvs2py at http://localhost:8888
 ```
 
 ### Option B: Platform-specific install
@@ -129,7 +131,9 @@ This scaffolds the directory structure, species mapping template, and calibratio
 
 * [USDA FVS](https://github.com/USDAForestService/ForestVegetationSimulator) (original, Fortran 77)
 * [Open-FVS](https://sourceforge.net/projects/open-fvs/) (older community fork on SourceForge)
-* [microFVS](https://github.com/Vibrant-Planet-Open-Science/microfvs) (lightweight reimplementation)
+* [microFVS](https://github.com/Vibrant-Planet-Open-Science/microfvs) (REST API, Vibrant Planet)
+* [fvs2py](https://github.com/Vibrant-Planet-Open-Science/fvs2py) (Python ctypes wrapper, Vibrant Planet)
+* [docker_fvs](https://github.com/Vibrant-Planet-Open-Science/docker_fvs) (Dockerized FVS builds, Vibrant Planet)
 
 ## License
 

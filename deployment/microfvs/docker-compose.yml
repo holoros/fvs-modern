@@ -4,6 +4,7 @@
 # Services:
 #   fvs-api   : microFVS REST API (FastAPI) on port 8000
 #   fvs-online: fvsOL Shiny web application on port 3838
+#   fvs2py    : Python wrapper with Jupyter notebook server on port 8888
 #
 # Usage:
 #   docker compose -f deployment/microfvs/docker-compose.yml up --build
@@ -37,3 +38,19 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+
+  fvs2py:
+    build:
+      context: ../..
+      dockerfile: deployment/fvs2py/Dockerfile
+    ports:
+      - "8888:8888"
+    restart: unless-stopped
+    command: >
+      jupyter notebook --ip=0.0.0.0 --port=8888 --no-browser
+      --allow-root --NotebookApp.token=''
+    volumes:
+      - fvs2py-notebooks:/code/notebooks
+
+volumes:
+  fvs2py-notebooks:

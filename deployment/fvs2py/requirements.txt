@@ -1,0 +1,5 @@
+numpy
+pandas
+pytest
+pytest-mock
+jupyter
