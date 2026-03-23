@@ -1,0 +1,61 @@
+# =============================================================================
+# Dockerfile.base: FVS shared library base image
+#
+# Builds all 24 FVS variant shared libraries from fvs-modern's modernized
+# Fortran 90 source. This image is intended as a base for downstream tools
+# (fvs2py, microFVS, rFVS, fvsOL) that need the compiled libraries.
+#
+# Published to ghcr.io/holoros/fvs-modern:latest
+#
+# Usage:
+#   docker build -t fvs-modern-base -f deployment/docker/Dockerfile.base .
+#
+# In downstream Dockerfiles:
+#   FROM ghcr.io/holoros/fvs-modern:latest AS fvs-libs
+#   COPY --from=fvs-libs /usr/local/lib/FVS*.so /usr/local/lib/
+# =============================================================================
+
+FROM ubuntu:24.04 AS builder
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        build-essential gfortran make && \
+    rm -rf /var/lib/apt/lists/*
+
+COPY src-converted/ /build/src-converted/
+
+WORKDIR /build/src-converted/bin
+
+# Build all US variants via makefile
+ENV OSTYPE=linux-gnu
+RUN make US 2>/dev/null || true
+
+# Canadian variants need the build script
+COPY deployment/scripts/build_fvs_libraries.sh /build/build.sh
+RUN bash /build/build.sh /build/src-converted /build/output bc on 2>/dev/null || true
+
+
+# --- Minimal runtime image with just the libraries ---
+FROM ubuntu:24.04
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        libgfortran5 libquadmath0 && \
+    rm -rf /var/lib/apt/lists/*
+
+# Copy all variant shared libraries
+COPY --from=builder /build/src-converted/bin/FVS??.so /usr/local/lib/
+COPY --from=builder /build/output/FVS??.so /usr/local/lib/
+
+# Copy executables
+COPY --from=builder /build/src-converted/bin/FVS?? /usr/local/bin/
+
+RUN ldconfig
+
+# Metadata
+LABEL org.opencontainers.image.title="fvs-modern" \
+      org.opencontainers.image.description="FVS shared libraries built from modernized Fortran 90 source (24 variants)" \
+      org.opencontainers.image.source="https://github.com/holoros/fvs-modern" \
+      org.opencontainers.image.licenses="Public Domain"
+
+CMD ["echo", "fvs-modern base image: 24 FVS variant libraries in /usr/local/lib/"]

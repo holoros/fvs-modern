@@ -8,10 +8,9 @@
 # fvs-modern source instead of upstream USDA.
 #
 # Images:
-#   ghcr.io/holoros/fvs-modern:latest        (on main push)
-#   ghcr.io/holoros/fvs-modern:v0.2.0        (on release tag)
-#   ghcr.io/holoros/fvs-modern-api:latest     (microFVS REST API)
-#   ghcr.io/holoros/fvs-modern-fvs2py:latest  (fvs2py Python wrapper)
+#   ghcr.io/holoros/fvs-modern:latest         Base image with 24 variant .so libs
+#   ghcr.io/holoros/fvs-modern-api:latest     microFVS REST API (FastAPI)
+#   ghcr.io/holoros/fvs-modern-fvs2py:latest  fvs2py Python wrapper
 # =============================================================================
 
 name: Build and Publish Docker Images
@@ -63,7 +62,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./deployment/docker/Dockerfile
+          file: ./deployment/docker/Dockerfile.base
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
