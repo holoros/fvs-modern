@@ -1,0 +1,103 @@
+FORTRAN 77 FIXED-TO-FREE CONVERTER - QUICK START GUIDE
+=======================================================
+
+INSTALLATION:
+No installation required. Just run the Python script.
+
+BASIC USAGE:
+============
+
+Single File:
+  python fixed_to_free.py input.f output.f90
+
+Entire Directory:
+  python fixed_to_free.py --dir ./source --output ./output_free
+
+Preview Changes (dry run):
+  python fixed_to_free.py --dir ./source --dry-run
+
+Generate Report:
+  python fixed_to_free.py --dir ./source --report report.txt
+
+Map Include Files:
+  python fixed_to_free.py --dir ./source --mapping includes.csv
+
+COMMON WORKFLOWS:
+=================
+
+Test on one subdirectory:
+  python fixed_to_free.py --dir ./base --output ./base_free --dry-run
+
+Convert with full diagnostics:
+  python fixed_to_free.py --dir ./source --output ./output \
+    --report conversion.txt --mapping mapping.csv --verbose
+
+WHAT IT DOES:
+=============
+
+Fixed-Form -> Free-Form Conversion:
+  Columns 1-5 (labels) -> Inline labels
+  Column 6 (continuation) -> Trailing & and leading &
+  Columns 7-72 (code) -> Regular code
+  C/c/* in col 1 (comments) -> ! comments
+
+INCLUDE Statement Update:
+  PRGPRM.F77 -> PRGPRM.F90
+  PLOT.F77 -> PLOT.F90
+  (All .F77 files converted to .F90)
+
+WHAT IT PRESERVES:
+==================
+  * All logic and control flow
+  * All variable names
+  * All GOTO statements
+  * All COMMON blocks
+  * All comments (just reformatted)
+
+WHAT CHANGES:
+=============
+  * Column layout removed
+  * Comments start with ! instead of C
+  * Continuation uses & instead of column 6 char
+  * INCLUDE filenames get .F90 extension
+  * Trailing whitespace beyond column 72 removed
+
+NEXT STEPS AFTER CONVERSION:
+============================
+
+1. Verify conversion succeeded:
+   python fixed_to_free.py --dir ./source --report report.txt
+
+2. Rename INCLUDE files based on mapping.csv
+
+3. Test compilation:
+   gfortran -c -ffree-form converted_file.f90
+
+4. Run test suite to verify functionality
+
+HELP:
+=====
+
+python fixed_to_free.py --help
+
+EXAMPLES:
+=========
+
+# Convert FVS base directory
+python fixed_to_free.py \
+  --dir /path/to/ForestVegetationSimulator-main/base \
+  --output /path/to/fvs-free-form/base \
+  --report base_conversion.txt \
+  --mapping base_includes.csv
+
+# Just preview what would happen
+python fixed_to_free.py \
+  --dir /path/to/source \
+  --dry-run
+
+# Convert with verbose logging
+python fixed_to_free.py \
+  --dir /path/to/source \
+  --output /path/to/output \
+  --verbose
+

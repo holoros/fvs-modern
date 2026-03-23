@@ -1,0 +1,1042 @@
+SUBROUTINE FMINIT
+IMPLICIT NONE
+!----------
+! FIRE-BASE $Id$
+!----------
+!  PURPOSE:
+!      INITIALIZE VARIABLES FOR THE FIRE MODEL
+!----------
+!
+!  CALLED FROM: INITRE
+!
+!  CALL LIST DEFINITIONS:
+!
+!  LOCAL VARIABLE DEFINITIONS:
+!
+!----------
+!  PARAMETER INCLUDE FILES.
+!----------
+INCLUDE 'PRGPRM.f90'
+INCLUDE 'FMPARM.f90'
+!----------
+!  COMMON INCLUDE FILES.
+!----------
+INCLUDE 'CONTRL.f90'
+INCLUDE 'FMCOM.f90'
+INCLUDE 'FMFCOM.f90'
+!----------
+!  VARIABLE DECLARATIONS.
+!----------
+LOGICAL LRET
+INTEGER I, J, K, L
+REAL    FALLM2
+!----------
+!  VARIABLE INITIALIZATIONS.
+!----------
+HARVYR = 0
+NSNAG  = 0
+IFTYR = 0
+ISALVC = 0
+ISALVS = 0
+ICYCRM = 0
+ITRNL = ITRN
+NSNAGSALV=0
+
+DO J=1,MAXTRE
+ISPCC(J)=0
+ENDDO
+!
+DO I=1,4
+  PFLAM(I)=0.
+  POTKIL(I)=0.
+  POTFSR(I)=0.
+  IF (I.LE.2) THEN
+    POTVOL(I)=0.
+    POTTYP(I)=0
+    POTRINT(I)=0.
+  ENDIF
+ENDDO
+!
+DO J=1,MXSNAG
+  DENIH(J) = 0.
+  DENIS(J) = 0.
+  SALVSPA(J,1) = 0.
+  SALVSPA(J,2) = 0.
+!
+  HTIHSALV(I)=0.
+  HTISSALV(I)=0.
+  SPSSALV(I)=0
+  DBHSSALV(I)=0.
+  HARDSALV(I)=.FALSE.
+  HTDEADSALV(I)=0.
+!
+ENDDO
+!
+!     INITIALIZE ACTIVITY FUELS VARS
+!
+SMALL   = 0.0
+LARGE   = 0.0
+OSMALL  = 0.0
+OLARGE  = 0.0
+SLCHNG  = 0.0
+LATFUEL = .FALSE.
+
+!     INITIALIZE SETDECAY - USED TO DETERMINE IF THE DECAY RATES HAVE BEEN RESET
+!     BY THE USER.
+
+DO I=1,MXFLCL
+  DO J = 1,4
+    SETDECAY(I,J) = -1.0
+  ENDDO
+ENDDO
+!
+!     INITIALIZE CA-VARIANT (WS,NC,IC) SHRUB DELAY MODEL VARS
+!
+FM89YR  = -1
+LATSHRB = .FALSE.
+LPRV89  = .FALSE.
+PERCOV  = 0.0
+CCCHNG  = 0.0
+PRV8    = 0.0
+PRV9    = 0.0
+!
+DO I=1,5
+  DO J=1,4
+    FUAREA(I,J)=0.0
+  ENDDO
+ENDDO
+!
+IFMYR1 =  0
+IFMYR2 =  0
+BURNYR = -1
+PBURNYR = -1
+!
+FALLM2 = 0.0
+CWDCUT = 0.0
+!
+JLOUT(1)=0
+JLOUT(2)=0
+JLOUT(3)=0
+JSNOUT=35
+!
+PRESVL(1,1)=0.
+PRESVL(2,1)=0.
+!
+LFMON  = .FALSE.
+LFMON2 = .TRUE.
+LHEAD  = .TRUE.
+LSHEAD = .TRUE.
+ISNGSM = -1
+LANHED = .TRUE.
+LDHEAD = .TRUE.
+LDYNFM = .TRUE.
+!----------
+!  INITIALIZE POTENTIAL FIRE SEASON, POTENTIAL FIRE PERCENT AREA BURNED
+!  THE FIRE SEASON, AND SOIL TYPE
+!----------
+POTPAB(1)=100.
+POTPAB(2)=100.
+POTSEAS(1)=1
+POTSEAS(2)=1
+BURNSEAS = 1
+SOILTP = 3
+!----------
+!  INITIALIZE VARIABLE RELATED TO CALCULATION OF CBH AND CBD
+!----------
+ICBHMT = 0
+CANMHT = 6.0
+ICANSP = 0
+CBHCUT = 30.0
+FOLMC  = 100.0
+!----------
+!  INITIALIZE VARIABLES RELATING TO FUEL MODELS
+!  MAKE SURE THAT THE USER-DEFINED FUEL WEIGHTINGS ARE
+!  INITIALIZED AND TURNED OFF.
+!----------
+LUSRFM = .FALSE.
+DO I = 1,4
+  FMDUSR(I) = 0
+  FWTUSR(I) = 0.0
+ENDDO
+!----------
+!  INITIALIZE ALL THE FUEL MODEL VARIABLES. THESE CAN
+!  BE CHANGED BY THE KEYWORD DEFULMOD
+!  FROM FAX FROM ELIZABETH REINHARDT
+!----------
+DO I = 1,MXDFMD
+  SURFVL(I,1,2) = 109
+  SURFVL(I,1,3) = 30
+  SURFVL(I,2,1) = 1500
+  SURFVL(I,2,2) = 1500
+!----------
+!  AND INITIALIZE ALL THE VARIABLES THAT ALWAYS CHANGE WITH FMD
+!----------
+  FMLOAD(I,1,1) = 0.0
+  FMLOAD(I,1,2) = 0.0
+  FMLOAD(I,1,3) = 0.0
+  FMLOAD(I,1,4) = 0.0
+  FMLOAD(I,2,1) = 0.0
+  FMLOAD(I,2,2) = 0.0
+  FMDEP(I)      = 0.0
+  MOISEX(I)     = 0.0
+ENDDO
+!----------
+!  SHORT GRASS - FMD 1
+!----------
+I = 1
+SURFVL(I,1, 1) = 3500
+FMLOAD(I,1, 1) =    0.03398
+FMDEP(I)       =    1.0
+MOISEX(I)      =    0.12
+!----------
+!  TIMBER (GRASS & UNDERSTORY) - FMD 2
+!----------
+I = 2
+SURFVL(I,1, 1) = 3000
+FMLOAD(I,1, 1) =    0.09183
+FMLOAD(I,1, 2) =    0.04591
+FMLOAD(I,1, 3) =    0.02296
+FMLOAD(I,2, 2) =    0.02296
+FMDEP(I)       =    1.0
+MOISEX(I)      =    0.15
+!----------
+!  TALL GRASS (2.5 FT) - FMD 3
+!----------
+I = 3
+SURFVL(I,1, 1) = 1500
+FMLOAD(I,1, 1) =    0.13820
+FMDEP(I)       =    2.5
+MOISEX(I)      =    0.25
+!----------
+!  CHAPARRAL (6 FT) - FMD 4
+!----------
+I = 4
+SURFVL(I,1, 1) = 2000
+FMLOAD(I,1, 1) =    0.23003
+FMLOAD(I,1, 2) =    0.18411
+FMLOAD(I,1, 3) =    0.09183
+FMLOAD(I,2, 1) =    0.23003
+FMDEP(I)       =    6.0
+MOISEX(I)      =    0.20
+!----------
+!  BRUSH (2 FT) - FMD 5
+!----------
+I = 5
+SURFVL(I,1, 1) = 2000
+FMLOAD(I,1, 1) =    0.04591
+FMLOAD(I,1, 2) =    0.02296
+FMLOAD(I,2, 1) =    0.09183
+FMDEP(I)       =    2.0
+MOISEX(I)      =    0.20
+!----------
+!  DORMANT BRUSH, HARDWOOD SLASH - FMD 6
+!----------
+I = 6
+SURFVL(I,1, 1) = 1750
+FMLOAD(I,1, 1) =    0.06887
+FMLOAD(I,1, 2) =    0.11478
+FMLOAD(I,1, 3) =    0.09183
+FMDEP(I)       =    2.5
+MOISEX(I)      =    0.25
+!----------
+!  SOUTHERN ROUGH - FMD 7
+!----------
+I = 7
+SURFVL(I,1, 1) = 1750
+SURFVL(I,2, 1) = 1550
+FMLOAD(I,1, 1) =    0.05188
+FMLOAD(I,1, 2) =    0.08586
+FMLOAD(I,1, 3) =    0.06887
+FMLOAD(I,2, 1) =    0.01699
+FMDEP(I)       =    2.5
+MOISEX(I)      =    0.40
+!----------
+!  CLOSED TIMBER LITTER - FMD 8
+!----------
+I = 8
+SURFVL(I,1, 1) = 2000
+FMLOAD(I,1, 1) =    0.06887
+FMLOAD(I,1, 2) =    0.04591
+FMLOAD(I,1, 3) =    0.11478
+FMDEP(I)       =    0.2
+MOISEX(I)      =    0.3
+!----------
+!  HARDWOOD LITTER - FMD 9
+!----------
+I = 9
+SURFVL(I,1, 1) = 2500
+FMLOAD(I,1, 1) =    0.13407
+FMLOAD(I,1, 2) =    0.01882
+FMLOAD(I,1, 3) =    0.00689
+FMDEP(I)       =    0.2
+MOISEX(I)      =    0.25
+!----------
+!  TIMBER (LITTER & UNDERSTORY) - FMD 10
+!----------
+I = 10
+SURFVL(I,1, 1) = 2000
+FMLOAD(I,1, 1) =    0.13820
+FMLOAD(I,1, 2) =    0.09183
+FMLOAD(I,1, 3) =    0.23003
+FMLOAD(I,2, 1) =    0.09183
+FMDEP(I)       =    1.0
+MOISEX(I)      =    0.25
+!----------
+!  LIGHT LOGGING SLASH (AN ACTIVITIES FUEL MODEL) - FMD 11
+!----------
+I = 11
+SURFVL(I,1, 1) = 1500
+FMLOAD(I,1, 1) =    0.06887
+FMLOAD(I,1, 2) =    0.20707
+FMLOAD(I,1, 3) =    0.25298
+FMDEP(I)       =    1.0
+MOISEX(I)      =    0.15
+!----------
+!  MEDIUM LOGGING SLASH - FMD 12
+!----------
+I = 12
+SURFVL(I,1, 1) = 1500
+FMLOAD(I,1, 1) =    0.18411
+FMLOAD(I,1, 2) =    0.64417
+FMLOAD(I,1, 3) =    0.75895
+FMDEP(I)       =    2.3
+MOISEX(I)      =    0.2
+!----------
+!  HEAVY LOGGING SLASH - FMD 13
+!----------
+I = 13
+SURFVL(I,1, 1) = 1500
+FMLOAD(I,1, 1) =    0.32185
+FMLOAD(I,1, 2) =    1.05785
+FMLOAD(I,1, 3) =    1.28788
+FMDEP(I)       =    3.0
+MOISEX(I)      =    0.25
+!----------
+!  A MODIFICATION OF 11, OHERWISE KNOWN AS 11A OR 14 OR 111
+!----------
+I = 14
+SURFVL(I,1, 1) = 1500
+FMLOAD(I,1, 1) =    0.126
+FMLOAD(I,1, 2) =    0.426
+FMLOAD(I,1, 3) =    0.506
+FMDEP(I)       =    1.8
+MOISEX(I)      =    0.20
+!----------
+!  RAY HERMIT (R5) -
+!  25  OLDER PLANTATION GREATER THAN 25 YEARS WITH SHRUB UNDERSTORY AND LOW CROWN BASES
+!  26  MODIFIED MODEL 4 BRUSH MODEL REDUCED FUELBED FMDEP(I) AND LOADINGS
+!----------
+I = 25
+SURFVL(I,1, 1) = 2000
+FMLOAD(I,1, 1) =    0.069
+FMLOAD(I,1, 2) =    0.069
+FMLOAD(I,1, 3) =    0.092
+FMLOAD(I,2, 1) =    0.207
+FMDEP(I)       =    3.5
+MOISEX(I)      =    0.25
+!
+I = 26
+SURFVL(I,1, 1) = 2000
+FMLOAD(I,1, 1) =    0.1242
+FMLOAD(I,1, 2) =    0.1242
+FMLOAD(I,1, 3) =    0.0828
+FMLOAD(I,2, 1) =    0.1656
+FMDEP(I)       =    3.6
+MOISEX(I)      =    0.35
+!----------
+!  ADD IN THE 40 NEW FUEL MODELS, FOLLOWING THEIR NUMBERING SCHEME
+!----------
+!----------
+!  GR1 (101) SHORT SPARSE DRY CLIMATE GRASS
+!----------
+I = 101
+SURFVL(I,1,1) = 2200
+SURFVL(I,2,2) = 2000
+FMLOAD(I,1, 1) =    0.00459
+FMLOAD(I,2, 2) =    0.01377
+FMDEP(I)       =    0.4
+MOISEX(I)      =    0.15
+!----------
+!  GR2 (102) LOW LOAD DRY CLIMATE GRASS
+!----------
+I = 102
+SURFVL(I,1,1) = 2000
+SURFVL(I,2,2) = 1800
+FMLOAD(I,1, 1) =    0.00459
+FMLOAD(I,2, 2) =    0.04591
+FMDEP(I)       =    1.0
+MOISEX(I)      =    0.15
+!----------
+!  GR3 (103) LOW LOAD VERY COARSE HUMID CLIMATE GRASS
+!----------
+I = 103
+SURFVL(I,1,1) = 1500
+SURFVL(I,2,2) = 1300
+FMLOAD(I,1, 1) =    0.00459
+FMLOAD(I,1, 2) =    0.01837
+FMLOAD(I,2, 2) =    0.06887
+FMDEP(I)       =    2.0
+MOISEX(I)      =    0.30
+
+!----------
+!  GR4 (104) MODERATE LOAD DRY CLIMATE GRASS
+!----------
+I = 104
+SURFVL(I,1,1) = 2000
+SURFVL(I,2,2) = 1800
+FMLOAD(I,1, 1) =    0.01148
+FMLOAD(I,2, 2) =    0.08724
+FMDEP(I)       =    2.0
+MOISEX(I)      =    0.15
+
+!----------
+!  GR5 (105) LOW LOAD HUMID CLIMATE GRASS
+!----------
+I = 105
+SURFVL(I,1,1) = 1800
+SURFVL(I,2,2) = 1600
+FMLOAD(I,1, 1) =    0.01837
+FMLOAD(I,2, 2) =    0.11478
+FMDEP(I)       =    1.5
+MOISEX(I)      =    0.40
+
+!----------
+!  GR6 (106) MODERATE LOAD HUMID CLIMATE GRASS
+!----------
+I = 106
+SURFVL(I,1,1) = 2200
+SURFVL(I,2,2) = 2000
+FMLOAD(I,1, 1) =    0.00459
+FMLOAD(I,2, 2) =    0.15611
+FMDEP(I)       =    1.5
+MOISEX(I)      =    0.40
+
+
+!----------
+!  GR7 (107) HIGH LOAD DRY CLIMATE GRASS
+!----------
+I = 107
+SURFVL(I,1,1) = 2000
+SURFVL(I,2,2) = 1800
+FMLOAD(I,1, 1) =    0.04591
+FMLOAD(I,2, 2) =    0.24793
+FMDEP(I)       =    3.0
+MOISEX(I)      =    0.15
+
+!----------
+!  GR8 (108) HIGH LOAD VERY COARSE HUMID CLIMATE GRASS
+!----------
+I = 108
+SURFVL(I,1,1) = 1500
+SURFVL(I,2,2) = 1300
+FMLOAD(I,1, 1) =    0.02296
+FMLOAD(I,1, 2) =    0.04591
+FMLOAD(I,2, 2) =    0.33517
+FMDEP(I)       =    4.0
+MOISEX(I)      =    0.30
+!----------
+!  GR9 (109) VERY HIGH LOAD HUMID CLIMATE GRASS
+!----------
+I = 109
+SURFVL(I,1,1) = 1800
+SURFVL(I,2,2) = 1600
+FMLOAD(I,1, 1) =    0.04591
+FMLOAD(I,1, 2) =    0.04591
+FMLOAD(I,2, 2) =    0.41322
+FMDEP(I)       =    5.0
+MOISEX(I)      =    0.40
+
+!----------
+!  GS1 (121) LOW LOAD DRY CLIMATE GRASS-SHRUB
+!----------
+I = 121
+SURFVL(I,1,1) = 2000
+SURFVL(I,2,1) = 1800
+SURFVL(I,2,2) = 1800
+FMLOAD(I,1, 1) =    0.00918
+FMLOAD(I,2, 1) =    0.02984
+FMLOAD(I,2, 2) =    0.02296
+FMDEP(I)       =    0.9
+MOISEX(I)      =    0.15
+!----------
+!  GS2 (122) MODERATE LOAD DRY CLIMATE GRASS-SHRUB
+!----------
+I = 122
+SURFVL(I,1,1) = 2000
+SURFVL(I,2,1) = 1800
+SURFVL(I,2,2) = 1800
+FMLOAD(I,1, 1) =    0.02296
+FMLOAD(I,1, 2) =    0.02296
+FMLOAD(I,2, 1) =    0.04591
+FMLOAD(I,2, 2) =    0.02755
+FMDEP(I)       =    1.5
+MOISEX(I)      =    0.15
+
+!----------
+!  GS3 (123) MODERATE LOAD HUMID CLIMATE GRASS-SHRUB
+!----------
+I = 123
+SURFVL(I,1,1) = 1800
+SURFVL(I,2,1) = 1600
+SURFVL(I,2,2) = 1600
+FMLOAD(I,1, 1) =    0.01377
+FMLOAD(I,1, 2) =    0.01148
+FMLOAD(I,2, 1) =    0.05739
+FMLOAD(I,2, 2) =    0.06657
+FMDEP(I)       =    1.8
+MOISEX(I)      =    0.40
+
+!----------
+!  GS4 (124) HIGH LOAD HUMID CLIMATE GRASS-SHRUB
+!----------
+I = 124
+SURFVL(I,1,1) = 1800
+SURFVL(I,2,1) = 1600
+SURFVL(I,2,2) = 1600
+FMLOAD(I,1, 1) =    0.08724
+FMLOAD(I,1, 2) =    0.01377
+FMLOAD(I,1, 3) =    0.00459
+FMLOAD(I,2, 1) =    0.32599
+FMLOAD(I,2, 2) =    0.15611
+FMDEP(I)       =    2.1
+MOISEX(I)      =    0.40
+!----------
+!  SH1 (141) LOW LOAD DRY CLIMATE SHRUB
+!----------
+I = 141
+SURFVL(I,1,1) = 2000
+SURFVL(I,2,1) = 1600
+SURFVL(I,2,2) = 1800
+FMLOAD(I,1, 1) =    0.01148
+FMLOAD(I,1, 2) =    0.01148
+FMLOAD(I,2, 1) =    0.05969
+FMLOAD(I,2, 2) =    0.00689
+FMDEP(I)       =    1.0
+MOISEX(I)      =    0.15
+!----------
+!  SH2 (142) MODERATE LOAD DRY CLIMATE SHRUB
+!----------
+I = 142
+SURFVL(I,1,1) = 2000
+SURFVL(I,2,1) = 1600
+FMLOAD(I,1, 1) =    0.06189
+FMLOAD(I,1, 2) =    0.11019
+FMLOAD(I,1, 3) =    0.03444
+FMLOAD(I,2, 1) =    0.17677
+FMDEP(I)       =    1.0
+MOISEX(I)      =    0.15
+
+!----------
+!  SH3 (143) MODERATE LOAD HUMID CLIMATE SHRUB
+!----------
+I = 143
+SURFVL(I,1,1) = 1600
+SURFVL(I,2,1) = 1400
+FMLOAD(I,1, 1) =    0.02066
+FMLOAD(I,1, 2) =    0.13774
+FMLOAD(I,2, 1) =    0.28466
+FMDEP(I)       =    2.4
+MOISEX(I)      =    0.40
+!----------
+!  SH4 (144) LOW LOAD HUMID CLIMATE TIMBER-SHRUB
+!----------
+I = 144
+SURFVL(I,1,1) = 2000
+SURFVL(I,2,1) = 1600
+SURFVL(I,2,2) = 1800
+FMLOAD(I,1, 1) =    0.03903
+FMLOAD(I,1, 2) =    0.05280
+FMLOAD(I,1, 3) =    0.00918
+FMLOAD(I,2, 1) =    0.11708
+FMDEP(I)       =    3.0
+MOISEX(I)      =    0.30
+!----------
+!  SH5 (145) HIGH LOAD DRY CLIMATE SHRUB
+!----------
+I = 145
+SURFVL(I,1,1) = 750
+SURFVL(I,2,1) = 1600
+FMLOAD(I,1, 1) =    0.16529
+FMLOAD(I,1, 2) =    0.09642
+FMLOAD(I,2, 1) =    0.13315
+FMDEP(I)       =    6.0
+MOISEX(I)      =    0.15
+!----------
+!  SH6 (146) LOW LOAD HUMID CLIMATE SHRUB
+!----------
+I = 146
+SURFVL(I,1,1) = 750
+SURFVL(I,2,1) = 1600
+FMLOAD(I,1, 1) =    0.13315
+FMLOAD(I,1, 2) =    0.06657
+FMLOAD(I,2, 1) =    0.06428
+FMDEP(I)       =    2.0
+MOISEX(I)      =    0.30
+!----------
+!  SH7 (147) VERY HIGH LOAD DRY CLIMATE SHRUB
+!----------
+I = 147
+SURFVL(I,1,1) = 750
+SURFVL(I,2,1) = 1600
+FMLOAD(I,1, 1) =    0.16070
+FMLOAD(I,1, 2) =    0.24334
+FMLOAD(I,1, 3) =    0.10101
+FMLOAD(I,2, 1) =    0.15611
+FMDEP(I)       =    6.0
+MOISEX(I)      =    0.15
+
+!----------
+!  SH8 (148) HIGH LOAD HUMID CLIMATE SHRUB
+!----------
+I = 148
+SURFVL(I,1,1) = 750
+SURFVL(I,2,1) = 1600
+FMLOAD(I,1, 1) =    0.09412
+FMLOAD(I,1, 2) =    0.15611
+FMLOAD(I,1, 3) =    0.03903
+FMLOAD(I,2, 1) =    0.19972
+FMDEP(I)       =    3.0
+MOISEX(I)      =    0.40
+
+!----------
+!  SH9 (149) VERY HIGH LOAD HUMID CLIMATE SHRUB
+!----------
+I = 149
+SURFVL(I,1,1) = 750
+SURFVL(I,2,1) = 1500
+SURFVL(I,2,2) = 1800
+FMLOAD(I,1, 1) =    0.20661
+FMLOAD(I,1, 2) =    0.11249
+FMLOAD(I,2, 1) =    0.32140
+FMLOAD(I,2, 2) =    0.07117
+FMDEP(I)       =    4.4
+MOISEX(I)      =    0.40
+!----------
+!  TU1 (161) LOW LOAD DRY CLIMATE TIMBER-GRASS-SHRUB
+!----------
+I = 161
+SURFVL(I,1,1) = 2000
+SURFVL(I,2,1) = 1600
+SURFVL(I,2,2) = 1800
+FMLOAD(I,1, 1) =    0.00918
+FMLOAD(I,1, 2) =    0.04132
+FMLOAD(I,1, 3) =    0.06887
+FMLOAD(I,2, 1) =    0.04132
+FMLOAD(I,2, 2) =    0.00918
+FMDEP(I)       =    0.6
+MOISEX(I)      =    0.20
+
+
+!----------
+!  TU2 (162) MODERATE LOAD HUMID CLIMATE TIMBER-SHRUB
+!----------
+I = 162
+SURFVL(I,1,1) = 2000
+SURFVL(I,2,1) = 1600
+FMLOAD(I,1, 1) =    0.04362
+FMLOAD(I,1, 2) =    0.08264
+FMLOAD(I,1, 3) =    0.05739
+FMLOAD(I,2, 1) =    0.00918
+FMDEP(I)       =    1.0
+MOISEX(I)      =    0.30
+
+!----------
+!  TU3 (163) MODERATE LOAD HUMID CLIMATE TIMBER-GRASS-SHRUB
+!----------
+I = 163
+SURFVL(I,1,1) = 1800
+SURFVL(I,2,1) = 1400
+SURFVL(I,2,2) = 1600
+FMLOAD(I,1, 1) =    0.05051
+FMLOAD(I,1, 2) =    0.00689
+FMLOAD(I,1, 3) =    0.01148
+FMLOAD(I,2, 1) =    0.05051
+FMLOAD(I,2, 2) =    0.02984
+FMDEP(I)       =    1.3
+MOISEX(I)      =    0.30
+!----------
+!  TU4 (164) DWARF CONIFER WITH UNDERSTORY
+!----------
+I = 164
+SURFVL(I,1,1) = 2300
+SURFVL(I,2,1) = 2000
+FMLOAD(I,1, 1) =    0.20661
+FMLOAD(I,2, 1) =    0.09183
+FMDEP(I)       =    0.5
+MOISEX(I)      =    0.12
+!----------
+!  TU5 (165) VERY HIGH LOAD DRY CLIMATE TIMBER-SHRUB
+!----------
+I = 165
+SURFVL(I,1,1) = 1500
+SURFVL(I,2,1) = 750
+FMLOAD(I,1, 1) =    0.18365
+FMLOAD(I,1, 2) =    0.18365
+FMLOAD(I,1, 3) =    0.13774
+FMLOAD(I,2, 1) =    0.13774
+FMDEP(I)       =    1.0
+MOISEX(I)      =    0.25
+!----------
+!  TL1 (181) LOW LOAD COMPACT CONIFER LITTER
+!----------
+I = 181
+SURFVL(I,1,1) = 2000
+FMLOAD(I,1, 1) =    0.04591
+FMLOAD(I,1, 2) =    0.10101
+FMLOAD(I,1, 3) =    0.16529
+FMDEP(I)       =    0.2
+MOISEX(I)      =    0.30
+
+!----------
+!  TL2 (182) LOW LOAD BROADLEAF LITTER
+!----------
+I = 182
+SURFVL(I,1,1) = 2000
+FMLOAD(I,1, 1) =    0.06428
+FMLOAD(I,1, 2) =    0.10560
+FMLOAD(I,1, 3) =    0.10101
+FMDEP(I)       =    0.2
+MOISEX(I)      =    0.25
+
+!----------
+!  TL3 (183) MODERATE LOAD CONIFER LITTER
+!----------
+I = 183
+SURFVL(I,1,1) = 2000
+FMLOAD(I,1, 1) =    0.02296
+FMLOAD(I,1, 2) =    0.10101
+FMLOAD(I,1, 3) =    0.12856
+FMDEP(I)       =    0.3
+MOISEX(I)      =    0.20
+!----------
+!  TL4 (184) SMALL DOWNED LOGS
+!----------
+I = 184
+SURFVL(I,1,1) = 2000
+FMLOAD(I,1, 1) =    0.02296
+FMLOAD(I,1, 2) =    0.06887
+FMLOAD(I,1, 3) =    0.19284
+FMDEP(I)       =    0.4
+MOISEX(I)      =    0.25
+!----------
+!  TL5 (185) HIGH LOAD CONIFER LITTER
+!----------
+I = 185
+SURFVL(I,1,1) = 2000
+SURFVL(I,2,1) = 1600
+FMLOAD(I,1, 1) =    0.05280
+FMLOAD(I,1, 2) =    0.11478
+FMLOAD(I,1, 3) =    0.20202
+FMDEP(I)       =    0.6
+MOISEX(I)      =    0.25
+
+!----------
+!  TL6 (186) MODERATE LOAD BROADLEAF LITTER
+!----------
+I = 186
+SURFVL(I,1,1) = 2000
+FMLOAD(I,1, 1) =    0.11019
+FMLOAD(I,1, 2) =    0.05510
+FMLOAD(I,1, 3) =    0.05510
+FMDEP(I)       =    0.3
+MOISEX(I)      =    0.25
+
+!----------
+!  TL7 (187) LARGE DOWNED LOGS
+!----------
+I = 187
+SURFVL(I,1,1) = 2000
+FMLOAD(I,1, 1) =    0.01377
+FMLOAD(I,1, 2) =    0.06428
+FMLOAD(I,1, 3) =    0.37190
+FMDEP(I)       =    0.4
+MOISEX(I)      =    0.25
+
+!----------
+!  TL8 (188) LONG-NEEDLE LITTER
+!----------
+I = 188
+SURFVL(I,1,1) = 1800
+FMLOAD(I,1, 1) =    0.26630
+FMLOAD(I,1, 2) =    0.06428
+FMLOAD(I,1, 3) =    0.05051
+FMDEP(I)       =    0.3
+MOISEX(I)      =    0.35
+
+!----------
+!  TL9 (189) VERY HIGH LOAD BROADLEAF LITTER
+!----------
+I = 189
+SURFVL(I,1,1) = 1800
+SURFVL(I,2,1) = 1600
+FMLOAD(I,1, 1) =    0.30533
+FMLOAD(I,1, 2) =    0.15152
+FMLOAD(I,1, 3) =    0.19054
+FMDEP(I)       =    0.6
+MOISEX(I)      =    0.35
+!----------
+!  SB1 (201) LOW LOAD ACTIVITY FUEL
+!----------
+I = 201
+SURFVL(I,1,1) = 2000
+FMLOAD(I,1, 1) =    0.06887
+FMLOAD(I,1, 2) =    0.13774
+FMLOAD(I,1, 3) =    0.50505
+FMDEP(I)       =    1.0
+MOISEX(I)      =    0.25
+
+!----------
+!  SB2 (202) MODERATE LOAD ACTIVITY FUEL OR LOW LOAD BLOWDOWN
+!----------
+I = 202
+SURFVL(I,1,1) = 2000
+FMLOAD(I,1, 1) =    0.20661
+FMLOAD(I,1, 2) =    0.19513
+FMLOAD(I,1, 3) =    0.18365
+FMDEP(I)       =    1.0
+MOISEX(I)      =    0.25
+
+!----------
+!  SB3 (203) HIGH LOAD ACTIVITY FUEL OR MODERATE LOAD BLOWDOWN
+!----------
+I = 203
+SURFVL(I,1,1) = 2000
+FMLOAD(I,1, 1) =    0.25253
+FMLOAD(I,1, 2) =    0.12626
+FMLOAD(I,1, 3) =    0.13774
+FMDEP(I)       =    1.2
+MOISEX(I)      =    0.25
+!----------
+!  SB4 (204) HIGH LOAD BLOWDOWN
+!----------
+I = 204
+SURFVL(I,1,1) = 2000
+FMLOAD(I,1, 1) =    0.24105
+FMLOAD(I,1, 2) =    0.16070
+FMLOAD(I,1, 3) =    0.24105
+FMDEP(I)       =    2.7
+MOISEX(I)      =    0.25
+
+!----------
+!  INITIALIZE VARIABLES FOR NEW FIRE CALCULATION OPTIONS
+!  (NEW FUEL MODEL LOGIC AND USING MODELLED LOADS)
+!----------
+IFLOGIC   = 0
+IFMSET    = 2
+USAV(1)   = 2000
+USAV(2)   = 1800
+USAV(3)   = 1500
+UBD(1)    = 0.10
+UBD(2)    = 0.75
+ULHV      = 8000
+DO I = 1,MXDFMD
+  IFUELMON(I) = -1
+ENDDO
+!----------
+!  SNAG POOL INITIALIZATION
+!----------
+DO I = 1, MAXSP
+  DO J = 1, 19
+    MAXHT(I,J)  =    0.0
+    MINHT(I,J)  = 1000.0
+    DSPDBH(I,J) =    0.0
+  ENDDO
+ENDDO
+!----------
+!  DEFAULT CYCLE LENGTH FOR DECAY CALCULATIONS
+!----------
+NYRS = 1
+!----------
+!  SET VARIABLES FOR BURN, FUEL EFFECTS, ALL FUELS, DOWN WOOD, AND
+!  MORTALITY REPORTS.
+!----------
+IFMBRB = 9999
+IFMBRE = 9999
+IFMFLB = 9999
+IFMFLE = 9999
+IFMMRB = 9999
+IFMMRE = 9999
+IFLALB = 9999
+IFLALE = 9999
+IPFLMB = 9999
+IPFLME = 9999
+ISNAGB = 9999
+ISNAGE = 9999
+ISHEATB= 9999
+ISHEATE= 9999
+ICFPB  = 9999
+ICFPE  = 9999
+IDWRPB = 9999
+IDWRPE = 9999
+IDWCVB = 9999
+IDWCVE = 9999
+!
+IDBRN  = 0
+IDSHEAT= 0
+IDFUL  = 0
+IDMRT  = 0
+IDFLAL = 0
+IDPFLM = 0
+IDDWRP = 0
+IDDWCV = 0
+!
+IBRPAS = 0
+IFLPAS = 0
+IMRPAS = 0
+IFAPAS = 0
+IPFPAS = 0
+IDWPAS = 0
+IDCPAS = 0
+!
+!  INITIAL VALUES FOR CONTROL OF 2 CARBON REPORTS
+!
+IDCRPT  = 0       ! MAIN CARBON REPORT
+ICRPTB  = 9999    ! BEGINNING YR
+ICRPTE  = 9999    ! ENDING YR
+ICRPAS  = 0       ! REPORT HEADER FLAG
+
+IDCHRV  = 0       ! HARVESTED WOOD REPORT
+ICHRVB  = 9999    ! BEGINNING YR
+ICHRVE  = 9999    ! ENDING YR
+ICHPAS  = 0       ! REPORT HEADER FLAG
+!
+!  INITIAL VALUES FOR CONTROL OF CARBON REPORT BEHAVIOR
+!
+DO I = 1,17
+  CARBVAL(I) = 0.0
+ENDDO
+
+ICMETH   = 0      ! CARBON METHOD 0 = FFE, 1 = JENKINS
+SELECT CASE (VARACD)
+  CASE ('ON','BC')
+  ICMETRC  = 1      ! UNITS TYPE FOR CANADA VARIANTS 1 = METRIC
+  CASE DEFAULT
+  ICMETRC  = 0      ! UNITS TYPE USA 0 = IMPERIAL
+END SELECT
+ICHABT   = 1      ! DEFAULT C-REPORTING HABITAT GROUP
+                  ! (FMCBA MAY ALTER: NI/IE/SO/SN)
+CRDCAY   = 0.0425  ! ROOT DECAY RATE (<0 = "NOT USED")
+CDBRK(1) =  9.0   ! DEFAULT SOFTWOOD DIAMETER BREAKPOINT (IN)
+CDBRK(2) = 11.0   ! DEFAULT HARDWOOD DIAMETER BREAKPOINT (IN)
+BIOLIVE  =  0.0   ! BIOxxx C-REPORTING GROUPS
+BIOREM(1)=  0.0
+BIOREM(2)=  0.0
+BIOSNAG  =  0.0
+BIODDW   =  0.0
+BIOFLR   =  0.0
+BIOSHRB  =  0.0
+BIOROOT  =  0.0
+BIOCON(1)=  0.0
+BIOCON(2)=  0.0
+DO I = 1,2
+  DO J = 1,2
+    DO K = 1,MAXCYC
+      FATE(I,J,K) = 0.0
+    ENDDO
+  ENDDO
+ENDDO
+
+DO J = 1,MXFLCL
+  DO K = 1,2
+    CWDNEW(K,J) = 0.0
+  ENDDO
+ENDDO
+!
+DO I = 1,3
+  DO J = 1,MXFLCL
+    DO K = 1,2
+       DO L = 1,5
+         CWD(I,J,K,L) = 0.0
+         IF (J .LE. 10) THEN
+           CWDVOL(I,J,K,L) = 0.0
+           CWDCOV(I,J,K,L) = 0.0
+         ENDIF
+       ENDDO
+    ENDDO
+  ENDDO
+ENDDO
+!
+DO I = 1,4
+  DO J = 0,5
+    DO K = 1,TFMAX
+      CWD2B(I,J,K)  = 0.0
+      CWD2B2(I,J,K) = 0.0
+    ENDDO
+  ENDDO
+ENDDO
+!
+DO I = 1,MAXTRE
+  FMPROB(I) = 0.0
+  OLDHT(I)  = 0.0
+  OLDCRL(I) = 0.0
+  GROW(I)   = 1
+  SNGNEW(I) = 0.0
+  DO K = 0,5
+    CROWNW(I,K) = 0.0
+    OLDCRW(I,K) = 0.0
+  ENDDO
+ENDDO
+!
+FLIVE(1) = 0.0
+FLIVE(2) = 0.0
+!----------
+!     *** CL-FFE *** stub
+!     Initialize CWD decay rate sensitivy. No keyword control yet.
+!     Array dimensions are MXFLCL+1 from FMPARM.F77
+!     Array storage in FMCOM.F77
+!     Decay rates are modified by calls to CLCWD in FMCWD and FMCRBOUT
+!     Set Q10 and reference decay temperature for each of size category.
+!     Ref: Kurz et al. 2009. Ecol. Mod. 220:480-504
+!----------
+!DO I = 1, 9
+!  Q10CWD(I) = 2.0  ! snag stems, branches
+!ENDDO
+!Q10CWD(10)  = 2.65 ! litter - Kurz Table 4: AG very fast
+!Q10CWD(11)  = 1.0  ! duff
+!Q10CWD(12)  = 2.0  ! roots
+!
+!DO I = 1,(MXFLCL+1)
+!  REFMATCWD(I) = 10.0
+!ENDDO
+!----------
+!  INITIALIZE FLAG INDICATING REMOVAL OF STAND BIOMASS
+!  EVENT MONITOR FUNCTION TREEBIO IN **FMEVMON**
+!----------
+LREMT=.FALSE.
+!----------
+!  INITIALIZE THE NUMBER OF PICTURES TO DRAW IF USING SVS.
+!----------
+NFMSVPX = 3
+!----------
+!  CALL THE VARIANT-SPECIFIC INITIALIZER.
+!----------
+CALL FMVINIT
+!
+RETURN
+!
+ENTRY FMATV(LRET)
+!----------
+!  RETURN THE STATE OF LFMON, WHICH IS FALSE UNLESS AT LEAST
+!  ONE FM KEYWORD FOR THE STAND IS PRESENT, THEN IT IS TRUE.
+!----------
+LRET = LFMON
+RETURN
+!
+ENTRY FMSATV(LRET)
+!----------
+!  SET THE STATE OF LFMON, THIS IS CALLED BY GETSTD. IF THE
+!  VALUE IS FALSE, THEN NONE OF THE FIRE MODEL VARIABLES HAVE
+!  BEEN DEFINED.
+!----------
+LFMON = LRET
+RETURN
+!
+ENTRY FMLNKD(LRET)
+!----------
+!  RETURNS TRUE IF THE FIRE MODEL IS LINKED, THE VERSION IN
+!  EXFIRE RETURNS FALSE.
+!----------
+LRET = .TRUE.
+RETURN
+!
+END

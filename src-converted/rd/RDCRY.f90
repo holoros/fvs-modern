@@ -1,0 +1,12 @@
+!ODE SEGMENT RDCRY
+!----------
+! RD $Id$
+!---------
+REAL   CRNSTO(ITOTRR,2,5), PROBIN(ITOTRR,2,5)
+
+COMMON /RDCRY/ PROBIN, CRNSTO
+!
+!     PROBIN  --
+!     CRNSTO  --
+!
+!-----END SEGMENT

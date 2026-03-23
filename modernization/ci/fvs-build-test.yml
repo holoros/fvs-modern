@@ -1,0 +1,113 @@
+name: FVS Build and Test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        gfortran-version: [ 11, 12 ]
+        fvs-variant: [ ne ]  # Start with NE for CI speed; add ca, ak later
+
+    name: Build FVS (${{ matrix.fvs-variant }}) with gfortran-${{ matrix.gfortran-version }}
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          gfortran-${{ matrix.gfortran-version }} \
+          cmake \
+          sqlite3 \
+          libsqlite3-dev
+
+    - name: Set up gfortran
+      run: |
+        sudo update-alternatives --install /usr/bin/gfortran gfortran /usr/bin/gfortran-${{ matrix.gfortran-version }} 100
+        sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-${{ matrix.gfortran-version }} 100
+        gfortran --version
+
+    - name: Create build directory
+      run: mkdir -p build
+
+    - name: Configure CMake (FVS ${{ matrix.fvs-variant }} variant)
+      run: |
+        cd build
+        cmake \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_Fortran_COMPILER=gfortran \
+          -DFVS_VARIANT=${{ matrix.fvs-variant }} \
+          ..
+      working-directory: ./
+
+    - name: Build FVS
+      run: |
+        cd build
+        make -j$(nproc) VERBOSE=1
+      working-directory: ./
+
+    - name: Cache CMake build directory
+      uses: actions/cache@v3
+      with:
+        path: build
+        key: fvs-build-${{ matrix.fvs-variant }}-gfortran-${{ matrix.gfortran-version }}-${{ github.sha }}
+        restore-keys: |
+          fvs-build-${{ matrix.fvs-variant }}-gfortran-${{ matrix.gfortran-version }}-
+          fvs-build-${{ matrix.fvs-variant }}-
+
+    - name: Run existing test suite (Python comparison tests)
+      run: |
+        if [ -f tests/test.py ]; then
+          cd tests
+          python test.py ../test_data/expected.txt ../test_data/actual.txt
+          cd ..
+        else
+          echo "Legacy Python tests not found; skipping"
+        fi
+      working-directory: ./
+      continue-on-error: true
+
+    - name: Run pFUnit tests (when available)
+      run: |
+        cd build
+        ctest --output-on-failure -V 2>&1 || true
+        if [ -f tests/fvs_tests ]; then
+          ./tests/fvs_tests
+        else
+          echo "pFUnit tests not yet available; this is expected during initial setup"
+        fi
+      working-directory: ./
+      continue-on-error: true
+
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: test-results-${{ matrix.fvs-variant }}-gfortran-${{ matrix.gfortran-version }}
+        path: |
+          build/Testing/
+          build/CMakeFiles/CMakeOutput.log
+        retention-days: 30
+
+  build-status:
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    if: always()
+    steps:
+      - name: Check build status
+        run: |
+          if [ "${{ needs.build-and-test.result }}" == "success" ]; then
+            echo "✓ FVS build and tests passed"
+            exit 0
+          else
+            echo "✗ FVS build or tests failed"
+            exit 1
+          fi

@@ -1,0 +1,19 @@
+!ODE SEGMENT ECON
+!----------
+! COMMON $Id$
+!----------
+!
+LOGICAL LECBUG,LECON
+!
+INTEGER JOSUME
+!
+COMMON /ECON/ JOSUME,LECBUG,LECON
+!
+!----------
+!  VARIABLE DEFINITIONS:
+!----------
+!  JOSUME --
+!  LECBUG --
+!   LECON --
+!
+!-----END SEGMENT

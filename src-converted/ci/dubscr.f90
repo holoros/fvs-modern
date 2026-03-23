@@ -1,0 +1,167 @@
+SUBROUTINE DUBSCR(ISPC,D,H,BA,CR,TPCCF,AVH,TMAI)
+IMPLICIT NONE
+!----------
+! CI $Id$
+!----------
+!  THIS SUBROUTINE CALCULATES CROWN RATIOS FOR TREES INSERTED BY
+!  THE REGENERATION ESTABLISHMENT MODEL.  IT ALSO DUBS CROWN RATIOS
+!  FOR TREES IN THE INVENTORY THAT ARE MISSING CROWN RATIO
+!  MEASUREMENTS AND ARE LESS THAN 1.0 INCHES DBH.  FINALLY, IT IS
+!  USED TO REPLACE CROWN RATIO ESTIMATES FOR ALL TREES THAT
+!  CROSS THE THRESHOLD BETWEEN THE SMALL AND LARGE TREE MODELS.
+!
+! NOTE: 17=CW AND 19=OH DO NOT USE THIS ROUTINE; CROWNS FOR TREES OF
+!       ALL SIZES FOR THESE SPECIES ARE DUBBED IN **CROWN**.
+!----------
+!OMMONS
+!
+!
+INCLUDE 'PRGPRM.f90'
+!
+!
+INCLUDE 'CONTRL.f90'
+!
+!
+INCLUDE 'ARRAYS.f90'
+!
+!
+INCLUDE 'PDEN.f90'
+!
+!
+!OMMONS
+!----------
+EXTERNAL RANN
+INTEGER ISPC
+REAL BCR0(MAXSP),BCR1(MAXSP),BCR2(MAXSP),BCR3(MAXSP),CRSD(MAXSP)
+REAL BCR5(MAXSP),BCR6(MAXSP),BCR8(MAXSP),BCR9(MAXSP),BCR10(MAXSP)
+REAL TMAI,AVH,TPCCF,CR,BA,H,D,SD,FCR,BACHLO
+!----------
+!     SPECIES LIST FOR CENTRAL IDAHO VARIANT.
+!
+!     1 = WESTERN WHITE PINE (WP)          PINUS MONTICOLA
+!     2 = WESTERN LARCH (WL)               LARIX OCCIDENTALIS
+!     3 = DOUGLAS-FIR (DF)                 PSEUDOTSUGA MENZIESII
+!     4 = GRAND FIR (GF)                   ABIES GRANDIS
+!     5 = WESTERN HEMLOCK (WH)             TSUGA HETEROPHYLLA
+!     6 = WESTERN REDCEDAR (RC)            THUJA PLICATA
+!     7 = LODGEPOLE PINE (LP)              PINUS CONTORTA
+!     8 = ENGLEMANN SPRUCE (ES)            PICEA ENGELMANNII
+!     9 = SUBALPINE FIR (AF)               ABIES LASIOCARPA
+!    10 = PONDEROSA PINE (PP)              PINUS PONDEROSA
+!    11 = WHITEBARK PINE (WB)              PINUS ALBICAULIS
+!    12 = PACIFIC YEW (PY)                 TAXUS BREVIFOLIA
+!    13 = QUAKING ASPEN (AS)               POPULUS TREMULOIDES
+!    14 = WESTERN JUNIPER (WJ)             JUNIPERUS OCCIDENTALIS
+!    15 = CURLLEAF MOUNTAIN-MAHOGANY (MC)  CERCOCARPUS LEDIFOLIUS
+!    16 = LIMBER PINE (LM)                 PINUS FLEXILIS
+!    17 = BLACK COTTONWOOD (CW)            POPULUS BALSAMIFERA VAR. TRICHOCARPA
+!    18 = OTHER SOFTWOODS (OS)
+!    19 = OTHER HARDWOODS (OH)
+!
+!  SURROGATE EQUATION ASSIGNMENT:
+!
+!  FROM THE IE VARIANT:
+!      USE 17(PY) FOR 12(PY)             (IE17 IS REALLY TT2=LM)
+!      USE 18(AS) FOR 13(AS)             (IE18 IS REALLY UT6=AS)
+!      USE 13(LM) FOR 11(WB) AND 16(LM)  (IE13 IS REALLY TT2=LM)
+!      USE 19(CO) FOR 17(CW) AND 19(OH)  (IE19 IS REALLY CR38=OH)
+!
+!  FROM THE UT VARIANT:
+!      USE 12(WJ) FOR 14(WJ)
+!      USE 20(MC) FOR 15(MC)             (UT20 = SO30=MC, WHICH IS
+!                                                  REALLY WC39=OT)
+!----------
+!  DATA STATEMENTS
+!----------
+DATA BCR0/ &
+     -0.44316, -0.83965, -0.89122, -0.62646, -0.49548, &
+      0.11847, -0.32466, -0.92007, -0.89014, -0.17561, &
+     -1.66949, -1.66949,-0.426688, -2.19723,      5.0, &
+     -1.66949,      0.0, -0.49548,      0.0/
+!
+DATA BCR1/ &
+     -0.48446, -0.16106, -0.18082, -0.06141,  0.00012, &
+     -0.39305, -0.20108, -0.22454, -0.18026, -0.33847, &
+    -0.209765,-0.209765,-0.093105,      0.0,      0.0, &
+    -0.209765,      0.0,  0.00012,      0.0/
+!
+DATA BCR2/ &
+      0.05825,  0.04161,  0.05186,  0.02360,  0.00362, &
+      0.02783,  0.04219,  0.03248,  0.02233,  0.05699, &
+          0.0,      0.0, 0.022409,      0.0,      0.0, &
+          0.0,      0.0,  0.00362,      0.0/
+!
+DATA BCR3/ &
+      0.00513,  0.00602,  0.00454,  0.00505,  0.00456, &
+      0.00626,  0.00436,  0.00620,  0.00614,  0.00692, &
+     0.003359, 0.003359, 0.002633,      0.0,      0.0, &
+     0.003359,      0.0,  0.00456,      0.0/
+!
+DATA BCR5/ &
+          0.0,      0.0,      0.0,      0.0,      0.0, &
+          0.0,      0.0,      0.0,      0.0,      0.0, &
+     0.011032, 0.011032,      0.0,      0.0,      0.0, &
+     0.011032,      0.0,      0.0,      0.0/
+!
+DATA BCR6/ &
+          0.0,      0.0,      0.0,      0.0,      0.0, &
+          0.0,      0.0,      0.0,      0.0,      0.0, &
+          0.0,      0.0, -.045532,      0.0,      0.0, &
+          0.0,      0.0,      0.0,      0.0/
+!
+DATA BCR8/ &
+          0.0,      0.0,      0.0,      0.0,      0.0, &
+          0.0,      0.0,      0.0,      0.0,      0.0, &
+     0.017727, 0.017727,      0.0,      0.0,      0.0, &
+     0.017727,      0.0,      0.0,      0.0/
+!
+DATA BCR9/ &
+          0.0,      0.0,      0.0,      0.0,      0.0, &
+          0.0,      0.0,      0.0,      0.0,      0.0, &
+     -.000053, -.000053,  .000022,      0.0,      0.0, &
+     -.000053,      0.0,      0.0,      0.0/
+!
+DATA BCR10/ &
+          0.0,      0.0,      0.0,      0.0,      0.0, &
+          0.0,      0.0,      0.0,      0.0,      0.0, &
+      .014098,  .014098, -.013115,      0.0,      0.0, &
+      .014098,      0.0,      0.0,      0.0/
+!
+DATA CRSD/ &
+       0.9476,   0.7396,   0.8706,   0.9203,   0.9450, &
+       0.8012,   0.7707,   0.9721,   0.8871,   0.8866, &
+          0.5,      0.5,   0.9310,      0.2,      0.5, &
+          0.5,      0.0,   0.9450,      0.0/
+!----------
+!  EXPECTED CROWN RATIO IS A FUNCTION OF SPECIES, DBH, HEIGHT, AND
+!  BASAL AREA.  THE MODEL IS BASED ON THE LOGISTIC FUNCTION,
+!  AND RETURNS A VALUE BETWEEN ZERO AND ONE.
+!----------
+CR=BCR0(ISPC) + BCR1(ISPC)*D + BCR2(ISPC)*H + BCR3(ISPC)*BA &
+      + BCR5(ISPC)*TPCCF + BCR6(ISPC)*(AVH/H) + BCR8(ISPC)*AVH &
+      + BCR9(ISPC)*(BA*TPCCF) + BCR10(ISPC)*TMAI
+!----------
+!  A RANDOM ERROR IS ASSIGNED TO THE CROWN RATIO PREDICTION
+!  PRIOR TO THE LOGISTIC TRANSFORMATION.  LINEAR REGRESSION
+!  WAS USED TO FIT THE MODEL AND THE ELEMENTS OF CRSD ARE THE
+!  STANDARD ERRORS FOR THE LINEARIZED MODEL BY SPECIES.
+!----------
+SD=CRSD(ISPC)
+10 CONTINUE
+FCR=0.0
+IF (DGSD.GE.1.0) FCR=BACHLO(0.0,SD,RANN)
+IF(ABS(FCR).GT.SD) GO TO 10
+!
+SELECT CASE (ISPC)
+CASE(15)
+  CR=((CR-1.0)*10.0 + 1.0)/100.
+CASE DEFAULT
+  IF(ABS(CR+FCR).GE.86.)CR=86.
+  CR=1.0/(1.0+EXP(CR+FCR))
+END SELECT
+!
+IF(CR.LT.0.05) CR=0.05
+IF(CR.GT.0.95) CR=0.95
+!
+RETURN
+END

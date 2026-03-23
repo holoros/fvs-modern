@@ -1,0 +1,83 @@
+SUBROUTINE RDESTB(N,ANS)
+IMPLICIT NONE
+!----------
+! RD $Id$
+!----------
+!
+!  SUBROUTINE FOR PUTTING REGENERATION ONTO ROOT DISEASE ROOT DISEASE PATCHES
+!
+!  CALLED BY :
+!     ESTAB   [PROGNOSIS]
+!
+!  CALLS     :
+!     RDROOT  (SUBROUTINE)   [ROOT DISEASE]
+!     RDSUM   (SUBROUTINE)   [ROOT DISEASE]
+!
+!  PARAMETERS :
+!     N      -
+!     ANS    -
+!
+!  Revision History :
+!   03/07/95 - Last revision date.
+!   08/28/14 Lance R. David (FMSC)
+!     Added implicit none and declared variables.
+!   03/01/2016 Lance R. David (FMSC)
+!     Moved one condition to exit to top.
+!
+!----------------------------------------------------------------------
+!
+!
+!
+!OMMONS
+!
+!
+INCLUDE 'PRGPRM.f90'
+INCLUDE 'RDPARM.f90'
+
+INCLUDE 'RDCOM.f90'
+INCLUDE 'RDADD.f90'
+INCLUDE 'RDARRY.f90'
+INCLUDE 'ARRAYS.f90'
+INCLUDE 'CONTRL.f90'
+
+INTEGER  IDI, IT, ISPI, J, N
+REAL     ANS, TPAREA, XXX
+
+IF (IROOT .EQ. 0) RETURN
+
+TPAREA = 0.0
+DO 20 IDI=MINRR,MAXRR
+   TPAREA = TPAREA + PAREA(IDI)
+20 CONTINUE
+IF (TPAREA .EQ. 0.0) RETURN
+!
+!.....PUT TREES INTO OUTSIDE DENSIITY ARRAY (INCLUDING THE FRINGE ARRAY)
+!
+FPROB(N) = ANS
+FFPROB(N,2) = ANS
+
+DO 40 IT=1,ISTEP
+   PROBI(N,IT,1) = 0.0
+   PROBI(N,IT,2) = 0.0
+40 CONTINUE
+
+IDI = MAXRR
+IF (MAXRR .LT. 3) IDI = IDITYP(IRTSPC(ISP(N)))
+
+PROBL(N) = ANS
+PROBIU(N) = ANS * PAREA(IDI)
+WK22(N) = 0.0
+ISPI = ISP(N)
+CALL RDROOT(ISPI,0.1,XXX,PROOT(IRTSPC(ISPI)),RSLOP(IRTSPC(ISPI)), &
+              HT(N))
+RROOTT(N) = XXX
+
+DO 1000 J=2,4
+   XMTH(J,N) = -1.0
+   ROOTH(J,N) = -1.0
+1000 CONTINUE
+
+CALL RDSUM(ITRN,PROBIT,PROBI,ISTEP)
+
+RETURN
+END

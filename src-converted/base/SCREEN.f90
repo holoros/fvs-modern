@@ -1,0 +1,18 @@
+!ODE SEGMENT SCREEN
+!----------
+! COMMON $Id$
+!----------
+!
+LOGICAL LSCRN
+!
+INTEGER JOSCRN
+!
+COMMON /SCREEN/ JOSCRN,LSCRN
+!
+!----------
+!  VARIABLE DEFINITIONS:
+!----------
+!  JOSCRN =
+!   LSCRN =
+!
+!-----END SEGMENT

@@ -1,0 +1,163 @@
+SUBROUTINE DFTMOD (ISTART,IFIN)
+IMPLICIT NONE
+!----------
+! DFTM $Id$
+!----------
+!
+!     *** DOUGLAS-FIR TUSSOCK MOTH INSECT AND BRANCH MODEL ***
+!     DEVELOPED BY SCOTT OVERTON, JIM COLBERT AND CURTIS WHITE
+!     AT OREGON STATE UNIVERSITY, CORVALLIS, OREGON.
+!
+!     MODIFIED FOR USE IN THE PROGNOSIS MODEL BY JIM COLBERT,
+!     JAN. 1978
+!
+!  REVISION HISTORY:
+!    01-APR-2013 Lance R. David (FMSC)
+!      A few variables defined locally were already defined
+!      in a common block. Local declaration removed.
+!----------
+!
+!OMMONS
+!
+INCLUDE 'TMCOM1.f90'
+!
+INCLUDE 'UPPER.f90'
+!
+INCLUDE 'LOWER.f90'
+!
+INCLUDE 'LIMITS.f90'
+!
+INCLUDE 'DFOL.f90'
+!
+INCLUDE 'ICOND.f90'
+!
+INCLUDE 'GPASS.f90'
+!
+!OMMONS
+!
+INTEGER IFIN,ISTART,I
+INTEGER K1,K2,IC1,IC2,K3,IC3,IX
+!
+!                  K(1):  BEGINNING PHASE
+!                  K(2):  LAST PHASE
+!                  K(3):  PHASE COUNTER
+!                  IC(1): FIRST TREE CLASS
+!                  IC(2): LAST TREE CLASS
+!                  IC(3): TREE CLASS COUNTER
+!
+!
+!                 SET INITIAL K AND IC VAR.
+!
+K(1) = 1
+K(2) = 3
+IC(1) = ISTART
+IC(2) = IFIN
+ICOUNT = IC(2)-IC(1)+1
+!
+!     SUPPRESS REDISTRIBUTION IF LREDIS IS FALSE
+!
+B0(57) = ICOUNT
+!
+!     WRITE PARAMETER FILE TO JOTMDK
+!
+IF (.NOT. LPUNCH) GO TO 67
+WRITE (JOTMDK,65)
+65 FORMAT (' LIST OF DFTMOD PARAMETERS:')
+WRITE (JOTMDK,66) B0,R0,(B1(I),I=1,30)
+66 FORMAT (6F12.7)
+
+67 CONTINUE
+!
+!                  START SIMULATION
+!
+DO 3 I=1,100
+  DPCENT(I,1) = 0.0
+  DPCENT(I,2) = 0.0
+3 CONTINUE
+
+K1 = K(1)
+K2 = K(2)
+IC1 = IC(1)
+IC2 = IC(2)
+
+DO 100 K3=K1,K2
+  K(3) = K3
+!
+!       PROCESS G FUNCTIONS FOR UPPER MODULE
+!
+  CALL G0COMP
+
+!
+!       PROCESS LOWER MODULE FOR DESIRED TREE CLASSES
+!
+  DO 50 IC3=IC1,IC2
+    IC(3) = IC3
+    ICOUNT = IC3 - IC1 + 1
+
+!
+!         CALL ROUTINE TO SET UP PARAMETERS
+!
+    CALL Z1COMP
+
+!
+!         DO LOWER LEVEL PROCESSING IN MODULE S(1)
+!
+    DO 10 I=1,10
+!
+!           SET LOWER LEVEL TIME INDEX, KP
+!
+      KP = I - 1
+!
+!           PROCESS G AND F FUNCTIONS IN MODULE S(1)
+!
+      CALL GFCOMP
+!
+!           UPDATE STATE VARIABLES IN S(1)
+!
+      DO 6 IX=1,4
+        X1(IX) = X1(IX) + F1(IX)
+!
+!             CHECK FOR NEGATIVE X VALUES
+!
+        IF (X1(IX) .GE. 0.0) GO TO 6
+
+!
+!             PRINT MESSAGE AND RESET X
+!
+        IF (TMDEBU) WRITE (JODFTM,1000) IX,X1(IX),I,IC(3),K(3)
+1000         FORMAT ('0X(',I1,')=',F14.6,' AT OCCASION ',I2, &
+                   ' FOR TREE CLASS',I3,' IN PHASE',I2/ &
+                   ' RESET TO 0.0')
+        X1(IX) = 0.0
+6       CONTINUE
+10     CONTINUE
+
+!
+!         FINISH UPPER LEVEL PROCESSING IN MODULE S(1)
+!
+    CALL Y1COMP
+50   CONTINUE
+  IF (K3 .EQ. 2 .OR. K3 .EQ. 3) CALL DFOLE8
+100 CONTINUE
+
+!
+!     FINISH UPPER LEVEL PROCESSING IN MODULE S(0)
+!
+CALL Y0COMP
+
+!*****************************************************************
+
+IF (.NOT. TMDEBU) RETURN
+WRITE (JODFTM,9992)
+9992 FORMAT('0   ***PERCENT BRANCH  DEFOLIATION FROM DFTMOD***'// &
+   '     JCLASS       IZ6   DPCENT1   DPCENT2'//)
+
+DO 999 I=1,ICOUNT
+  WRITE (JODFTM,9991) I, IZ6(I), DPCENT(I,1), DPCENT(I,2)
+999 CONTINUE
+9991 FORMAT(1X,2I10,2F10.4)
+
+!****************************************************************
+
+RETURN
+END

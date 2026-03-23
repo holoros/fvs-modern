@@ -1,0 +1,54 @@
+SUBROUTINE PTINT(IPLTNO, NINC, XAXIS, ANEW)
+IMPLICIT NONE
+!----------
+! LPMPB $Id$
+!----------
+!
+!
+! Revision History
+!   02/08/88 Last noted revision date.
+!   07/02/10 Lance R. David (FMSC)
+!     Added IMPLICIT NONE.
+!   08/22/14 Lance R. David (FMSC)
+!     Function names were used as variable names.
+!     changed variable INT to INC
+!     changed variable AINT to AINC
+!     changed variable NINT to NINC
+!----------
+INTEGER IP, IPLTNO, NINC, NINT1, NP
+
+REAL ANEW(10), OLD(10), DIFF(10), AINC, DIFAX, INC, &
+        OLDAX, XAXIS
+!
+NP = 10
+IF (NINC .LE. 1) GO TO 420
+AINC = FLOAT(NINC)
+!
+!     ** COMPUTE DIFFERENCES
+DO 390 IP = 1,NP
+DIFF(IP) = (ANEW(IP) - OLD(IP))/AINC
+390 CONTINUE
+DIFAX = (XAXIS - OLDAX)/AINC
+!
+!     **  INTERPOLATE PLOT VALUES
+NINT1 = NINC - 1
+DO 410 INC = 1,NINT1
+OLDAX = OLDAX + DIFAX
+DO 400 IP = 1,NP
+OLD(IP) = OLD(IP) + DIFF(IP)
+400 CONTINUE
+CALL PTARY (IPLTNO, OLDAX, OLD)
+410 CONTINUE
+420 CONTINUE
+!
+!     ** SAVE OLD VALUES FOR PLOT
+DO 430 IP = 1,NP
+OLD(IP) = ANEW(IP)
+430 CONTINUE
+OLDAX = XAXIS
+!
+!     ** SPOOL NEW VALUES
+CALL PTARY(IPLTNO, XAXIS, ANEW)
+!
+RETURN
+END

@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  syntax-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install gfortran
+        run: sudo apt-get update && sudo apt-get install -y gfortran
+
+      - name: Syntax check modernized base files
+        run: |
+          PASS=0
+          FAIL=0
+          for f in src-converted/base/main.f90 \
+                   src-converted/base/myopen.f90 \
+                   src-converted/base/volkey.f90 \
+                   src-converted/base/algevl.f90 \
+                   src-converted/base/evldx.f90 \
+                   src-converted/base/errgro.f90; do
+            if gfortran -c -fsyntax-only -ffree-form -fPIC "$f" 2>/dev/null; then
+              echo "[OK] $f"
+              PASS=$((PASS+1))
+            else
+              echo "[FAIL] $f"
+              FAIL=$((FAIL+1))
+            fi
+          done
+          echo ""
+          echo "Results: $PASS passed, $FAIL failed"
+          [ "$FAIL" -eq 0 ] || exit 1
+
+  shellcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Lint deployment scripts
+        run: |
+          for f in deployment/scripts/*.sh; do
+            echo "Checking $f..."
+            shellcheck --severity=error "$f" || true
+          done

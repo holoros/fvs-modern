@@ -1,0 +1,279 @@
+BLOCK DATA BLKDAT
+IMPLICIT NONE
+!----------
+! WS $Id$
+!----------
+!
+!     SEE **MAIN** FOR DICTIONARY OF VARIABLE NAMES.
+!
+!OMMONS
+!
+!
+INCLUDE 'PRGPRM.f90'
+!
+!
+INCLUDE 'ESPARM.f90'
+!
+!
+INCLUDE 'ESCOMN.f90'
+!
+!
+INCLUDE 'COEFFS.f90'
+!
+!
+INCLUDE 'PDEN.f90'
+!
+!
+INCLUDE 'ECON.f90'
+!
+!
+INCLUDE 'HTCAL.f90'
+!
+!
+INCLUDE 'CONTRL.f90'
+!
+!
+INCLUDE 'PLOT.f90'
+!
+!
+INCLUDE 'RANCOM.f90'
+!
+!
+INCLUDE 'SCREEN.f90'
+!
+!
+INCLUDE 'FVSSTDCM.f90'
+!
+!
+!OMMONS
+!----------
+INTEGER I,J
+!----------
+!     SPECIES LIST FOR WESTERN SIERRAS VARIANT.
+!
+!     1 = SUGAR PINE (SP)                   PINUS LAMBERTIANA
+!     2 = DOUGLAS-FIR (DF)                  PSEUDOTSUGA MENZIESII
+!     3 = WHITE FIR (WF)                    ABIES CONCOLOR
+!     4 = GIANT SEQUOIA (GS)                SEQUOIADENDRON GIGANTEAUM
+!     5 = INCENSE CEDAR (IC)                CALOCEDRUS DECURRENS
+!     6 = JEFFREY PINE (JP)                 PINUS JEFFREYI
+!     7 = CALIFORNIA RED FIR (RF)           ABIES MAGNIFICA
+!     8 = PONDEROSA PINE (PP)               PINUS PONDEROSA
+!     9 = LODGEPOLE PINE (LP)               PINUS CONTORTA
+!    10 = WHITEBARK PINE (WB)               PINUS ALBICAULIS
+!    11 = WESTERN WHITE PINE (WP)           PINUS MONTICOLA
+!    12 = SINGLELEAF PINYON (PM)            PINUS MONOPHYLLA
+!    13 = PACIFIC SILVER FIR (SF)           ABIES AMABILIS
+!    14 = KNOBCONE PINE (KP)                PINUS ATTENUATA
+!    15 = FOXTAIL PINE (FP)                 PINUS BALFOURIANA
+!    16 = COULTER PINE (CP)                 PINUS COULTERI
+!    17 = LIMBER PINE (LM)                  PINUS FLEXILIS
+!    18 = MONTEREY PINE (MP)                PINUS RADIATA
+!    19 = CALIFORNIA FOOTHILL PINE (GP)     PINUS SABINIANA
+!    20 = WASHOE PINE (WE)                  PINUS WASHOENSIS
+!    21 = GREAT BASIN BRISTLECONE PINE (GB) PINUS LONGAEVA
+!    22 = BIGCONE DOUGLAS-FIR (BD)          PSEUDOTSUGA MACROCARPA
+!    23 = REDWOOD (RW)                      SEQUOIA SEMPERVIRENS
+!    24 = MOUNTAIN HEMLOCK (MH)             TSUGA MERTENSIANA
+!    25 = WESTERN JUNIPER (WJ)              JUNIPERUS OCIDENTALIS
+!    26 = UTAH JUNIPER (UJ)                 JUNIPERUS OSTEOSPERMA
+!    27 = CALIFORNIA JUNIPER (CJ)           JUNIPERUS CALIFORNICA
+!    28 = CALIFORNIA LIVE OAK (LO)          QUERCUS AGRIFOLIA
+!    29 = CANYON LIVE OAK (CY)              QUERCUS CHRYSOLEPSIS
+!    30 = BLUE OAK (BL)                     QUERCUS DOUGLASII
+!    31 = CALIFORNIA BLACK OAK (BO)         QUERQUS KELLOGGII
+!    32 = VALLEY OAK (VO)                   QUERCUS LOBATA
+!    33 = INTERIOR LIVE OAK (IO)            QUERCUS WISLIZENI
+!    34 = TANOAK (TO)                       LITHOCARPUS DENSIFLORUS
+!    35 = GIANT CHINQUAPIN (GC)             CHRYSOLEPIS CHRYSOPHYLLA
+!                                           VAR. CHRYSOPHYLLA
+!    36 = QUAKING ASPEN (AS)                POPULUS TREMULOIDES
+!    37 = CALIFORNIA-LAUREL (CL)            UMBELLULARIA CALIFORNICA
+!    38 = PACIFIC MADRONE (MA)              ARBUTUS MENZIESII
+!    39 = PACIFIC DOGWOOD (DG)              CORNUS NUTTALLII
+!    40 = BIGLEAF MAPLE (BM)                ACER MACROPHYLLUM
+!    41 = CURL-LEAF MOUNTAIN MAHOGANY (MC)  CERCOCARPUS LEDIFOLIUS
+!    42 = OTHER SOFTWOOD (OS)
+!    43 = OTHER HARDWOOD (OH)
+!
+!  SURROGATE EQUATION ASSIGNMENT:
+!
+!    FROM EXISTING WS EQUATIONS --
+!      USE 1(SP) FOR 11(WP) AND 24(MH)
+!      USE 2(DF) FOR 22(BD)
+!      USE 3(WF) FOR 13(SF)
+!      USE 4(GS) FOR 23(RW)
+!      USE 8(PP) FOR 18(MP)
+!      USE 34(TO) FOR 35(GC), 36(AS), 37(CL), 38(MA), AND 39(DG)
+!      USE 31(BO) FOR 28(LO), 29(CY), 30(BL), 32(VO), 33(IO), 40(BM), AND
+!                     43(OH)
+!
+!    FROM CA VARIANT --
+!      USE CA11(KP) FOR 12(PM), 14(KP), 15(FP), 16(CP), 17(LM), 19(GP), 20(WE),
+!                       25(WJ), 26(WJ), AND 27(CJ)
+!      USE CA12(LP) FOR 9(LP) AND 10(WB)
+!
+!    FROM SO VARIANT --
+!      USE SO30(MC) FOR 41(MC)
+!
+!    FROM UT VARIANT --
+!      USE UT17(GB) FOR 21(GB)
+!----------
+! TYPE DECLARATIONS AND COMMON STATEMENT FOR CONTROL VARIABLES.
+!----------
+DATA BKRAT/MAXSP*0./
+!
+DATA COR2 /MAXSP*1./, HCOR2 /MAXSP*1./,RCOR2/MAXSP*1.0/
+!
+DATA TREFMT / &
+   '(I4,T1,I7,F6.0,I1,A3,F4.1,F3.1,2F3.0,F4.1,I1,3(I2,I2),2I1,I2,2I3, &
+   2I1,F3.0)' /
+!
+DATA YR / 10.0 /, IRECNT/ 0 /,ICCODE/0/
+!
+DATA IREAD,ISTDAT,JOLIST,JOSTND,JOSUM,JOTREE/ 15,2,3,16,4,8 /
+!----------
+! COMMON STATEMENT FOR ESCOMN VARIABLES
+!----------
+DATA XMIN/ &
+    2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 1.0, 1.0, &
+    2.0, 1.0, 2.0, 1.0, 1.0, 1.0, 1.0, 2.0, 1.0, 1.0, &
+    0.5, 2.0, 2.0, 2.0, 1.0, 1.0, 1.0, 2.0, 2.0, 2.0, &
+    2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, &
+    1.0, 2.0, 2.0/
+
+DATA DBHMID/1.0,3.0,5.0,7.0,9.0,12.0,16.0,20.0,24.0,28.0/
+!
+DATA ISPSPE/23,28,29,30,31,32,33,34,35,36,37,38,39,40/
+!
+DATA BNORML/3*1.0,1.046,1.093,1.139,1.186,1.232,1.278,1.325, &
+     1.371,1.418,1.464,1.510,1.557,1.603,1.649,1.696,1.742,1.789/
+!
+DATA HHTMAX/ &
+    27.0, 21.0, 21.0, 22.0, 20.0, 18.0, 18.0, 17.0, 20.0, 20.0, &
+    27.0, 20.0, 21.0, 20.0, 20.0, 20.0, 20.0, 17.0, 20.0, 20.0, &
+     9.0, 21.0, 22.0, 27.0, 20.0, 20.0, 20.0, 24.0, 24.0, 24.0, &
+    24.0, 24.0, 24.0, 22.0, 22.0, 22.0, 22.0, 22.0, 22.0, 24.0, &
+    20.0, 23.0, 24.0/
+!
+DATA IFORCD/103,104,105,106,621,110,113,114,116,117, &
+               118,109,111,112,412,402,108,102,115,  0/
+!
+DATA IFORST/  3,  4,  5,  4,  7, 10,  4, 14, 16, 17, &
+                 4,  9, 11, 12, 19, 20, 11,  9, 12,  4/
+!
+!     OCURHT ZEROES OUT PROBABILITIES WHICH CANNOT OCCUR BY DEFINITION.
+!     (DIMENSIONED (16,MAXSP) WITH THE 16 BEING THE HABITAT TYPE GROUP
+!      AS SHOWN IN TABLE 3, PG 6, GTR INT-279) WHICH DOES NOT PERTAIN
+!      TO THE WS VARIANT)
+!
+DATA ((OCURHT(I,J),I=1,16),J=1,MAXSP)/ 688*0.0 /
+!
+!     OCURNF ZEROES OUT PROBABILITIES ON NATIONAL FORESTS BY SPECIES.
+!     (DIMENSIONED 20,MAXSP WITH THE 20 BEING 20 FOREST CODES SHOWN
+!      IN ARRAY IFORCD ABOVE AND MAPPED AS SHOWN IN ARRAY IFORST)
+!
+DATA ((OCURNF(I,J),I=1,20),J=1,MAXSP)/ 860*0.0 /
+!----------
+! COMMON STATEMENT FOR PLOT VARIABLES.
+!----------
+DATA JSP / &
+    'SP ',   'DF ',   'WF ',   'GS ',   'IC ', &
+    'JP ',   'RF ',   'PP ',   'LP ',   'WB ', &
+    'WP ',   'PM ',   'SF ',   'KP ',   'FP ', &
+    'CP ',   'LM ',   'MP ',   'GP ',   'WE ', &
+    'GB ',   'BD ',   'RW ',   'MH ',   'WJ ', &
+    'UJ ',   'CJ ',   'LO ',   'CY ',   'BL ', &
+    'BO ',   'VO ',   'IO ',   'TO ',   'GC ', &
+    'AS ',   'CL ',   'MA ',   'DG ',   'BM ', &
+    'MC ',   'OS ',   'OH '/
+!
+DATA FIAJSP / &
+    '117',   '202',   '015',   '212',   '081', &
+    '116',   '020',   '122',   '108',   '101', &
+    '119',   '133',   '011',   '103',   '104', &
+    '109',   '113',   '124',   '127',   '137', &
+    '142',   '201',   '211',   '264',   '064', &
+    '065',   '062',   '801',   '805',   '807', &
+    '818',   '821',   '839',   '631',   '431', &
+    '746',   '981',   '361',   '492',   '312', &
+    '475',   '299',   '998'/
+!
+DATA PLNJSP / &
+    'PILA  ','PSME  ','ABCO  ','SEGI2 ','CADE27', &
+    'PIJE  ','ABMA  ','PIPO  ','PICO  ','PIAL  ', &
+    'PIMO3 ','PIMO  ','ABAM  ','PIAT  ','PIBA  ', &
+    'PICO3 ','PIFL2 ','PIRA2 ','PISA2 ','PIWA  ', &
+    'PILO  ','PSMA  ','SESE3 ','TSME  ','JUOC  ', &
+    'JUOS  ','JUCA7 ','QUAG  ','QUCH2 ','QUDO  ', &
+    'QUKE  ','QULO  ','QUWI2 ','LIDE3 ','CHCHC4', &
+    'POTR5 ','UMCA  ','ARME  ','CONU4 ','ACMA3 ', &
+    'CELE3 ','2TN   ','2TB   '/
+!
+DATA JTYPE /130,170,250,260,280,290,310,320,330,420, &
+               470,510,520,530,540,550,570,610,620,640, &
+               660,670,680,690,710,720,730,830,850,999,92*0 /
+!
+DATA NSP / &
+    'SP1','DF1','WF1','GS1','IC1','JP1','RF1','PP1','LP1','WB1', &
+    'WP1','PM1','SF1','KP1','FP1','CP1','LM1','MP1','GP1','WE1', &
+    'GB1','BD1','RW1','MH1','WJ1','UJ1','CJ1','LO1','CY1','BL1', &
+    'BO1','VO1','IO1','TO1','GC1','AS1','CL1','MA1','DG1','BM1', &
+    'MC1','OS1','OH1', &
+    'SP2','DF2','WF2','GS2','IC2','JP2','RF2','PP2','LP2','WB2', &
+    'WP2','PM2','SF2','KP2','FP2','CP2','LM2','MP2','GP2','WE2', &
+    'GB2','BD2','RW2','MH2','WJ2','UJ2','CJ2','LO2','CY2','BL2', &
+    'BO2','VO2','IO2','TO2','GC2','AS2','CL2','MA2','DG2','BM2', &
+    'MC2','OS2','OH2', &
+    'SP3','DF3','WF3','GS3','IC3','JP3','RF3','PP3','LP3','WB3', &
+    'WP3','PM3','SF3','KP3','FP3','CP3','LM3','MP3','GP3','WE3', &
+    'GB3','BD3','RW3','MH3','WJ3','UJ3','CJ3','LO3','CY3','BL3', &
+    'BO3','VO3','IO3','TO3','GC3','AS3','CL3','MA3','DG3','BM3', &
+    'MC3','OS3','OH3'/
+!
+DATA SIGMAR/ &
+     0.347,  0.407,  0.347, 0.6178,  0.433, &
+     0.289, 0.4182,  0.371, 0.4169, 0.4169, &
+     0.347, 0.4392,  0.347, 0.4392, 0.4392, &
+    0.4392, 0.4392,  0.371, 0.4392, 0.4392, &
+       0.2,  0.407, 0.6178,  0.347, 0.4392, &
+    0.4392, 0.4392, 0.4721, 0.4721, 0.4721, &
+    0.4721, 0.4721, 0.4721, 0.4744, 0.4744, &
+    0.4744, 0.4744, 0.4744, 0.4744, 0.4721, &
+    0.5357,  0.313, 0.4721/
+!----------
+!   COMMON STATEMENT FOR COEFFS VARIABLES
+!----------
+DATA HT1/ &
+    4.86039, 4.86039, 4.86039, 5.3401, 4.86039, &
+    4.86039, 4.86039, 4.86039,  4.8358,  4.8358, &
+    4.86039,  4.6843, 4.86039,  4.6843,  4.6843, &
+     4.6843,  4.6843, 4.86039,  4.6843,  4.6843, &
+     4.1920, 4.86039, 5.3401, 4.86039,  4.6843, &
+     4.6843,  4.6843, 4.80420, 4.80420, 4.80420, &
+    4.80420, 4.80420, 4.80420, 4.80420, 4.80420, &
+    4.80420, 4.80420, 4.80420, 4.80420, 4.80420, &
+     5.1520, 4.86039, 4.80420/
+!
+DATA HT2/ &
+    -9.32795, -9.32795, -9.32795, -15.9354, -9.32795, &
+    -9.32795, -9.32795, -9.32795,  -9.2077,  -9.2077, &
+    -9.32795,  -6.5516, -9.32795,  -6.5516,  -6.5516, &
+     -6.5516,  -6.5516, -9.32795,  -6.5516,  -6.5516, &
+     -5.1651, -9.32795, -15.9354, -9.32795,  -6.5516, &
+     -6.5516,  -6.5516, -9.92422, -9.92422, -9.92422, &
+    -9.92422, -9.92422, -9.92422, -9.92422, -9.92422, &
+    -9.92422, -9.92422, -9.92422, -9.92422, -9.92422, &
+    -13.5760, -9.32795, -9.92422/
+!
+DATA REGNBK/2.999/
+!
+DATA S0/55329D0/,SS/55329./
+!
+DATA LSCRN,JOSCRN/.FALSE.,6/
+!
+DATA JOSUME/13/
+!
+DATA KOLIST,FSTOPEN /27,.FALSE./
+!
+END

@@ -1,0 +1,141 @@
+SUBROUTINE DBSREFERENCE
+IMPLICIT NONE
+!----------------------------------------------------------------------
+!  ROUTINE TO OUTPUT INVENTORY REFERENCE INFORMATION
+!
+INCLUDE 'PRGPRM.f90'
+INCLUDE 'DBSCOM.f90'
+INCLUDE 'CONTRL.f90'
+INCLUDE 'PLOT.f90'
+INCLUDE 'VOLSTD.f90'
+
+INTEGER iRet, ColNumber, iInvRef, I, SPPNUM,ISPPSDI,ISTIDX
+DOUBLE PRECISION FORMCLS,MIND,MERCHTOPD,STUMP, &
+                    SAWD,SAWTD,SAWSTMP,BFD,BFTD,BFSTUMP
+CHARACTER*4    SPPFVS,SPPPLTS
+CHARACTER*5    SPPFIA
+CHARACTER*2000 SQLStmtStr
+CHARACTER*20   TABLENAME
+CHARACTER*3    CRUISETYPE
+
+INTEGER fsql3_tableexists,fsql3_exec,fsql3_bind_int,fsql3_step, &
+           fsql3_prepare,fsql3_bind_double,fsql3_finalize
+
+CALL DBSCASE(1)
+
+TABLENAME = 'FVS_InvReference'
+
+iRet=fsql3_tableexists(IoutDBref,TRIM(TABLENAME)//CHAR(0))
+IF(iRet.EQ.0) THEN
+  SQLStmtStr='CREATE TABLE '//TRIM(TABLENAME)// &
+                ' (CaseID text not null, '// &
+                'StandID text not null, '// &
+                'SpeciesNum int, '// &
+                'SpeciesFVS text, '// &
+                'SpeciesPlants text, '// &
+                'SpeciesFIA text, '// &
+                'SDIMax int, '// &
+                'SiteIndex int, '// &
+                'CFCruiseType text,'// &
+                'CFVolEq text, '// &
+                'CFMinDBH real, '// &
+                'CFTopDia real, '// &
+                'CFStump real, '// &
+                'CFSawMinDBH real, '// &
+                'CFSawTopDia real, '// &
+                'CFSawStump real, '// &
+                'BFVolEq text, '// &
+                'BFMinDBH real, '// &
+                'BFTopDia real, '// &
+                'BFStump real);'//CHAR(0)
+
+  iRet=fsql3_exec(IoutDBref, SQLStmtStr)
+  IF(iRet.NE.0) THEN
+    iInvRef=0
+    RETURN
+  ENDIF
+ENDIF
+
+DO I=1,MAXSP
+  IF(TRIM(JSP(I)).EQ.'') CYCLE
+  ISPPSDI=NINT(SDIDEF(I))
+  ISTIDX=NINT(SITEAR(I))
+  MIND=DBHMIN(I)
+  MERCHTOPD=TOPD(I)
+  STUMP=STMP(I)
+  SAWD=SCFMIND(I)
+  SAWTD=SCFTOPD(I)
+  SAWSTMP=SCFSTMP(I)
+  BFD=BFMIND(I)
+  BFTD=BFTOPD(I)
+  BFSTUMP=BFSTMP(I)
+  IF(CFCTYPE .EQ. 'I') THEN
+    CRUISETYPE = 'FIA'
+  ELSE
+    CRUISETYPE = 'FVS'
+  END IF
+
+  SQLStmtStr='INSERT INTO '//TRIM(TABLENAME)// &
+                ' (CaseID,StandID,'// &
+                'SpeciesNum,SpeciesFVS,SpeciesPlants,SpeciesFIA,'// &
+                'SDIMax,SiteIndex,'// &
+                'CFCruiseType,CFVolEq,CFMinDBH,CFTopDia,CFStump,'// &
+                'CFSawMinDBH,CFSawTopDia,CFSawStump,'// &
+                'BFVolEQ,BFMinDBH,BFTopDia,BFStump)'// &
+                " VALUES('"//CASEID//"','"//TRIM(NPLT)//"',?,'"// &
+                TRIM(JSP(I))//"','"//TRIM(PLNJSP(I))//"','"// &
+                TRIM(FIAJSP(I))//"',"// &
+                '?,?,'// &
+                "'"//CRUISETYPE//"','"//TRIM(VEQNNC(I))//"',?,?,?,"// &
+                '?,?,?,'// &
+                "'"//TRIM(VEQNNB(I))//"',?,?,?);"//CHAR(0)
+
+  iRet=fsql3_prepare(IoutDBref,SQLStmtStr)
+  IF(iRet.NE.0) THEN
+    iInvRef=0
+    RETURN
+  ENDIF
+
+  ColNumber = 1
+  iRet= fsql3_bind_int(IoutDBref,ColNumber,I)
+
+  ColNumber = ColNumber + 1
+  iRet= fsql3_bind_int(IoutDBref,ColNumber,ISPPSDI)
+
+  ColNumber = ColNumber + 1
+  iRet= fsql3_bind_int(IoutDBref,ColNumber,ISTIDX)
+
+  ColNumber = ColNumber + 1
+  iRet= fsql3_bind_double(IoutDBref,ColNumber,MIND)
+
+  ColNumber = ColNumber + 1
+  iRet= fsql3_bind_double(IoutDBref,ColNumber,MERCHTOPD)
+
+  ColNumber = ColNumber + 1
+  iRet= fsql3_bind_double(IoutDBref,ColNumber,STUMP)
+
+  ColNumber = ColNumber + 1
+  iRet= fsql3_bind_double(IoutDBref,ColNumber,SAWD)
+
+  ColNumber = ColNumber + 1
+  iRet= fsql3_bind_double(IoutDBref,ColNumber,SAWTD)
+
+  ColNumber = ColNumber + 1
+  iRet= fsql3_bind_double(IoutDBref,ColNumber,SAWSTMP)
+
+  ColNumber = ColNumber + 1
+  iRet= fsql3_bind_double(IoutDBref,ColNumber,BFD)
+
+  ColNumber = ColNumber + 1
+  iRet= fsql3_bind_double(IoutDBref,ColNumber,BFTD)
+
+  ColNumber = ColNumber + 1
+  iRet= fsql3_bind_double(IoutDBref,ColNumber,BFSTUMP)
+
+  iRet= fsql3_step(IoutDBref)
+ENDDO
+iRet= fsql3_finalize(IoutDBref)
+IF(iRet.NE.0) iInvRef = 0
+
+RETURN
+END

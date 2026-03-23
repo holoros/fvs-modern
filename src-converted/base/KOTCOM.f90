@@ -1,0 +1,20 @@
+!ODE SEGMENT KOTCOM
+!----------
+! COMMON $Id$
+!----------
+!
+INTEGER KKTYPE,KOTFOR,KOTNUM
+!
+INTEGER KOTHAB(175)
+!
+COMMON /KOTCOM/ KKTYPE,KOTFOR,KOTHAB,KOTNUM
+!
+!----------
+!  VARIABLE DEFINITIONS:
+!----------
+!  KKTYPE --
+!  KOTFOR --
+!  KOTHAB --
+!  KOTNUM --
+!
+!-----END SEGMENT

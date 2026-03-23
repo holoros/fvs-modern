@@ -1,0 +1,84 @@
+SUBROUTINE RDROOT(I,A,ANS,F1,F2,HEI)
+IMPLICIT NONE
+!----------
+! RD $Id$
+!----------
+!
+!  FUNCTION FOR CALCULATING THE ROOT RADIUS OF LIVE TREES
+!
+!  CALLED BY :
+!     RDDAM   [ROOT DISEASE]
+!     RDESTB  [ROOT DISEASE]
+!     RDIN    [ROOT DISEASE]
+!     RDPRIN  [ROOT DISEASE]
+!     RDSTR   [ROOT DISEASE]
+!     RDTREG  [ROOT DISEASE]
+!
+!  CALLS     :
+!     NONE
+!
+!  PARAMETERS :
+!     I      - SPECIES
+!     A      - DBH
+!     ANS    - ROOT RADIUS
+!     F1     - PROOT
+!     F2     - RSLOP
+!     HEI    - HEIGHT
+!
+!  Revision History :
+!   01/20/94 - Last revision date.
+!   09/02/14 Lance R. David (FMSC)
+!     Added implicit none and declared variables.
+!
+!----------------------------------------------------------------------
+!
+!OMMONS
+!
+INCLUDE 'PRGPRM.f90'
+INCLUDE 'RDPARM.f90'
+INCLUDE 'PLOT.f90'
+INCLUDE 'RDADD.f90'
+
+INTEGER I
+REAL    A, ANS, EFFECT, F1, F2, HEI, SDINEW
+INTEGER IDANUW
+!----------
+!  DUMMY ARGUMENT NOT USED WARNING SUPPRESSION SECTION
+!----------
+IDANUW = I
+!
+!
+!     CALCULATE THE EFFECT OF SDI (IF KEYWORD WAS NOT USED,
+!     THERE MAY BE NO EFFECT)
+
+SDINEW = (OLDTPA / GROSPC) * (ORMSQD / 10.0) ** 1.605
+
+IF (SDINEW .GT. 0.0) THEN
+   EFFECT = SDISLP * SDINEW + YINCPT
+ELSE
+   EFFECT = 1.0
+ENDIF
+
+EFFECT = MIN(EFFECT,1.5)
+EFFECT = MAX(EFFECT,0.5)
+
+!     NOW CALCULATE THE ROOT RADIUS
+
+IF (A .LT. 3.5) GOTO 1000
+ANS = EFFECT * F2 * F1 * A / 12.0
+GOTO 9999
+
+!
+!     ROOT RADIUS FOR SMALL (<3.5 DBH) TREES.
+!
+1000 CONTINUE
+ANS = 0.01
+IF (HEI .EQ. 0.0 .OR. BA .EQ. 0.0) GOTO 9999
+ANS = EXP(0.61157 * ALOG(HEI) + 0.04032 * ALOG(BA) - 0.80815)
+
+ANS = ANS * EFFECT
+
+9999 CONTINUE
+
+RETURN
+END

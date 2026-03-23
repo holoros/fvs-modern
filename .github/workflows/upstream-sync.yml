@@ -1,0 +1,203 @@
+name: Upstream Sync Check
+
+# Runs weekly on Monday at 8 AM Eastern, or on manual trigger
+on:
+  schedule:
+    - cron: '0 12 * * 1'  # UTC noon = 8 AM ET
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  check-upstream:
+    runs-on: ubuntu-latest
+    outputs:
+      has_changes: ${{ steps.check.outputs.has_changes }}
+      fvs_count: ${{ steps.check.outputs.fvs_count }}
+      iface_count: ${{ steps.check.outputs.iface_count }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read sync state
+        id: state
+        run: |
+          if [ -f .upstream-sync.json ]; then
+            FVS_DATE=$(python3 -c "import json; print(json.load(open('.upstream-sync.json'))['fvs_last_date'])")
+            IFACE_DATE=$(python3 -c "import json; print(json.load(open('.upstream-sync.json'))['iface_last_date'])")
+          else
+            FVS_DATE="2025-11-06"
+            IFACE_DATE="2025-09-30"
+          fi
+          echo "fvs_date=$FVS_DATE" >> $GITHUB_OUTPUT
+          echo "iface_date=$IFACE_DATE" >> $GITHUB_OUTPUT
+
+      - name: Check USFS repos for new commits
+        id: check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          FVS_COMMITS=$(curl -sf "https://api.github.com/repos/USDAForestService/ForestVegetationSimulator/commits?since=${{ steps.state.outputs.fvs_date }}T00:00:00Z&per_page=50" | python3 -c "import sys,json; print(len(json.load(sys.stdin)))")
+          IFACE_COMMITS=$(curl -sf "https://api.github.com/repos/USDAForestService/ForestVegetationSimulator-Interface/commits?since=${{ steps.state.outputs.iface_date }}T00:00:00Z&per_page=50" | python3 -c "import sys,json; print(len(json.load(sys.stdin)))")
+
+          echo "fvs_count=$FVS_COMMITS" >> $GITHUB_OUTPUT
+          echo "iface_count=$IFACE_COMMITS" >> $GITHUB_OUTPUT
+
+          if [ "$FVS_COMMITS" -gt 0 ] || [ "$IFACE_COMMITS" -gt 0 ]; then
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          fi
+
+          echo "FVS core: $FVS_COMMITS new commits"
+          echo "Interface: $IFACE_COMMITS new commits"
+
+      - name: Generate change report
+        if: steps.check.outputs.has_changes == 'true'
+        run: |
+          mkdir -p docs
+          python3 << 'PYEOF'
+          import json, urllib.request
+          from datetime import datetime
+
+          # Fetch commits
+          fvs_url = "https://api.github.com/repos/USDAForestService/ForestVegetationSimulator/commits?since=${{ steps.state.outputs.fvs_date }}T00:00:00Z&per_page=50"
+          iface_url = "https://api.github.com/repos/USDAForestService/ForestVegetationSimulator-Interface/commits?since=${{ steps.state.outputs.iface_date }}T00:00:00Z&per_page=50"
+
+          fvs_data = json.loads(urllib.request.urlopen(fvs_url).read())
+          iface_data = json.loads(urllib.request.urlopen(iface_url).read())
+
+          report = []
+          report.append(f"# Upstream Change Report ({datetime.now().strftime('%Y-%m-%d')})\n")
+          report.append(f"## FVS Core ({len(fvs_data)} new commits)\n")
+          for c in fvs_data:
+              sha = c['sha'][:8]
+              date = c['commit']['author']['date'][:10]
+              msg = c['commit']['message'].split('\n')[0][:80]
+              report.append(f"* `{sha}` {date} {msg}")
+
+          report.append(f"\n## FVS Interface ({len(iface_data)} new commits)\n")
+          for c in iface_data:
+              sha = c['sha'][:8]
+              date = c['commit']['author']['date'][:10]
+              msg = c['commit']['message'].split('\n')[0][:80]
+              report.append(f"* `{sha}` {date} {msg}")
+
+          # Check for conflicts with our patched files
+          patched = ['vbase/initre.f', 'base/main.f', 'base/myopen.f', 'base/volkey.f',
+                     'base/algevl.f', 'base/evldx.f', 'base/errgro.f']
+          conflicts = []
+          for c in fvs_data:
+              detail_url = f"https://api.github.com/repos/USDAForestService/ForestVegetationSimulator/commits/{c['sha']}"
+              try:
+                  detail = json.loads(urllib.request.urlopen(detail_url).read())
+                  for f in detail.get('files', []):
+                      if f['filename'] in patched:
+                          conflicts.append(f"* `{c['sha'][:8]}` modifies **{f['filename']}** (patched in fvs-modern)")
+              except:
+                  pass
+
+          if conflicts:
+              report.append("\n## Potential Patch Conflicts\n")
+              report.extend(conflicts)
+              report.append("\nManual review required before sync.")
+
+          with open('docs/upstream_report.md', 'w') as f:
+              f.write('\n'.join(report) + '\n')
+          PYEOF
+
+      - name: Create sync PR
+        if: steps.check.outputs.has_changes == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BRANCH="upstream-sync/$(date +%Y%m%d)"
+          git checkout -b "$BRANCH"
+          git add docs/upstream_report.md
+          git commit -m "chore: upstream change report $(date +%Y-%m-%d)
+
+          FVS core: ${{ steps.check.outputs.fvs_count }} new commits
+          Interface: ${{ steps.check.outputs.iface_count }} new commits
+
+          Review docs/upstream_report.md for details."
+
+          git push origin "$BRANCH"
+
+          gh pr create \
+            --title "Upstream changes detected ($(date +%Y-%m-%d))" \
+            --body "$(cat << EOF
+          ## Upstream Change Detection
+
+          The weekly sync check found new commits in the USFS repositories:
+
+          * **FVS Core:** ${{ steps.check.outputs.fvs_count }} new commits
+          * **Interface:** ${{ steps.check.outputs.iface_count }} new commits
+
+          See \`docs/upstream_report.md\` for the full change report including
+          potential conflicts with fvs-modern patches.
+
+          ### To integrate these changes:
+
+          \`\`\`bash
+          ./deployment/scripts/sync_upstream.sh --all
+          \`\`\`
+
+          This will pull, patch, convert, rebuild, and test all variants.
+          EOF
+          )" \
+            --label "upstream-sync"
+
+  build-test:
+    needs: check-upstream
+    if: needs.check-upstream.outputs.has_changes == 'true'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gfortran libsqlite3-dev r-base
+
+      - name: Install R packages
+        run: |
+          sudo R --no-save -e "install.packages(c('shiny','Cairo','rhandsontable','ggplot2','RSQLite','plyr','colourpicker','rgl','leaflet','zip','openxlsx','shinyFiles'), repos='https://cloud.r-project.org', Ncpus=2)"
+
+      - name: Build IE variant (smoke test)
+        run: |
+          # Download latest USFS source
+          curl -sL "https://github.com/USDAForestService/ForestVegetationSimulator/archive/refs/heads/main.zip" -o fvs.zip
+          unzip -q fvs.zip
+          cd ForestVegetationSimulator-main
+
+          # Apply FORMAT patches
+          sed -i "s/A8'/A8,'/g" vbase/initre.f
+          sed -i "s/A10'/A10,'/g" vbase/initre.f
+          sed -i "s/I3' TARGETED/I3, ' TARGETED/g" vbase/initre.f
+
+          # Build IE variant
+          OSTYPE=linux-gnu make FVSie.so
+          ls -la bin/FVSie.so
+
+      - name: Test IE variant loads via rFVS
+        run: |
+          cd ForestVegetationSimulator-main
+          # Get rFVS
+          curl -sL "https://github.com/USDAForestService/ForestVegetationSimulator-Interface/archive/refs/heads/main.zip" -o iface.zip
+          unzip -q iface.zip
+
+          # Install rFVS with corrected NAMESPACE
+          cp ../deployment/config/rFVS_NAMESPACE ForestVegetationSimulator-Interface-main/rFVS/NAMESPACE
+          mkdir -p ForestVegetationSimulator-Interface-main/rFVS/man
+          printf '\name{rFVS-package}\n\alias{rFVS}\n\docType{package}\n\title{rFVS}\n\description{R interface to FVS.}\n\author{Nicholas Crookston}\n' > ForestVegetationSimulator-Interface-main/rFVS/man/rFVS-package.Rd
+          R CMD INSTALL ForestVegetationSimulator-Interface-main/rFVS
+
+          # Load test
+          R --no-save -e "
+            library(rFVS)
+            fvsLoad('FVSie', bin='$(pwd)/bin')
+            dims <- fvsGetDims()
+            stopifnot(dims['maxspecies'] == 23)
+            cat('IE variant: OK\n')
+          "

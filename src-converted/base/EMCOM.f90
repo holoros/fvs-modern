@@ -1,0 +1,18 @@
+!ODE SEGMENT EMCOM
+!----------
+! COMMON $Id$
+!----------
+!
+INTEGER IEMTYP
+!
+COMMON /EMCOM/ IEMTYP
+!
+!----------
+!  VARIABLE DEFINITIONS:
+!----------
+!
+!    IEMTYP -- INDEX TO VALID HABITAT TYPE CODES FOR THE EM
+!              VARIANT.  SET IN **HABTYP, AND USED TO SET
+!              MAX SDI (SDIDEF ARRAY) IN *SITSET
+!
+!-----END SEGMENT

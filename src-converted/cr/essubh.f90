@@ -1,0 +1,192 @@
+SUBROUTINE ESSUBH (I,HHT,EMSQR,DILATE,DELAY,ELEV,ISER,GENTIM, &
+     TRAGE)
+IMPLICIT NONE
+!----------
+! CR $Id$
+!----------
+!
+!     ASSIGNS HEIGHTS TO SUBSEQUENT AND PLANTED TREE RECORDS
+!     CREATED BY THE ESTABLISHMENT MODEL.
+!
+!
+!     COMING INTO ESSUBH, TRAGE IS THE AGE OF THE TREE AS SPECIFIED ON
+!     THE PLANT OR NATURAL KEYWORD.  LEAVING ESSUBH, TRAGE IS THE NUMBER
+!     BETWEEN PLANTING (OR NATURAL REGENERATION) AND THE END OF THE
+!     CYCLE.  AGE IS TREE AGE UP TO THE TIME REGENT WILL BEGIN GROWING
+!     THE TREE.
+!----------
+!OMMONS
+!
+INCLUDE 'PRGPRM.f90'
+!
+!
+INCLUDE 'ESPARM.f90'
+!
+!
+INCLUDE 'ESCOMN.f90'
+!----------
+!  DECLARATIONS
+!----------
+INTEGER I,N,ITIME,ISER
+REAL    AGE,HHT,EMSQR,DILATE,DELAY,ELEV,GENTIM,TRAGE
+REAL RDANUW
+INTEGER IDANUW
+!----------
+!  SPECIES ORDER:
+!   1=AF,  2=CB,  3=DF,  4=GF,  5=WF,  6=MH,  7=RC,  8=WL,  9=BC, 10=LM,
+!  11=LP, 12=PI, 13=PP, 14=WB, 15=SW, 16=UJ, 17=BS, 18=ES, 19=WS, 20=AS,
+!  21=NC, 22=PW, 23=GO, 24=AW, 25=EM, 26=BK, 27=SO, 28=PB, 29=AJ, 30=RM,
+!  31=OJ, 32=ER, 33=PM, 34=PD, 35=AZ, 36=CI, 37=OS, 38=OH
+!
+!  SPECIES EXPANSION:
+!  UJ,AJ,RM,OJ,ER USE CR JU
+!  NC,PW USE CR CO
+!  GO,AW,EM,BK,SO USE CR OA
+!  PB USES CR AS
+!  PM,PD,AZ USE CR PI
+!  CI USES CR PP
+!----------
+!  DUMMY ARGUMENT NOT USED WARNING SUPPRESSION SECTION
+!----------
+RDANUW = DILATE
+RDANUW = ELEV
+RDANUW = EMSQR
+IDANUW = ISER
+!
+!----------
+N=INT(DELAY+0.5)
+IF(N.LT.-3) N=-3
+DELAY=FLOAT(N)
+ITIME=INT(TIME+0.5)
+IF(N.GT.ITIME) DELAY=TIME
+AGE=TIME-DELAY-GENTIM+TRAGE
+IF(AGE.LT.1.0) AGE=1.0
+TRAGE=TIME-DELAY
+!
+SELECT CASE (I)
+!----------
+!     HEIGHT OF TALLEST SUBSEQUENT SPECIES 1=AF
+!----------
+CASE (1)
+  HHT = 0.75
+!----------
+!     HEIGHT OF TALLEST SUBS. SPECIES 2=CB
+!----------
+CASE (2)
+  HHT = 1.0
+!----------
+!     HT OF TALLEST SUBS. SPECIES 3=DF
+!----------
+CASE (3)
+  HHT = 2.0
+!----------
+!     HT OF TALLEST SUBS. SPECIES 4=GF
+!----------
+CASE (4)
+  HHT = 2.0
+!----------
+!     HT OF TALLEST SUBS. SPECIES 5=WF
+!----------
+CASE (5)
+  HHT = 2.0
+!----------
+!     HT OF TALLEST SUBS. SPECIES 6=MH
+!----------
+CASE (6)
+  HHT = 0.5
+!----------
+!     HT OF TALLEST SUBS. SPECIES 7=RC
+!----------
+CASE (7)
+  HHT = 1.5
+!----------
+!     HT OF TALLEST SUBS. SPECIES 8=WL
+!----------
+CASE (8)
+  HHT = 3.0
+!----------
+!     HT OF TALLEST SUBS. SPECIES 9=BC
+!----------
+CASE (9)
+  HHT = 0.5
+!----------
+!     HEIGHT OF TALLEST SUBS. SPECIES 10=LM
+!----------
+CASE (10)
+  HHT = 0.5
+!----------
+!     HT OF TALLEST SUBS. SPECIES 11=LP
+!----------
+CASE (11)
+  HHT = 3.0
+!----------
+!     HT OF TALLEST SUBS. SPECIES 12=PI, 33=PM, 34=PD, 35=AZ
+!----------
+CASE (12,33:35)
+  HHT = .5
+!----------
+!     HEIGHT OF TALLEST SUBS. SPECIES 13=PP, 36=CI
+!----------
+CASE (13,36)
+  HHT = 3.0
+!----------
+!     HT OF TALLEST SUBS. SPECIES 14=WB
+!----------
+CASE (14)
+  HHT = 1.0
+!----------
+!     HT OF TALLEST SUBS. SPECIES 15=SW
+!----------
+CASE (15)
+  HHT = 1.0
+!----------
+!     HT OF TALLEST SUBS. SPECIES 16=UJ, 29=AJ, 30=RM, 31=OJ, 32=ER
+!----------
+CASE (16,29:32)
+  HHT = 0.5
+!----------
+!     HT OF TALLEST SUBS. SPECIES 17=BS
+!----------
+CASE (17)
+  HHT = 2.0
+!----------
+!     HT OF TALLEST SUBS. SPECIES 18=ES
+!----------
+CASE (18)
+  HHT = 1.5
+!----------
+!     HT OF TALLEST SUBS. SPECIES 19=WS
+!----------
+CASE (19)
+  HHT = 1.0
+!----------
+!     HT OF TALLEST SUBS. SPECIES 20=AS, 28=PB
+!----------
+CASE (20,28)
+  HHT = 5.0
+!----------
+!     HEIGHT OF TALLEST SUBS. SPECIES 21=NC, 22=PW
+!----------
+CASE (21:22)
+  HHT = 10.0
+!----------
+!     HT OF TALLEST SUBS. SPECIES 23=GO, 24=AW, 25=EM, 26=BK, 27=SO
+!----------
+CASE (23:27)
+  HHT = 5.0
+!----------
+!     HT OF TALLEST SUBS. SPECIES 37=OS
+!----------
+CASE (37)
+  HHT = 1.0
+!----------
+!     HT OF TALLEST SUBS. SPECIES 38=OH
+!----------
+CASE (38)
+  HHT = 5.0
+!
+END SELECT
+!
+RETURN
+END
+!**END OF CODE SEGMENT

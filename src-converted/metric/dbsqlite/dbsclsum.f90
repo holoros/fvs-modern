@@ -1,0 +1,127 @@
+SUBROUTINE DBSCLSUM(CNPLT,IYR,SP,SPVIAB, &
+             SPBA,SPTPA,SPMORT1,SPMORT2,SPGMULT, &
+             SPSITGM,MXDENMLT,POTESTAB)
+IMPLICIT NONE
+!
+! METRIC-DBSQLITE $Id$
+!
+!     POPULATE A DATABASE WITH THE CLIMATE SUMMARY
+
+INCLUDE 'PRGPRM.f90'
+
+INCLUDE 'PLOT.f90'
+
+INCLUDE 'DBSCOM.f90'
+   $ ATTRIBUTES DLLIMPORT :: FSQL3_ADDCOLIFABSENT &
+   $ ATTRIBUTES DLLIMPORT :: FSQL3_BIND_DOUBLE &
+   $ ATTRIBUTES DLLIMPORT :: FSQL3_BIND_INT &
+   $ ATTRIBUTES DLLIMPORT :: FSQL3_BIND_TEXT &
+   $ ATTRIBUTES DLLIMPORT :: FSQL3_CLOSE &
+   $ ATTRIBUTES DLLIMPORT :: FSQL3_COLCNT &
+   $ ATTRIBUTES DLLIMPORT :: FSQL3_COLDOUBLE &
+   $ ATTRIBUTES DLLIMPORT :: FSQL3_COLINT &
+   $ ATTRIBUTES DLLIMPORT :: FSQL3_COLISNULL &
+   $ ATTRIBUTES DLLIMPORT :: FSQL3_COLNAME &
+   $ ATTRIBUTES DLLIMPORT :: FSQL3_COLREAL &
+   $ ATTRIBUTES DLLIMPORT :: FSQL3_COLTEXT &
+   $ ATTRIBUTES DLLIMPORT :: FSQL3_COLTYPE &
+   $ ATTRIBUTES DLLIMPORT :: FSQL3_ERRMSG &
+   $ ATTRIBUTES DLLIMPORT :: FSQL3_EXEC &
+   $ ATTRIBUTES DLLIMPORT :: FSQL3_FINALIZE &
+   $ ATTRIBUTES DLLIMPORT :: FSQL3_OPEN &
+   $ ATTRIBUTES DLLIMPORT :: FSQL3_PREPARE &
+   $ ATTRIBUTES DLLIMPORT :: FSQL3_RESET &
+   $ ATTRIBUTES DLLIMPORT :: FSQL3_STEP &
+   $ ATTRIBUTES DLLIMPORT :: FSQL3_TABLEEXISTS &
+   _WIN64) &
+   $ ATTRIBUTES ALIAS:'_FSQL3_ADDCOLIFABSENT' :: FSQL3_ADDCOLIFABSENT &
+   $ ATTRIBUTES ALIAS:'_FSQL3_BIND_DOUBLE'    :: FSQL3_BIND_DOUBLE &
+   $ ATTRIBUTES ALIAS:'_FSQL3_BIND_INT'       :: FSQL3_BIND_INT &
+   $ ATTRIBUTES ALIAS:'_FSQL3_BIND_TEXT'      :: FSQL3_BIND_TEXT &
+   $ ATTRIBUTES ALIAS:'_FSQL3_CLOSE'          :: FSQL3_CLOSE &
+   $ ATTRIBUTES ALIAS:'_FSQL3_COLCNT'         :: FSQL3_COLCNT &
+   $ ATTRIBUTES ALIAS:'_FSQL3_COLDOUBLE'      :: FSQL3_COLDOUBLE &
+   $ ATTRIBUTES ALIAS:'_FSQL3_COLINT'         :: FSQL3_COLINT &
+   $ ATTRIBUTES ALIAS:'_FSQL3_COLISNULL'      :: FSQL3_COLISNULL &
+   $ ATTRIBUTES ALIAS:'_FSQL3_COLNAME'        :: FSQL3_COLNAME &
+   $ ATTRIBUTES ALIAS:'_FSQL3_COLREAL'        :: FSQL3_COLREAL &
+   $ ATTRIBUTES ALIAS:'_FSQL3_COLTEXT'        :: FSQL3_COLTEXT &
+   $ ATTRIBUTES ALIAS:'_FSQL3_COLTYPE'        :: FSQL3_COLTYPE &
+   $ ATTRIBUTES ALIAS:'_FSQL3_ERRMSG'         :: FSQL3_ERRMSG &
+   $ ATTRIBUTES ALIAS:'_FSQL3_EXEC'           :: FSQL3_EXEC &
+   $ ATTRIBUTES ALIAS:'_FSQL3_FINALIZE'       :: FSQL3_FINALIZE &
+   $ ATTRIBUTES ALIAS:'_FSQL3_OPEN'           :: FSQL3_OPEN &
+   $ ATTRIBUTES ALIAS:'_FSQL3_PREPARE'        :: FSQL3_PREPARE &
+   $ ATTRIBUTES ALIAS:'_FSQL3_RESET'          :: FSQL3_RESET &
+   $ ATTRIBUTES ALIAS:'_FSQL3_STEP'           :: FSQL3_STEP &
+   $ ATTRIBUTES ALIAS:'_FSQL3_TABLEEXISTS'    :: FSQL3_TABLEEXISTS
+!
+INTEGER I,IYR,IRCODE
+CHARACTER(LEN=*) CNPLT,SP
+REAL SPVIAB,SPBA,SPTPA,SPMORT1,SPMORT2,SPGMULT, &
+        SPSITGM,MXDENMLT,POTESTAB
+
+CHARACTER*8    CSP1,CSP2,CSP3
+CHARACTER*2000 SQLStmtStr
+
+INTEGER fsql3_tableexists,fsql3_exec
+IF (ICLIM.EQ.0) RETURN
+
+!     MAKE SURE WE HAVE AN UP TO DATE CASEID
+
+CALL DBSCASE(1)
+
+IRCODE = fsql3_tableexists(IoutDBref, &
+     "FVS_Climate_Metric"//CHAR(0))
+IF(IRCODE.EQ.0) THEN
+  SQLStmtStr='CREATE TABLE FVS_Climate_Metric('// &
+                 'CaseID text not null,'// &
+                 'StandID text not null,'// &
+                 'Year Int null,'// &
+                 'SpeciesFVS    text null,'// &
+                 'SpeciesPLANTS text null,'// &
+                 'SpeciesFIA    text null,'// &
+                 'Viability real null,'// &
+                 'BA real null,'// &
+                 'TPH real null,'// &
+                 'ViabMort real null,'// &
+                 'dClimMort real null,'// &
+                 'GrowthMult real null,'// &
+                 'SiteMult real null,'// &
+                 'MxDenMult real null,'// &
+                 'AutoEstbTPH real null)'//CHAR(0)
+  IRCODE = fsql3_exec(IoutDBref,SQLStmtStr)
+  IF (IRCODE .NE. 0) THEN
+    ICLIM = 0
+    RETURN
+  ENDIF
+ENDIF
+
+!     ASSIGN FVS, PLANTS AND FIA SPECIES CODES
+!
+DO I = 1,MAXSP
+  IF (SP .EQ. JSP(I)) THEN
+    CSP1 = JSP(I)
+    CSP2 = PLNJSP(I)
+    CSP3 = FIAJSP(I)
+  ENDIF
+ENDDO
+
+WRITE(SQLStmtStr,*)'INSERT INTO FVS_Climate (CaseID,'// &
+      'StandID,Year,SpeciesFVS,SpeciesPLANTS,SpeciesFIA,'// &
+      'Viability,BA,TPH,ViabMort,'// &
+      'dClimMort,GrowthMult,SiteMult,MxDenMult '// &
+      'VALUES(''',CASEID,''',''',TRIM(CNPLT),''',',IYR,',', &
+      '''',TRIM(CSP1),''',', &
+      '''',TRIM(CSP2),''',', &
+      '''',TRIM(CSP3),''',', &
+      SPVIAB,',',SPBA,',',SPTPA,',', &
+      SPMORT1,',',SPMORT2,',',SPGMULT,',', &
+      SPSITGM,',',MXDENMLT,',',POTESTAB,')'
+
+IRCODE = fsql3_exec(IoutDBref,trim(SQLStmtStr)//CHAR(0))
+IF (IRCODE .NE. 0) ICLIM = 0
+RETURN
+END
+
+

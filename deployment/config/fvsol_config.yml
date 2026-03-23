@@ -1,0 +1,71 @@
+# ==============================================================================
+# FVS-Online Configuration File
+# ==============================================================================
+# Copy this file to the root of your FVSPrjBldr app directory (alongside ui.R
+# and server.R) and edit the values below to match your server environment.
+#
+# Every value here replaces a previously hardcoded constant in the R source.
+# Environment variables override YAML values when set (see fvsol_config.R).
+# ==============================================================================
+
+# --- Server identity ----------------------------------------------------------
+server:
+  # Base URL users see in emails and project links (no trailing slash)
+  base_url: "https://your-server.example.edu/FVSwork"
+
+  # Institution name shown in UI header and email subjects
+  institution: "Your University"
+
+  # Department or unit shown in UI subheader (set to "" to hide)
+  department: "Department of Forestry"
+
+# --- Directories --------------------------------------------------------------
+paths:
+  # Root directory where project work directories are created
+  # Each project gets a UUID subdirectory here (e.g., /srv/fvs/projects/<uuid>)
+  work_dir: "/srv/fvs/projects"
+
+  # Directory containing compiled FVS variant shared libraries (.so files)
+  fvs_bin: "/srv/fvs/bin"
+
+  # (Optional) Development binary directory; uncomment to enable version toggle
+  # fvs_bin_dev: "/srv/fvs/bin-dev"
+
+# --- Email --------------------------------------------------------------------
+email:
+  # Shell command template for sending email. The token {file} is replaced
+  # with the path to a temporary file containing RFC 822 headers + body.
+  # Common options:
+  #   ssmtp:    "ssmtp -t < {file}"
+  #   sendmail: "/usr/sbin/sendmail -t < {file}"
+  #   msmtp:    "msmtp -t < {file}"
+  #   disabled: ""  (empty string disables email sending)
+  send_command: "ssmtp -t < {file}"
+
+  # Subject line prefix for project creation emails
+  subject_prefix: "FVSOnline project"
+
+# --- Project lifecycle --------------------------------------------------------
+projects:
+  # Days of inactivity before a project is eligible for auto-removal
+  retention_days: 60
+
+# --- Upload and resource limits -----------------------------------------------
+limits:
+  # Maximum file upload size in megabytes
+  max_upload_mb: 10000
+
+# --- Logging ------------------------------------------------------------------
+logging:
+  # Log file names (written to the app working directory)
+  fvsol_log: "FVSOnline.log"
+  fvsol_log_prev: "FVSOnline.older.log"
+  prjbldr_log: "FVSPrjBldr.log"
+
+# --- Shiny options ------------------------------------------------------------
+shiny:
+  # Enable Shiny reactive tracing (TRUE for debugging)
+  trace: false
+
+  # Launch browser automatically (applies to local/desktop mode only)
+  launch_browser: true

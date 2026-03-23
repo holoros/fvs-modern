@@ -1,0 +1,90 @@
+SUBROUTINE HBDECD (IHB,CNHB,MAXHB,ARRAY2,KARD2)
+IMPLICIT NONE
+!----------
+! BASE $Id$
+!----------
+!
+!  CALLED FROM SUBROUTINE **HABTYP**.
+!----------
+!
+!     DECODE THE HABITAT TYPE/PLANT ASSOCIATION CODE.
+!     HT/PA CODE IS IN THE SECOND POSITION OF KARD AND ARRAY
+!     AND IS USED AS A SCALAR KARD2 AND ARRAY2 IN THIS ROUTINE.
+!
+!     IHB   = NUMERIC HABITAT CODE, ZERO IF NO HABITAT FOUND.
+!     CNHB  = C*8 VECTOR OF LENGTH MAXHB, HABITAT CODES.
+!     MAXHB = LENGTH OF CNHB.
+!----------
+INTEGER IHB,MAXHB,J,I
+CHARACTER*10 KARD2
+CHARACTER*8  CNHB(MAXHB),TEMP
+REAL         ARRAY2
+!
+IHB=IFIX(ARRAY2)
+!----------
+!  IF IHB IS OUT OF RANGE, SET FLAG TO LOAD DEFAULT CODE.
+!----------
+IF (IHB.GE.0 .AND. IHB.LE.MAXHB) THEN
+!----------
+!  IF IHB IS ZERO, THEN THE ALPHA CODE MAY BE PRESENT.
+!----------
+   IF (IHB.EQ.0) THEN
+!----------
+!  LOAD TEMP WITH UP TO EIGHT NON-BLANK CHARS IN KARD2.
+!----------
+      TEMP='UNKNOWN'
+      J=0
+      DO 10 I=1,10
+      IF (KARD2(I:I).NE.' ') THEN
+         TEMP=' '
+         DO 5 J=1,MIN(8,10-I+1)
+         IF ((KARD2(I+J-1:I+J-1).EQ.'0').AND.(J.EQ.1)) THEN
+            TEMP='DEFAULT'
+            GO TO 50
+         ENDIF
+         TEMP(J:J)=KARD2(I+J-1:I+J-1)
+         CALL UPCASE(TEMP(J:J))
+5          CONTINUE
+         GO TO 20
+      ENDIF
+10       CONTINUE
+!----------
+!  NOTHING WAS FOUND.
+!----------
+      TEMP='DEFAULT'
+      GO TO 50
+20       CONTINUE
+!----------
+!  TRY TO DECODE THE HABITAT CODE.
+!  'UNKNOWN' IS HABITAT CODE ZERO.
+!----------
+      IF (TEMP.NE.'UNKNOWN') THEN
+         DO 30 I=1,MAXHB
+         IF (TEMP(1:8).EQ.CNHB(I)(1:8)) THEN
+            IHB=I
+            GO TO 50
+         ENDIF
+30          CONTINUE
+!----------
+!  NO VALID HABITAT CODE WAS FOUND.  SET FLAG TO LOAD DEFAULT.
+!----------
+         IHB=-1
+         KARD2=TEMP
+         GO TO 60
+      ENDIF
+!----------
+!  VALID HABITAT CODE FOUND.
+!----------
+50       CONTINUE
+      KARD2=TEMP
+      ARRAY2=FLOAT(IHB)
+   ELSE
+      IHB=IFIX(ARRAY2)
+      KARD2=CNHB(IHB)(1:8)
+   ENDIF
+ELSE
+   IHB=-1
+ENDIF
+60 CONTINUE
+RETURN
+END

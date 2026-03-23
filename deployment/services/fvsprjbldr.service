@@ -1,0 +1,25 @@
+[Unit]
+Description=FVS Project Builder Shiny App
+After=network.target
+
+[Service]
+Type=simple
+User=fvs
+Group=fvs
+WorkingDirectory=/srv/fvs
+Environment=R_LIBS_USER=/srv/fvs/R-libs
+ExecStart=/usr/bin/Rscript /srv/fvs/launch_prjbldr.R
+Restart=on-failure
+RestartSec=10
+StandardOutput=append:/var/log/fvs/prjbldr.log
+StandardError=append:/var/log/fvs/prjbldr.log
+
+# Security hardening
+NoNewPrivileges=yes
+ProtectSystem=strict
+ReadWritePaths=/srv/fvs /var/log/fvs /tmp
+ProtectHome=yes
+PrivateTmp=yes
+
+[Install]
+WantedBy=multi-user.target

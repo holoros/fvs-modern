@@ -1,0 +1,20 @@
+FUNCTION PERCNT(VALUE, BASE)
+IMPLICIT NONE
+!----------
+! LPMPB $Id$
+!----------
+!
+!     PART OF THE MOUNTAIN PINE BEETLE EXTENSION OF PROGNOSIS SYSTEM.
+!
+!
+! Revision History
+!   02/08/88 Last noted revision date.
+!   07/02/10 Lance R. David (FMSC)
+!     Added IMPLICIT NONE.
+!----------
+REAL BASE, PERCNT, VALUE
+
+PERCNT = 0.
+IF(ABS(BASE) .GE. 1E-30) PERCNT = 100.*VALUE/BASE
+RETURN
+END

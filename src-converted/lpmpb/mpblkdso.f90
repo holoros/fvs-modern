@@ -1,0 +1,87 @@
+BLOCK DATA MPBLKD
+IMPLICIT NONE
+!----------
+! LPMPB $Id$
+!----------
+!
+!     MOUNTAIN PINE BEETLE --
+!     SEE MPBCUP OR MPBMOD FOR VARIABLE DISCRIPTIONS.
+!
+! Revision History
+!   10/14/04 LANCE DAVID (FHTET)
+!     CREATED THIS SORNEC-33 VARIANT VERSION TO ACCOMODATE
+!     THE 33 SPECIES REPRESENTED. SURROGATE SPECIES ASSIGNMENTS
+!     ARE BASED ON THOSE MADE IN THE NORTHERN IDAHO AND CENTRAL
+!     ROCKIES VARIANTS.
+!   07/02/10 Lance R. David (FMSC)
+!     Added IMPLICIT NONE.
+!   08/22/14 Lance R. David (FMSC)
+!     Function name was used as variable name.
+!     changed variable INT to INCRS
+!----------------------------------------------------------------------
+!
+!OMMONS
+
+INCLUDE 'PRGPRM.f90'
+
+INCLUDE 'MPBCOM.f90'
+!
+!OMMONS
+!
+DATA  JOMPB  / 7 /
+
+DATA IPLTNO/ 1 /,IMPROB/ 1 /,NATR/ 2 /, KEYMPB/ 2,3,6*0,1 /, &
+        INCRS/ 10 /
+
+!----------
+! vv---- MPB surface area calculation surrogate specie (surfce.f)
+! !!   SPECIES LIST FOR SORNEC-33 VARIANT.
+! !!
+! WP   1 = WESTERN WHITE PINE (WP)          PINUS MONTICOLA
+! WP   2 = SUGAR PINE (SP)                  PINUS LAMBERTIANA
+! DF   3 = DOUGLAS-FIR (DF)                 PSEUDOTSUGA MENZIESII
+! DF   4 = WHITE FIR (WF)                   ABIES CONCOLOR (SO - WF/GF)
+! WL   5 = MOUNTAIN HEMLOCK (MH)            TSUGA MERTENSIANA
+! WL   6 = INCENSE CEDAR (IC)               LIBOCEDRUS DECURRENS
+! LP   7 = LODGEPOLE PINE (LP)              PINUS CONTORTA
+! WP   8 = ENGLEMAN SPRUCE (ES)             PICEA ENGELMANNII
+! DF   9 = SHASTA RED FIR (SH)              ABIES MAGNIFICA (SHASTENSIS)(FROM CA)
+! PP  10 = PONDEROSA PINE (PP)              PINUS PONDEROSA
+! WL  11 = WESTERN JUNIPER (JU)             JUNIPERUS OCCIDENTALIS
+! DF  12 = GRAND FIR (GF)                   ABIES GRANDIS (SO - WF/GF)
+! DF  13 = SUBALPINE FIR (AF)               ABIES LASIOCARPA
+! DF  14 = PACIFIC SILVER FIR (SF)          ABIES AMABILIS (FROM EC)
+! DF  15 = NOBLE FIR (NF)                   ABIES PROCERA (FROM WC)
+! WL  16 = WHITEBARK PINE (WB)              PINUS ALBICAULIS (FROM TT)
+! WL  17 = WESTERN LARCH (WL)               LARIX OCCIDENTALIS (FROM EC)
+! WL  18 = WESTERN REDCEDAR (RC)            THUJA PLICATA (FROM EC)
+! DF  19 = WESTERN HEMLOCK (WH)             TSUGA HETEROPHYLLA (FROM WC)
+! WL  20 = PACIFIC YEW (PY)                 TAXUS BREVIFOLIA (FROM WC)
+! WL  21 = WHITE ALDER (WA)                 ALNUS RHOMBIFOLIA (FROM WC)
+! WL  22 = RED ALDER (RA)                   ALNUS RUBRA (FROM WC)
+! DF  23 = BIGLEAF MAPLE (BM)               ACER MACROPHYLLUM (FROM WC)
+! DF  24 = QUAKING ASPEN (AS)               POPULUS TREMULOIDES (FROM UT)
+! DF  25 = BLACK COTTONWOOD (CW)            POPULUS TRICHOCARPA (FROM WC)
+! DF  26 = BITTER CHERRY (CH)               PRUNUS EMARGINATA (FROM WC)
+! DF  27 = OREGON WHITE OAK (WO)            QUERCUS GARRYANA (FROM CA)
+! DF  28 = WILLOW (WI)                      SALIX sp. (FROM WC)
+! DF  29 = GIANT CHINKAPIN (GC) /           CASTANOPSIS CHRYSOPHYLLA (FROM WC)
+! DF  30 = CURL-LEAF MOUNTAIN MAHOGANY (MC) CERCOCARPUS LEDIFOLIUS (FROM WC)
+! DF  31 = BIRCHLEAF MOUNTAIN MAHOGANY (MB) CERCOCARPUS ALNIFOLIUS (FROM WC)
+! WL  32 = OTHER SOFTWOODS (OS)             DOUGLAS-FIR (DF) (FROM SO)
+! DF  33 = OTHER HARWOODS (OH)              MISCELLANEOUS HARDWOOD (FROM WC)
+!----------
+
+DATA IDXWP,IDXWL,IDXDF,IDXLP,IDXPP/1,17,3,7,10/
+
+!     Assign surrogate species for the calculations in surfce.f
+DATA MPBSPM/ &
+       1,  1,  3,  3, 17, 17,  7,  1,  3, 10, 17, &
+!        12  13  14  15  16  17  18  19  20  21  22
+!        GF, AF, SF, NF, WB, WL, RC, WH, PY, WA, RA,
+       3,  3,  3,  3, 17, 17, 17,  3, 17, 17, 17, &
+!        23  24  25  26  27  28  29  30  31  32  33
+!        BM, AS, CW, CH, WO, WI, GC, MC, MB, OS, OH
+       3,  3,  3,  3,  3,  3,  3,  3,  3, 17,  3 /
+
+END

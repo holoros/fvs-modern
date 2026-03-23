@@ -1,0 +1,102 @@
+SUBROUTINE BMDAM (II,ICODES)
+!----------
+! WWPB $Id$
+!----------
+!
+!  THIS ROUTINE PROCESSES THE MOUNTAIN PINE BEETLE DAMAGE CODES.
+!  FOR THE WESTWIDE PINE BEETLE MODEL. THE ASSUMPTION IS THAT
+!  ATTACKS ARE ON LODGEPOLE PINE ONLY (THIS IS NOT CHECKED) THAT
+!  TREES MUST BE ALIVE, AND THAT THE ATTACK MUST HAVE HAPPENED
+!  WITHIN THE LAST (DEFAULT MODIFIABLE BY KEYWORD BMDAMAGE) TWO
+!  YEARS PRIOR TO THE FIRST PPE MASTER CYCLE.
+!
+!  CALLED BY :
+!     DAMCDS  [PROGNOSIS]
+!
+!  CALLS     :
+!     DBCHK   (SUBROUTINE)   [PROGNOSIS]
+!
+!  PARAMETERS :
+!     II     - TREE POINTER FOR LIVE AND DEAD TREES.
+!     ICODES - DISEASE AND DAMAGE CODES ARRAY.
+!
+!  LOCAL VARIABLES :
+!
+!
+!  COMMON BLOCK VARIABLES USED :
+!
+!  Revision History :
+!  07/28/00 AJM:
+!    Reading of damage codes changed so that damage codes 1, 2, 5
+!    are used and recognized instead of 3.
+!  07/10/07 - Lance R. David (FHTET)
+!    Time at which damage codes are processed is now at the end of
+!    keyword processing instead of during the reading of tree data.
+!    So, tree data items that were passed as arguments are now
+!    available from the FVS common area. Original arguments were:
+!    (II,IITH,ICODES)
+!    FVS array IMC(II) is used as replacement for input tree history
+!    code (IITH).
+!    No need for special handling of dead tree index (IREC2) because
+!    dead trees are already at the end of the arrays. Argument II is
+!    correct index value for both live and dead.
+!----------
+!
+!
+!OMMONS
+!
+!
+INCLUDE 'PRGPRM.f90'
+INCLUDE 'PPEPRM.f90'
+INCLUDE 'ARRAYS.f90'
+INCLUDE 'CONTRL.f90'
+INCLUDE 'PPCNTL.f90'
+
+INCLUDE 'BMPRM.f90'
+INCLUDE 'BMCOM.f90'
+
+LOGICAL DEBUG
+DIMENSION ICODES(6)
+
+!     SEE IF WE NEED TO DO SOME DEBUG.
+
+CALL DBCHK (DEBUG,'BMDAM',5,ICYC)
+IF (DEBUG) WRITE (JOSTND,*) ' ** IN BMDAM'
+
+LBMDAM(II) = .FALSE.
+
+!     SEE IF THE INVENTORY IS WANTED FOR INITIALIZING THE MODEL.
+!     OTHERWISE BRANCH TO END
+
+IF (.NOT. LINVON) GOTO 9000
+
+!     SEE IF THE INVENTORY YEAR IS RECENT ENOUGH TO USE THIS INVENTORY FOR
+!     INITIALIZING THE MODEL. OTHERWISE BRANCH TO END.
+
+IF ((MIY(1) - IY(1)) .GT. DEDYRS) GOTO 9000
+
+!     PROCESS TREE RECORD. DEAD TREES ARE EXCLUDED, AND ONLY
+!     BOLE ATTACKS (OR NOTHING RECORDED) ARE VALID. LOADING VALUES
+!     INTO THE ARRAY WORKS BECAUSE *ALL* INVENTORIED STANDS ARE PART
+!     OF THE DISPERSAL PROCESS. THEREFORE WHEN THE DISPERSAL STANDS
+!     ARE RECORDED DURING THE READING OF THE INVENTORY, THERE WILL
+!     BE A PROPER CORRESPONDENCE BETWEEN 'ISTND', WHICH IS
+!     INCREMENTED IN PPMAIN, AND IS USED TO ASSIGN THE STAND NUMBER
+!     VIA A CALL TO GPADSD IN INSTND. THE LOGICAL FLAG IS USED IN
+!     BM??? TO CONVERT A TREES/ACRE ATTACK FOR THE BMKILL ARRAY.
+
+IF (IMC(II) .LT. 7 .OR. IMC(II) .GT. 9) THEN
+  DO 100 J=1,5,2
+    K1 = ICODES(J)
+    K2 = ICODES(J+1)
+    IF ((K1 .EQ. 1 .OR. K1 .EQ. 2 .OR. K1 .EQ. 5 .OR. &
+            K1 .EQ. 6) .AND. (K2 .EQ. 0 .OR. K2 .EQ. 3)) THEN
+      LBMDAM(II) = .TRUE.
+    ENDIF
+100   CONTINUE
+ENDIF
+
+9000 CONTINUE
+
+RETURN
+END

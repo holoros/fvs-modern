@@ -1,0 +1,16 @@
+PUBLIC DOMAIN NOTICE
+
+This software is a derivative work of the Forest Vegetation Simulator (FVS),
+originally developed by the USDA Forest Service. As a work of the United States
+Government, the original FVS source code is not subject to copyright protection
+in the United States under 17 U.S.C. § 105.
+
+Modifications in this fork (fvs-modern) are contributed to the public domain
+under the same terms.
+
+This software is provided "as is" without warranty of any kind, express or
+implied, including but not limited to the warranties of merchantability,
+fitness for a particular purpose, and noninfringement.
+
+For the original USDA FVS source, see:
+https://github.com/USDAForestService/ForestVegetationSimulator

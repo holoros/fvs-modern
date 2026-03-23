@@ -1,0 +1,22 @@
+BLOCK DATA DBSBLKD
+!
+! DBS $Id$
+!
+!     INITIALIZE DATABASE VARIABLES
+!
+!OMMONS
+!
+!
+INCLUDE 'DBSCOM.f90'
+!
+!
+!OMMONS
+!
+DATA DSNOUT/'FVSOut.mdb'/
+DATA ConnHndlOut/-1/
+DATA EnvHndlOut/-1/
+DATA DSNIN/'FVSIn.mdb'/
+DATA ConnHndlIn/-1/
+DATA EnvHndlIn/-1/
+
+END

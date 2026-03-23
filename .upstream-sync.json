@@ -1,0 +1,8 @@
+{
+  "fvs_last_sha": "b183c10f",
+  "fvs_last_date": "2025-11-06",
+  "iface_last_sha": "4d9e3c30",
+  "iface_last_date": "2025-09-30",
+  "last_sync": "2026-03-22",
+  "notes": "Baseline from fvs-modern initial build. USFS FVS last commit: Staging (#54), Interface last commit: staging merge."
+}

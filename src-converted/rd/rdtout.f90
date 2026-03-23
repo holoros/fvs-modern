@@ -1,0 +1,118 @@
+SUBROUTINE RDTOUT
+IMPLICIT NONE
+!----------
+! RD $Id$
+!----------
+!
+!  PRINTS A SUMMARY OF THE DISEASE INFORMATION WHICH WAS READ IN
+!  FROM THE TREELIST.
+!
+!  CALLED BY :
+!     INITRE  [PROGNOSIS] -NOT ANY MORE
+!     RDMN1   [ROOT DISEASE]
+!
+!  CALLS     :
+!     NONE
+!
+!  PARAMETERS :
+!     NONE
+!
+!  COMMON BLOCK VARIABLES :
+!     STCUT:   From ANCOM;
+!
+!
+!  LOCAL VARIABLES :
+!
+!
+!  Revision History:
+!   06/12/13 Lance R. David (FMSC)
+!     Modified for removal of "print control" column 1.
+!   09/04/14 Lance R. David (FMSC)
+!     Added implicit none and declared variables.
+!
+!----------------------------------------------------------------------
+!
+!.... PARAMETER INCLUDE FILES
+!
+INCLUDE 'PRGPRM.f90'
+INCLUDE 'RDPARM.f90'
+!
+!.... COMMON INCLUDE FILES
+!
+INCLUDE 'CONTRL.f90'
+INCLUDE 'RDCOM.f90'
+INCLUDE 'RDARRY.f90'
+INCLUDE 'RDADD.f90'
+INCLUDE 'METRIC.f90'
+
+INTEGER IDI, J
+CHARACTER*1 DITYPE(4)
+!
+!.... DATA statements
+!
+DATA DITYPE/'P','S','A','W'/
+!
+!     WRITE HEADING FOR OUTPUT
+!
+WRITE (JOSTND,1000)
+1000 FORMAT (/,130('-'))
+WRITE (JOSTND,1010)
+1010 FORMAT (/,42X,'SUMMARY OF DISEASE INFORMATION READ IN ON', &
+          ' INPUT')
+WRITE (JOSTND,1000)
+
+DO 90 IDI=MINRR,MAXRR
+   WRITE (JOSTND,1020) DITYPE(IDI)
+1020    FORMAT (/,11X,'DISEASE TYPE: ',A1)
+
+   IF (RRTINV) THEN
+      WRITE (JOSTND,1030) RINNF(IDI), RINUF(IDI), RISTU(IDI)
+1030       FORMAT (11X, 'NUMBER OF INFECTED TREE RECORDS IN ', &
+             'DISEASE PATCHES=  ', F6.0/ &
+             11X, 'NUMBER OF UNINFECTED TREE RECORDS IN ', &
+             'DISEASE PATCHES=', F6.0/ &
+             11X, 'NUMBER OF INFECTED STUMP RECORDS IN ', &
+             'DISEASE PATCHES= ', F6.0)
+   ENDIF
+   WRITE (JOSTND,1040)
+   WRITE (JOSTND,1050)
+   WRITE (JOSTND,1060)
+
+1040    FORMAT (/,11X, '        NUMBER OF INFECTED STUMPS         ')
+1050    FORMAT (/,11X, 'SIZE CLASS      RESINOUS      NON-RESINOUS')
+1060    FORMAT (11X,   '------------------------------------------')
+
+   DO 50 J = 1,5
+      IF (LMTRIC) THEN
+        IF (J.LT.5) THEN
+           WRITE (JOSTND,1071) &
+               NINT(STCUT(J)*INTOCM), NINT(STCUT(J+1)*INTOCM), &
+               PROBDA(IDI,1,J,1), PROBDA(IDI,2,J,1)
+        ELSE
+           WRITE (JOSTND,1081) NINT(STCUT(J)*INTOCM), &
+               PROBDA(IDI,1,J,1), PROBDA(IDI,2,J,1)
+        ENDIF
+      ELSE
+        IF (J.LT.5) THEN
+           WRITE (JOSTND,1070) &
+               NINT(STCUT(J)), NINT(STCUT(J+1)), &
+               PROBDA(IDI,1,J,1), PROBDA(IDI,2,J,1)
+        ELSE
+           WRITE (JOSTND,1080) NINT(STCUT(J)), &
+               PROBDA(IDI,1,J,1), PROBDA(IDI,2,J,1)
+        ENDIF
+      ENDIF
+1070       FORMAT (12X,I2,'-',I3,'"',6X,F5.0,10X,F5.0)
+1080       FORMAT (12X,'  >',I3,'"',6X,F5.0,10X,F5.0)
+1071       FORMAT (12X,I3,'-',I3,' CM',5X,F5.0,10X,F5.0)
+1081       FORMAT (12X,'   >',I3,' CM',5X,F5.0,10X,F5.0)
+50    CONTINUE
+
+90 CONTINUE
+!
+!     PRINT DELIMITER FOR END OF OUTPUT
+!
+WRITE (JOSTND,1000)
+
+RETURN
+END

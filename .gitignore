@@ -1,0 +1,47 @@
+# Build artifacts
+*.o
+*.mod
+*.so
+*.dylib
+*.dll
+*.exe
+bin/FVS*_buildDir/
+
+# R package build artifacts
+*.Rcheck/
+*.tar.gz
+man/*.Rd
+!deployment/config/*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Docker build context
+deployment/docker/.env
+
+# Sync state (user-specific)
+.fvs-modern/
+
+# Test output
+tests/**/run_*/
+*.sum.new
+regression_results/
+
+# Large data files
+*.mdb
+*.accdb
+*.db
+!tests/**/*.db

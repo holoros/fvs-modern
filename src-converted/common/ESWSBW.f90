@@ -1,0 +1,18 @@
+!ODE SEGMENT ESWSBW
+!----------
+! COMMON $Id$
+!----------
+!
+INTEGER NBWHST
+!
+INTEGER IBWHST(2,20)
+!
+COMMON /ESWSBW/ IBWHST,NBWHST
+!
+!----------
+!  VARIABLE DEFINITIONS:
+!----------
+!  IBWHST --
+!  NBWHST --
+!
+!-----END SEGMENT

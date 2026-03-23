@@ -1,0 +1,60 @@
+# =============================================================================
+# FVS-Online Docker Compose
+#
+# Usage:
+#   1. Place ForestVegetationSimulator-main/ and
+#      ForestVegetationSimulator-Interface-main/ alongside this file
+#      (or adjust the build context path)
+#
+#   2. Build and start:
+#      docker compose up --build -d
+#
+#   3. Access:
+#      FVS-Online:      http://localhost:3838
+#      Project Builder:  http://localhost:3839
+#
+#   4. Run tests:
+#      docker compose run --rm fvsonline test
+#      docker compose run --rm fvsonline simulate
+# =============================================================================
+
+services:
+
+  fvsonline:
+    build:
+      context: ../..
+      dockerfile: deployment/docker/Dockerfile
+    image: fvs-online:latest
+    container_name: fvsonline
+    ports:
+      - "${FVS_PORT:-3838}:3838"
+    volumes:
+      - fvs-projects:/srv/fvs/projects
+    environment:
+      - FVS_PORT=3838
+      - FVS_HOST=0.0.0.0
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3838/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # Uncomment to add nginx reverse proxy with SSL
+  # nginx:
+  #   image: nginx:alpine
+  #   container_name: fvs-nginx
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #   volumes:
+  #     - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+  #     - /etc/letsencrypt:/etc/letsencrypt:ro
+  #   depends_on:
+  #     - fvsonline
+  #   restart: unless-stopped
+
+volumes:
+  fvs-projects:
+    driver: local

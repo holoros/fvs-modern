@@ -1,0 +1,23 @@
+FUNCTION SURFLP (DBH)
+IMPLICIT NONE
+!----------
+! LPMPB $Id$
+!----------
+!
+!     PART OF THE MOUNTAIN PINE BEETLE EXTENSION OF PROGNOSIS SYSTEM.
+!
+!     CALCULATES THE SURFACE AREA OF LPP.
+!     FUNCTION IS FROM DON BURNELL.
+!
+!
+! Revision History
+!   02/08/88 Last noted revision date.
+!   07/02/10 Lance R. David (FMSC)
+!     Added IMPLICIT NONE.
+!----------
+REAL DBH, SURFLP
+
+SURFLP = DBH  *  0.672
+IF ( DBH .GT. 5.0 ) SURFLP = 8.835 * DBH - 40.82
+RETURN
+END

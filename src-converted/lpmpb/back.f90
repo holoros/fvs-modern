@@ -1,0 +1,39 @@
+DOUBLE PRECISION FUNCTION BACK  (X,P,Q,Z,N)
+IMPLICIT NONE
+!----------
+! LPMPB $Id$
+!----------
+!
+!     PART OF THE MOUNTAIN PINE BEETLE EXTENSION OF PROGNOSIS SYSTEM.
+!
+!
+! Revision History
+!   02/08/88 Last noted revision date.
+!   07/02/10 Lance R. David (FMSC)
+!     Added IMPLICIT NONE.
+!----------
+INCLUDE 'MPBETA.f90'
+INTEGER N
+DOUBLE PRECISION P,Q,R,T,U,X,Z,AP,FN,Q1,XN,XNU
+
+BACK = Z
+IF(N.EQ.0) RETURN
+Q1 = Q-1.
+AP = Z
+FN = N
+XNU = N+N+6
+1 XN = XNU
+R = 0.
+BACK = Z
+2 XN = XN-1
+T = P + XN
+U = (T+Q1)*X
+R = U/(U+T-T*R)
+IF(XN .LE. FN) BACK = R*BACK
+IF(BACK .LT. BMIN)RETURN
+IF(XN.GT.1.) GO TO 2
+IF(DABS(BACK-AP) .LT. DABS(EPS*BACK))RETURN
+AP = BACK
+XNU = XNU+5.
+GO TO 1
+END

@@ -1,0 +1,47 @@
+SUBROUTINE RDTRP (LTRP)
+IMPLICIT NONE
+!----------
+! RD $Id$
+!----------
+!
+!  SUBROUTINE WHICH RETURNS LTRP TO INDICATE WHETHER TRIPLING WILL
+!  OCCUR IN THE CONTEXT OF THE ROOT DISEASE MODEL.  IF TRIPLING WILL
+!  RESULT IN MORE THAN IRRTRE TREE RECORDS BEING CREATED THEN
+!  TRIPLING IS SUPPRESSED.
+!
+!  CALLED BY :
+!     GRINCR  [PROGNOSIS]
+!
+!  CALLS     :
+!     RDATV   (SUBROUTINE)   [ROOT DISEASE]
+!
+!  PARAMETERS :
+!     LTRP   -
+!
+!  Revision History:
+!   11/06/89 - Last revision date.
+!   09/04/14 Lance R. David (FMSC)
+!     Added implicit none and declared variables.
+!
+!----------------------------------------------------------------------
+!
+!OMMONS
+!
+INCLUDE 'PRGPRM.f90'
+INCLUDE 'RDPARM.f90'
+INCLUDE 'CONTRL.f90'
+!
+!OMMONS
+!
+
+LOGICAL LTRP, LGO, LTEE
+INTEGER ILIM
+
+CALL RDATV (LGO,LTEE)
+IF (LGO) THEN
+   ILIM = IRRTRE / 3
+   LTRP = (ICYC .LE. ICL4 .AND. ITRN .LE. ILIM .AND. .NOT. NOTRIP)
+ENDIF
+
+RETURN
+END

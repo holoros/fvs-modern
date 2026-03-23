@@ -1,0 +1,42 @@
+Subject: Event Monitor activity expansion
+
+Name: Lance David
+
+Date: 04/18/2025
+
+Variants affected: All
+
+Description: Expanded the number of activities the Event Monitor can handle. The number of
+             activities that can be scheduled and executed in a single cycle has not been
+             changed, only the total number of activities that can be done for a complete
+             projection. Projections that reported "FVS10 ERROR:  OPTION/ACTIVITY STORAGE
+             AREA IS FULL" may still generate this error but the projection will succeed
+             for additional cycles. The number of additional cycles will depend on the
+             specific events or activities that are involved in a single cycle.
+
+Impact on users: Performance of events and activities for additional cycles.
+
+Files:
+common\OPCOM.F77 - Increased MAXACT from 2000 to 4000 and MAXPRM from 5999 to 7999.
+                   MAXPRM cannot be increased further due to constraints with hard coded
+                   value ranges for variable INSTR in evldx.f
+
+base\evldx.f - Changed upper limit range for INSTR from 7000 to 9000 at line 74.
+               To increase this value any further interferes with other processing as INSTR
+               is used to determine what kind of instruction of performed.
+
+base\evmkv.f - Additional information associated with FVS10 error written to output.
+
+base\evusrv.f - Additional information associated with FVS10 error written to output.
+
+base\opadd.f - Additional information associated with FVS10 error written to output.
+
+base\opcact.f - Additional information associated with FVS10 error written to output.
+
+base\opeval.f - Additional debug added.
+
+base\opexpn.f - Additional information associated with FVS10 error written to output.
+
+base\opmerg.f - Additional information associated with FVS10 error written to output.
+
+base\opnew.f - Additional debug added.

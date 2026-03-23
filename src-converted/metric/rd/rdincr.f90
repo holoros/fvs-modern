@@ -1,0 +1,3053 @@
+SUBROUTINE RDIN(PASKEY,ARRAY,LNOTBK,LKECHO)
+!----------
+! METRIC-RD $Id$
+!----------
+!
+!  Purpose :
+!     This is the master routine for reading in root disease keywords.
+!
+!     Format statements that handle I/O based on number of species (MAXSP)
+!     must be changed from 11 to 24 for Central Rockies variant.
+!     Those format statements are:  606, 711, 1321, 2921, 3963
+!
+!  Called By :
+!     INITRE  [PROGNOSIS]
+!
+!  Calls :
+!     DBCHK   (SUBROUTINE)   [PROGNOSIS]
+!     KEYRDR  (SUBROUTINE)   [PROGNOSIS]
+!     ERRGRO  (SUBROUTINE)   [PROGNOSIS]
+!     FNDKEY  (SUBROUTINE)   [PROGNOSIS]
+!     OPNEW   (SUBROUTINE)   [PROGNOSIS]
+!     RCDSET  (SUBROUTINE)   [PROGNOSIS]
+!     MYOPEN  (SUBROUTINE)   [PROGNOSIS]
+!     SPDECD  (SUBROUTINE)   [PROGNOSIS]
+!     RDROOT  (SUBROUTINE)   [ROOT DISEASE]
+!     RDSSIZ  (SUBROUTINE)   [ROOT DISEASE]
+!     RDSTP   (SUBROUTINE)   [ROOT DISEASE]
+!
+!  Entry Points :
+!     RDKEY
+!
+!  Arguments :
+!     PASKEY - RETURNS TO THE CALLING ROUTINE THE KEYWORD FROM ARRAY
+!              TABLE FOR INDEX VALUE IN PARAMETER KEY OF ENTRY POINT
+!              RDKEY.
+!     ARRAY  - ARRAY OF 7 ELEMENTS THAT HOLDS THE FIELD VALUES READ IN
+!              FROM THE KEYWORD
+!     LNOTBK - ELEMENT IS TRUE IF FIELD IS NOT BLANK
+!
+!  Local Variables :
+!
+!  Common Block Variables Used :
+!
+!  Revision History :
+!     05/01/97 - Matthew K. Thompson (FHTET)
+!                Fixed an error with setting the disease type in the
+!                PLOTINF keyword.
+!     05/28/97 - Matthew K. Thompson (FHTET)
+!                Removed keyword DATELIST and call to subroutine RDTLS.
+!     10/21/97 - Added the code to set IRTSPC for the Central Rockies
+!                variant.
+!     06/02/98 - Robert Nathan Havis (FHTET)
+!                Put in warning message print to output file when RRTYPE
+!                is not used to specify disease and default disease type,
+!                annosus is used. new logical (LRTYPE)
+!     01/18/00 - Lance David (FHTET)
+!                Inserted a keyword spaceholder in position 27 of array
+!                TABLE and increased the array size to 42. Removal of the
+!                keyword that occupied this space and reducing the array
+!                size (possibly mod dated 05/38/97) caused the FVS option
+!                processor to report the wrong keyword in the Activity
+!                Schedule and Summary reports for all Root Disease activity
+!                keywords in positions 27-42 of array TABLE.
+!     03/20/00 - Lance David (FHTET)
+!                Fixed additional format statments to handle I/O for 24
+!                species. Keywords affected were RRHOSTS and INFKILL.
+!                Replaced the literals in option processor calls with
+!                references to array MYACT.
+!     08/03/00 - Nick Crookston (RMRS)
+!                Fixed up some format statements. (Who coded the old
+!                H edit discriptor in 907?).
+!  16-MAY-01 Lance R. David (FHTET)
+!     Added use of FVS subroutine UPCASE to eliminate case sensitivity in
+!     COMMENT's "END" keyword processing.
+!  06-JUL-01 Lance R. David (FHTET)
+!     Moved several local variables (IDOBB, LBBON and LRTYPE) to RDCOM
+!     and their initialization to RDINIT.
+!     The purpose of this change is to allow RD keywords to occur
+!     in multiple sets/blocks within the FVS keyword set. That means the
+!     that certain variables cannot be re-initialized each time this
+!     routine is entered which is triggered by the RDIN keyword.
+!  06-AUG-01 Lance R. David (FHTET)
+!     Handling of tree specie code, number and alpha, (ISPC and KARD(2)) for
+!     BBTYPEx keywords were not set when field 2 of keyword was blank. This
+!     was a problem (undefined variable) for the keyword reporting statements.
+!  13-AUG-02 Lance R. David (FHTET)
+!     Added call to FVS routine GETSED in processing of RSEED keyword
+!     for random seeding of the random number generator when field 1 is 0.
+!  10-NOV-2003 - Lance R. David (FHTET)
+!     Added LFLAG to KEYRDR call statement argument list.
+!  29-MAR-2005 Lance R. David (FHTET)
+!     Made RD available to CR Model Type 2. The fact that it was not enabled
+!     was overlooked during the processes of implementing CR 24 species and
+!     RD v3.0.
+!  04-JAN-2006 Lance R. David (FHTET)
+!     Changed error message and process for END keyword so that FVS
+!     simulation continues instead of terminating when initialization
+!     instructions are incomplete.
+!..........................................................................
+!
+!.... Parameter include files.
+
+INCLUDE 'PRGPRM.f90'
+INCLUDE 'RDPARM.f90'
+
+!.... Common include files.
+
+INCLUDE 'CONTRL.f90'
+INCLUDE 'PLOT.f90'
+INCLUDE 'RDCOM.f90'
+INCLUDE 'RDARRY.f90'
+INCLUDE 'ARRAYS.f90'
+INCLUDE 'RDADD.f90'
+INCLUDE 'METRIC.f90'
+
+!.... Local variable declarations.
+
+LOGICAL      DEBUG
+LOGICAL      LNOTBK(7),LINIT,LKECHO
+
+CHARACTER*16 RRJSP(ITOTSP)
+CHARACTER*12 DISTYP(0:ITOTRR)
+CHARACTER*10 KARD(7), T1, T2, T3
+CHARACTER*8  TABLE(42), KEYWRD, PASKEY
+CHARACTER*4  C4TMP
+CHARACTER*80 RECORD
+
+INTEGER MYACT(9)
+
+DIMENSION    ARRAY(7), PRMS(10), IHST(MAXSP)
+
+!.... Data Statements.
+!
+!.... 1-SPREAD  2-PSTUMP 3-WINDTHR 4-BBTYPE1 5-BBTYPE2
+!.... 6-BBTYPE3 7-BORATE 8-SPORE   9-BBTYPE4
+
+DATA MYACT / 2401, 2403, 2414, 2415, 2416, &
+                2417, 2430, 2431, 2432 /
+
+DATA DISTYP /'NON-HOST    ','P-TYPE ANOS.','S-TYPE ANOS.', &
+                'ARMILLARIA  ','PHELLINUS   '/
+
+DATA RRJSP /'      WHITE PINE', '   WESTERN LARCH', &
+               '     DOUGLAS-FIR', '       GRAND FIR', &
+               ' WESTERN HEMLOCK', '     W. R. CEDAR', &
+               '  LODGEPOLE PINE', '       E. SPRUCE', &
+               '   SUBALPINE FIR', '  PONDEROSA PINE', &
+               'MOUNTAIN HEMLOCK', '      SUGAR PINE', &
+               '       WHITE FIR', '   INCENSE-CEDAR', &
+               '         RED FIR', '   P. SILVER FIR', &
+               '  OTHER SOFTWOOD', '  OTHER HARDWOOD', &
+               '           ASPEN', '     BLUE SPRUCE', &
+               '        CORKBARK', ' WHITE BARK PINE', &
+               '     LIMBER PINE', '      COTTONWOOD', &
+               '    WHITE SPRUCE', '         JUNIPER', &
+               '  OTHER CONIFERS', '   GIANT SEQUOIA', &
+               '       BLACK OAK', '           OTHER', &
+               '    JEFFERY PINE', 'TANOAK/CHINKAPIN', &
+               '          PINYON', '    YELLOW CEDAR', &
+               '        RED WOOD', ' SUBALPINE LARCH', &
+               '  KNOBECONE PINE', '     PACIFIC YEW', &
+               '       NOBLE FIR', '        NON-HOST'/
+
+DATA TABLE &
+      /'SPREAD',   'CARRY',    'PSTUMP',   'OPEN',    'RRINIT', &
+       'TTDMULT',  'INFMULT',  'INFSIMS',  'END',     'SAREA', &
+       'COMMENT',  'RRDOUT',   'INFKILL',  'WINDTHR', 'BBTYPE1', &
+       'BBTYPE2',  'BBTYPE3',  'INOCSPAN', 'RRCOMP',  'RRECHO', &
+       'STREAD',   'TDISTN',   'RRJUMP',   'RRMINK',  'RSEED', &
+       'PLREAD',   '--RDv3--', 'RRTREIN',  'INFCOLO', 'BORATE', &
+       'SPORE',    'BBTYPE4',  'DNSCALC',  'SMCOUT',  'BBOUT', &
+       'PLOTINF',  'SDIRMULT', 'TIMEDEAD', 'RRHOSTS', 'INOCLIFE', &
+       'BBCLEAR',  'RRTYPE' /
+
+!     DATA TABLE, alphabetically by keyword
+!
+!     keyword  array index
+!
+!     --RDv3--  27    Put in as a place holder. If removed, indexing in FVS
+!                     option processor routines must also be corrected.
+!     BBCLEAR   41
+!     BBOUT     35
+!     BBTYPE1   15
+!     BBTYPE2   16
+!     BBTYPE3   17
+!     BBTYPE4   32
+!     BORATE    30
+!     CARRY      2     Not used in Annosus model
+!     COMMENT   11
+!     DNSCALC   33
+!     END        9
+!     INFCOLO   29
+!     INFKILL   13
+!     INFMULT    7
+!     INFSIMS    8
+!     INOCLIFE  40
+!     INOCSPAN  18
+!     OPEN       4
+!     PLOTINF   36
+!     PLREAD    26
+!     PSTUMP     3
+!     RRCOMP    19
+!     RRDOUT    12
+!     RRECHO    20
+!     RRHOSTS   39
+!     RRINIT     5
+!     RRJUMP    23
+!     RRMINK    24
+!     RRTREIN   28
+!     RRTYPE    42
+!     RSEED     25
+!     SAREA     10
+!     SDIRMULT  37
+!     SMCOUT    34
+!     SPREAD     1
+!     SPORE     31
+!     STREAD    21
+!     TDISTN    22
+!     TIMEDEAD  38
+!     TTDMULT    6
+!     WINDTHR   14
+
+IROOT = 1
+ISIZE = 42
+
+!     The array IRTSPC is used to index the species dependent arrays
+!     HABFAC, PNINF, PKILLS, RRJSP, ISPS, DBIFAC, HTIFAC, PROOT,
+!     RSLOP, ROWDOM, ROWIBP, RRPSWT, SSSFAC.  In the root disease model
+!     the defaults for these variables are indexed as follows :
+!
+!     SPECIES #|  1 |  2 |  3 |  4 |  5 |  6 |  7 |  8 |  9 | 10 |
+!     SPECIES  | WP | WL | DF | GF | WH |  C | LP |  S | AF | PP |
+!
+!     SPECIES #| 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 |
+!     SPECIES  | MH | SP | WF | IC | RF | SF | OS | OH | AS | BS |
+!
+!     SPECIES #| 21 | 22 | 23 | 24 | 25 | 26 | 27 | 28 | 29 | 30 |
+!     SPECIES  | CB | WB | LM | CW | WS | J  | OC | GS | BO | OTH|
+!
+!     SPECIES #| 31 | 32 | 33 | 34 | 35 | 36 | 37 | 38 | 39 | 40 |
+!     SPECIES  | JP | TO | P  | YC | RW | LL | KP | PY | NF | NH |
+!
+!     IRTSPC can be modified for different variants of FVS so
+!     that species match between the FVS model and the root
+!     disease model.
+!
+!     For the Central Rockies variant (CR) set the species mapping
+!     array IRTSPC based on the model type.  In the other
+!     variants of FVS IRTSPC is set in the variant dependent
+!     subroutine RDBLK1
+!
+!     This was changed when the species list was increased to 24 species,
+!     making the species consistant across all model types.
+!     (RNH Dec98)
+!
+!  Model type 1 - Southwest mixed conifer
+!  Model type 2 - Southwest ponderosa pine
+!  Model type 3 - Black hills ponderosa pine
+!  Model type 4 - Spruce-fir
+!  Model type 5 - Lodgepole pine
+
+IF (IMODTY .LT. 1 .OR. IMODTY .GT. 5) THEN
+   WRITE(JOSTND,60)
+60    FORMAT (/,' ******** ERROR !!!   MODEL TYPE HAS NOT BEEN ', &
+              'SELECTED.  STDINFO KEYWORD IS REQUIRED BEFORE ROOT ', &
+              'DISEASE KEYWORDS.')
+   STOP 20
+ENDIF
+
+WRITE(JOSTND,50) IMODTY
+50 FORMAT(/,9X,'   CENTRAL ROCKIES MODEL TYPE ',I1,' IS BEING USED ', &
+          'FOR THE ROOT DISEASE MODEL.')
+
+!.... Load the passed keyword into KEYWRD.
+
+KEYWRD = PASKEY
+
+!.... See if we need to do some debug.
+
+CALL DBCHK(DEBUG,'RDIN',4,ICYC)
+
+90 CONTINUE
+
+!.... Call the keyword reader.
+
+CALL KEYRDR (IREAD,JOSTND,DEBUG,KEYWRD, &
+       LNOTBK,ARRAY,IRECNT,KODE,KARD,LFLAG)
+
+!.... PROCESS ERRORS
+! ... RETURN CODES 0=NO ERROR 1=COLUMN 1 BLANK 2=EOF
+
+IF (KODE .EQ. 0) GOTO 80
+IF (KODE .EQ. 2) CALL ERRGRO (.FALSE.,2)
+CALL ERRGRO (.TRUE.,6)
+GOTO 90
+
+80 CONTINUE
+CALL FNDKEY (NUMBER,KEYWRD,TABLE,ISIZE,KODE,DEBUG,JOSTND)
+
+!.... RETURN CODES 0=NO ERROR 1=KEYWORD NOT FOUND 2=MISSPELLING
+
+IF (KODE .EQ. 0) GOTO 51
+IF (KODE .EQ. 1) THEN
+   CALL ERRGRO (.TRUE.,1)
+   GOTO 90
+ENDIF
+
+51 CONTINUE
+
+!.... PROCESS THE KEYWORD
+
+GOTO (1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21, &
+     22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40, &
+     41,42), NUMBER
+
+1 CONTINUE
+!
+!  ==========  OPTION NUMBER 1: SPREAD ===============================
+!
+!     ARG 1 = YR OF CHANGE TO THESE PARAMETERS
+!     ARG 2 = 0, STATIC SPREAD MODEL
+!     ARG 2 = 1, DYNAMIC SPREAD MODEL
+!     ARG 2 = 2, DYNAMIC SPREAD MODEL WITH RATE AVERAGED
+!           EVALUATED ONLY IF ARG 2 = 0
+!     ARG 3 = X, SPREAD RATE FOR P TYPE CENTERS OR CURRENT ROOT
+!           DISEASE CENTERS
+!     ARG 4 = X, SPREAD RATE FOR S TYPE CENTERS
+!           ONLY USED IF ARG 2 > 0
+!     ARG 5 = Y  NUMBER OF MONTE CARLO SIMULATIONS FOR SPREAD
+!     ARG 6 = DISEASE TYPE :     1 = P-TYPE ANNOSUS
+!                                2 = S-TYPE ANNOSUS
+!                                3 = ARMILLARIA
+!                                4 = PHELLINUS
+!
+IDT = 1
+IPOINT = MINRR
+
+IF (LNOTBK(1)) IDT = INT(ARRAY(1))
+
+!.... SET WHICH ROOT DISEASE SPECIES SHOULD BE MODIFIED
+
+IF (LNOTBK(6)) IPOINT = INT(ARRAY(6))
+
+IRMIN = MINRR
+IRMAX = MAXRR
+
+IF (IPOINT .GT. 2) THEN
+   IRMIN = IPOINT
+   IRMAX = IPOINT
+ELSEIF (IPOINT .EQ. 0) THEN
+   IRMIN = 1
+   IRMAX = 2
+ENDIF
+
+PRMS(1) = IRSPTY
+PRMS(2) = RRRSET(IRMIN)
+PRMS(3) = RRRSET(IRMAX)
+PRMS(4) = NMONT
+
+IF (LNOTBK(5)) PRMS(4) = ARRAY(5)
+IF (PRMS(4) .LT. 0.0) PRMS(4) = 0.0
+IF (PRMS(4) .GT. 50.0) PRMS(4) = 50.0
+
+IF (LNOTBK(2)) PRMS(1) = ARRAY(2)
+IF (ARRAY(2) .EQ. 1.0) GOTO 150
+IF (ARRAY(2) .EQ. 2.0) GOTO 175
+
+!.... STATIC SPREAD MODEL
+
+IRSPTY = 0
+
+IF (LMTRIC) THEN
+   IF (LNOTBK(3)) PRMS(2) = ARRAY(3) * MTOFT
+   IF (LNOTBK(4)) PRMS(3) = ARRAY(4) * MTOFT
+ELSE
+   IF (LNOTBK(3)) PRMS(2) = ARRAY(3)
+   IF (LNOTBK(4)) PRMS(3) = ARRAY(4)
+ENDIF
+
+IF(LKECHO)WRITE(JOSTND,100) KEYWRD, IDT
+100 FORMAT(/1X,A8,'   STARTING IN YEAR: ',I5,'   USE THE STATIC ', &
+           'SPREAD MODEL')
+
+IF (LMTRIC) THEN
+   IF (IRMIN .EQ. IRMAX) THEN
+      IF(LKECHO)WRITE(JOSTND,113) DISTYP(IRMIN),PRMS(2) * FTTOM
+113       FORMAT(/T13, 'SPREAD FOR ',A12,F4.2,' M/YEAR')
+   ELSEIF (IRMAX .EQ. IRMIN + 1) THEN
+      IF(LKECHO)WRITE(JOSTND,114) DISTYP(IRMIN),PRMS(2) * FTTOM, &
+                           DISTYP(IRMAX),PRMS(3) * FTTOM
+114       FORMAT(/T13, 'SPREAD FOR ',A12,F4.2,' M/YEAR' / &
+                 T13, 'SPREAD FOR ',A12,F4.2,' M/YEAR')
+   ENDIF
+ELSE
+   IF (IRMIN .EQ. IRMAX) THEN
+      IF(LKECHO)WRITE(JOSTND,103) DISTYP(IRMIN),PRMS(2)
+103       FORMAT(/T13, 'SPREAD FOR ',A12,F4.2,' FEET/YEAR')
+   ELSEIF (IRMAX .EQ. IRMIN + 1) THEN
+      IF(LKECHO)WRITE(JOSTND,104) DISTYP(IRMIN),PRMS(2), &
+                           DISTYP(IRMAX),PRMS(3)
+104       FORMAT(/T13, 'SPREAD FOR ',A12,F4.2,' FEET/YEAR' / &
+                 T13, 'SPREAD FOR ',A12,F4.2,' FEET/YEAR')
+   ENDIF
+ENDIF
+GOTO 180
+
+150 CONTINUE
+
+!.... DYNAMIC SPREAD MODEL WITH A VARIETY OF SPREAD RATES USED
+
+IRSPTY = 1
+
+IF(LKECHO)WRITE(JOSTND,101) KEYWRD,IDT,INT(PRMS(4))
+101 FORMAT (/1X,A8,'   STARTING IN YEAR: ',I5,'  USE THE DYNAMIC ', &
+           'SPREAD MODEL (VARIABLE RATES).',/T13,'DO ', &
+            I4,'  SPREAD SIMULATIONS')
+GOTO 180
+
+175 CONTINUE
+
+!.... DYNAMIC SPREAD MODEL WITH AVERAGE SPREAD RATE APPLIED TO ALL
+!.... CENTERS
+
+IRSPTY = 2
+
+IF(LKECHO)WRITE(JOSTND,102) KEYWRD,IDT,INT(PRMS(4))
+102 FORMAT (/1X,A8,'   STARTING IN YEAR: ',I5,'  USE THE DYNAMIC ', &
+           'SPREAD MODEL (AVERAGE RATES).',/T13,'DO ', &
+            I4,'  SPREAD SIMULATIONS')
+180 CONTINUE
+
+CALL OPNEW (KODE,IDT,MYACT(1),4,PRMS)
+IF (KODE .GT. 0) GOTO 90
+
+GOTO 90
+
+2 CONTINUE
+!
+!  ==========  OPTION NUMBER 2: CARRY ================================
+!
+!     OPTION PROCESSING LOGIC FOR CARRYOVER MODEL IS CONTAINED IN
+!     SUBROUTINE DISEAS. DEFAULT IS STATIC CARRY MODEL.
+!
+!     ****NOT YET METRIFIED.  IF DECIDE TO USE, MUST ADD METRIC OPTIONS*
+!
+!     IF(LKECHO)WRITE(JOSTND,*) ' '
+!     IF(LKECHO)WRITE(JOSTND,*) 'CARRY      KEYWORD NOT USED IN GENERAL ROOT ',
+!    &                 'DISEASE MODEL'
+!     GOTO 90
+!
+!     ICRRY = 0
+!     IF (ARRAY(2) .GT. 0.0) IRGEN(1) = INT(ARRAY(2))
+!     IF (ARRAY(1) .GT. 0) GOTO 202
+!
+!     STATIC CARRYOVER MODEL, LOOK FOR PINSET, CHECK THAT IT'S IN BOUNDS
+!
+!     IFRRC = 0
+!     IRFLAG = 1
+!     IF ((LNOTBK(4)) .AND. ARRAY(4) .GE. 0.0 .AND. ARRAY(4) .LE. 100.0)
+!    >    NNCENT = INT(ARRAY(4))
+!     IF (ARRAY(3) .LT. 0.0 .OR. ARRAY(3) .GT. 1.0) GOTO 203
+!     IF (LNOTBK(3)) PINSET = ARRAY(3)
+!     GOTO 204
+!
+! 203 CONTINUE
+!     ICRRY = 1
+!
+! 204 CONTINUE
+!     GOTO 205
+!
+! 202 CONTINUE
+!
+!     DYNAMIC CARRYOVER MODEL, CHECK FOR DEFINITION OF MINIMUM
+!     SPREAD RATE IN ARRAY(3)
+!
+!     IFRRC = 1
+!     IRFLAG = 0
+!     IF (ARRAY(3) .GT. 0.0) RRGEN(1,7) = ARRAY(3)
+!
+!     OUTPUT FOR CARRY KEYWORD
+!
+! 205 CONTINUE
+!     IF (IFRRC .EQ. 1) GOTO 206
+!     IF (ICRRY .EQ. 1) GOTO 207
+!
+!     IF(LKECHO)WRITE(JOSTND,208) KEYWRD, PINSET,NNCENT,IRGEN(1)
+! 208 FORMAT(/1X ,A8, '   STATIC CARRYOVER MODEL',
+!    >     2X,'; PROB. OF NEW INFECTION CENTERS BEING FORMED=',F4.2,
+!    >      ';  NEW CENTERS = ',I4,/
+!    >        T13,'MODEL CALLED ',I4,' CYCLES AFTER MANAGEMENT')
+!     GOTO 90
+!
+! 207 CONTINUE
+!     IF(LKECHO)WRITE(JOSTND,210) KEYWRD,ARRAY(2),PINSET
+! 210 FORMAT (/1X,A8,'*** CARRYOVER MODEL KEYWORD, PROBABILITY',
+!    > ' OF INFECTION',/,
+!    >      T13, '***** ASSIGNED ',F4.2,' OUT OF BOUNDS, SET TO ',F4.2)
+!     GOTO 90
+!
+! 206 CONTINUE
+!     IF(LKECHO)WRITE(JOSTND,211) KEYWRD,RRGEN(1,7),IRGEN(1)
+! 211 FORMAT (/1X,A8,'   DYNAMIC CARRYOVER MODEL, MINIMUM SPREAD= ',
+!    >      F5.2, ' FT/YR  MODEL CALLED ',I4,' CYCLES AFTER MANAGEMENT')
+
+GOTO 90
+
+3 CONTINUE
+!
+!  ==========  OPTION NUMBER 3: PSTUMP ===============================
+!
+!     ARG 1 - YEAR OF STUMP PUSHING
+!     ARG 2 - STUMP PUSHING EFFICIENCY.  THIS IS THE PROPORTION OF
+!             STUMPS THAT WILL BE REMOVED BY THE STUMP-PUSHING ACTIVITY.
+!             DEFAULT EFFICIENCY IS 1.0
+!     ARG 3 - MINIMUM STUMP DIAMETER TO BE REMOVED.  ALL STUMPS OF
+!             THIS DIAMETER AND GREATER WILL BE REMOVED WITH THE
+!             EFFICIENCY STATED IN FIELD 2.  IF LEFT BLANK, MINIMUM
+!             DBH IS SET TO 0.
+!
+!
+IDT = 1
+IRRPSH = 0
+
+IF (LNOTBK(1)) IDT = INT(ARRAY(1))
+
+PRMS(1) = PPUSH
+PRMS(2) = PRREM
+
+IF (ARRAY(2) .LE. 1.0 .AND. ARRAY(2) .GT. 0.0) THEN
+   IRRPSH = 1
+   PRMS(1) = ARRAY(2)
+ENDIF
+
+IF (ARRAY(3) .GT. 0.0 .AND. ARRAY(3) .LE. 999.0) THEN
+   IF (LMTRIC) PRMS(2) = ARRAY(3) * CMTOIN
+   IF (.NOT. LMTRIC) PRMS(2) = ARRAY(3)
+ENDIF
+
+CALL OPNEW (KODE,IDT,MYACT(2),2,PRMS)
+IF (KODE .GT. 0) GOTO 90
+
+!.... OUTPUT FOR PSTUMP KEYWORD
+
+IF (IRRPSH .EQ. 1) GOTO 301
+WRITE(JOSTND,302) KEYWRD, ARRAY(2), PPUSH
+302 FORMAT (/1X,A8,'   ***** ',F4.2,' STUMP-PUSHING EFFICIENCY ', &
+         'OUT OF BOUNDS',/,T13,'***** SET TO ',F4.2)
+GOTO 90
+
+301 CONTINUE
+IF (LMTRIC) THEN
+   IF(LKECHO)WRITE(JOSTND,304) KEYWRD,IDT,PRMS(1),PRMS(2)*INTOCM
+304    FORMAT(/1X,A8,'   DATE/CYCLE=',I5,';  EFFICIENCY = ',F4.2, &
+               ';   MIN SIZE = ',F6.2,' CMS DBH')
+ELSE
+   IF(LKECHO)WRITE(JOSTND,303) KEYWRD, IDT, PRMS(1), PRMS(2)
+303    FORMAT(/1X,A8,'   DATE/CYCLE=',I5,';  EFFICIENCY = ',F4.2, &
+               ';   MIN SIZE = ',F6.2,' INCHES DBH')
+ENDIF
+
+GO TO 90
+
+4 CONTINUE
+!
+!  ==========  OPTION NUMBER 4: OPEN    ==============================
+!
+!     OPEN FILE.  USED WITH KEYWORD RRECHO, BBOUT, SMCOUT, INFSIMS.
+!     DEFAULT VALUES ARE: UNIT 24 (RRECHO DEFAULT)
+!     SPACES TREATED AS ZEROS, STATUS FRESH, REC LENGTH 132,
+!     FILE NAME MUST BE SUPPLIED AS A SUPPLEMENTAL RECORD.
+!
+
+IF (.NOT. LNOTBK(1)) ARRAY(1) = 24
+IF (.NOT. LNOTBK(2)) ARRAY(2) = 0
+IF (.NOT. LNOTBK(3)) ARRAY(3) = 3
+IF (.NOT. LNOTBK(4)) ARRAY(4) = 132
+
+!.... CALL PROGNOSIS SUBROUTINE KEYOPN FOR OPEN KEYWORD.
+
+CALL KEYOPN (IREAD,RECORD,JOSTND,IRECNT,KEYWRD,ARRAY,KARD)
+GOTO 90
+
+5 CONTINUE
+!
+!  ==========  OPTION NUMBER 5: RRINIT ===============================
+!
+!     THIS KEYWORD IS USED WHEN ROOT DISEASE INITIALIZATION IS
+!     PERFORMED 'MANUALLY' IE THE INITIALIZATION INFORMATION IS SUPPLIED
+!     BY THE USER.
+!
+!     CENTERS CAN BE EITHER READ IN OR SET RANDOMLY
+!
+!     FIELD 7 CONTAINS THE DISEASE TYPE.  1 = P TYPE ANNOSUS
+!                                         2 = S TYPE ANNOSUS
+!                                         3 = ARMILLARIA
+!                                         4 = PHELLINUS
+!
+IDI = MINRR
+IF (LNOTBK(7)) IDI = INT(ARRAY(7))
+
+RRMAN = .TRUE.
+IF (ARRAY(1) .LT. 1.0) GOTO 520
+
+!.... THE ATTRIBUTES OF EACH CENTER ARE READ IN
+!.... AND ARRAY(2) CONTAINS THE NUMBER OF CENTERS TO READ
+!.... IN.  CHECK THAT ONLY 100, AT MOST CENTERS ARE READ IN
+
+IF (LNOTBK(2)) NCENTS(IDI) = INT(ARRAY(2))
+IF (ARRAY(2) .LE. 100.0) GOTO 502
+WRITE(JOSTND,503)
+503 FORMAT(T13,'**** TOO MANY CENTERS TO READ IN, SET TO 100')
+NCENTS(IDI) = 100
+
+502 CONTINUE
+DO 504 IC=1,NCENTS(IDI)
+   READ(IREAD,505) PCENTS(IDI,IC,1), PCENTS(IDI,IC,2), &
+                      PCENTS(IDI,IC,3)
+505    FORMAT (3F7.1)
+
+   IF (LMTRIC) THEN
+      PCENTS(IDI,IC,1) = PCENTS(IDI,IC,1) * MTOFT
+      PCENTS(IDI,IC,2) = PCENTS(IDI,IC,2) * MTOFT
+      PCENTS(IDI,IC,3) = PCENTS(IDI,IC,3) * MTOFT
+   ENDIF
+
+   IF (PCENTS(IDI,IC,1) .LE. DIMEN) GOTO 506
+
+   WRITE(JOSTND,507) IC, DIMEN
+507    FORMAT (/T13,'***** ERROR IN PATCH ',I4, &
+             ' X-COORD SET TO ',F7.0)
+   PCENTS(IDI,IC,1) = DIMEN
+
+506    CONTINUE
+   IF (PCENTS(IDI,IC,2) .LE. DIMEN) GOTO 504
+
+   WRITE(JOSTND,508) IC,DIMEN
+508    FORMAT (/T13,'***** ERROR IN PATCH ',I4, &
+             ' Y-COORD SET TO ',F7.0)
+   PCENTS(IDI,IC,2) = DIMEN
+
+504 CONTINUE
+
+!.... SET PAREA(IDI) TO -1 TO INDICATE THAT CENTERS WERE READ IN
+!.... MANUALLY AND SET LPAREA TO TRUE SO PAREA WONT BE RESET AT END
+!.... OF PROCESSING.
+
+PAREA(IDI) = -1.0
+LPAREA(IDI) = .TRUE.
+
+IPCFLG(IDI) = 1
+GOTO 530
+
+520 CONTINUE
+
+!.... THE ATTRIBUTES OF THE CENTERS ARE ASSIGNED RANDOMLY
+!.... THE USER MUST SET THE TOTAL NUMBER OF CENTERS IN
+!.... ARRAY(2) AND THE TOTAL DISEASED AREA IN ARRAY(6)
+
+IF (LNOTBK(2)) NCENTS(IDI) = INT(ARRAY(2))
+IF (ARRAY(2) .LE. 100.0) GOTO 525
+
+WRITE(JOSTND,521)
+521 FORMAT(T13,'**** TOO MANY CENTERS TO ASSIGN, SET TO 100')
+
+NCENTS(IDI) = 100
+
+525 CONTINUE
+IF (LMTRIC) THEN
+   IF (LNOTBK(6)) PAREA(IDI) = ARRAY(6) * HATOAC
+ELSE
+   IF (LNOTBK(6)) PAREA(IDI) = ARRAY(6)
+ENDIF
+
+IF (LNOTBK(6)) LPAREA(IDI) = .TRUE.
+IPCFLG(IDI) = 0
+
+!.... IF THERE IS ONLY ONE CENTER AND THE REQUESTED AREA IS THE STAND
+!.... AREA THEN RUN THE STAND AS ONE CENTER
+
+IF (NCENTS(IDI) .EQ. 1 .AND. PAREA(IDI) .EQ. SAREA) &
+           LONECT(IDI) = 1
+
+530 CONTINUE
+
+!.... SET UP OTHER PARAMETERS
+
+IF (LNOTBK(3) .AND. LNOTBK(4)) THEN
+   IF (LMTRIC) THEN
+      IF (ARRAY(3) .GE. 0.0) PRKILL(IDI) = ARRAY(3) / HATOAC
+      IF (ARRAY(4) .GE. 0.0) PRUN(IDI) = ARRAY(4) / HATOAC
+   ELSE
+      IF (ARRAY(3) .GE. 0.0) PRKILL(IDI) = ARRAY(3)
+      IF (ARRAY(4) .GE. 0.0) PRUN(IDI) = ARRAY(4)
+   ENDIF
+   LINIT = .TRUE.
+ELSE
+   LINIT = .FALSE.
+ENDIF
+
+IF (LNOTBK(5) .AND. ARRAY(5) .GE. 0.0 .AND. ARRAY(5) .LE. 1.0) &
+      RRINCS(IDI) = ARRAY(5)
+
+!.... OUTPUT FOR RRINIT KEYWORD
+
+IF (IPCFLG(IDI) .EQ. 1) GOTO 550
+
+IF(LKECHO)WRITE(JOSTND,541) KEYWRD, DISTYP(IDI)
+541 FORMAT (/1X,A8,'   ROOT DISEASE IS ', A12 / &
+         T13,'ROOT DISEASE INITIALIZATION KEYWORD; ', &
+         'ROOT DISEASE CENTERS ASSIGNED RANDOMLY '/ &
+            T13,'INITIALIZATION WILL BE WITH USER-SUPPLIED DATA', &
+                ' UNLESS THE RRTREIN KEYWORD IS USED IN THE', &
+                ' RUNSTREAM')
+
+IF (LINIT) THEN
+   IF (LMTRIC) THEN
+      IF(LKECHO)WRITE(JOSTND,572) NCENTS(IDI), PRKILL(IDI)/ACTOHA, &
+                            PRUN(IDI)/ACTOHA
+572       FORMAT (T13,'NUMBER OF CENTERS=',I4/ &
+               T13,'INFECTED TREES/HA IN DISEASED AREAS   = ',F7.2/ &
+               T13,'UNINFECTED TREES/HA IN DISEASED AREAS = ',F7.2)
+   ELSE
+      IF(LKECHO)WRITE(JOSTND,542)NCENTS(IDI),PRKILL(IDI),PRUN(IDI)
+542       FORMAT (T13,'NUMBER OF CENTERS=',I4/ &
+               T13,'INFECTED TREES/ACRE IN DISEASED AREAS   = ',F7.2/ &
+               T13,'UNINFECTED TREES/ACRE IN DISEASED AREAS = ',F7.2)
+   ENDIF
+
+ELSE
+   IF(LKECHO)WRITE(JOSTND,543) NCENTS(IDI)
+543    FORMAT (T13,'NUMBER OF CENTERS=',I4)
+
+   IF (LMTRIC) THEN
+      IF(LKECHO)WRITE(JOSTND,575)
+575       FORMAT (T13,'50% OF TREES/HA IN THE DISEASED AREAS ARE', &
+                  ' INFECTED'/ &
+                 T13,'50% OF TREES/HA IN THE DISEASED AREAS ARE', &
+                  ' UNINFECTED')
+   ELSE
+      IF(LKECHO)WRITE(JOSTND,576)
+576       FORMAT (T13,'50% OF TREES/ACRE IN THE DISEASED AREAS ARE', &
+                  ' INFECTED'/ &
+                 T13,'50% OF TREES/ACRE IN THE DISEASED AREAS ARE', &
+                  ' UNINFECTED')
+   ENDIF
+
+   IF (LNOTBK(3) .OR. LNOTBK(4)) WRITE(JOSTND,544)
+544    FORMAT (T10,'** EITHER FIELD 3 OR FIELD 4 WAS NOT SPECIFIED.', &
+              ' DEFAULTS WERE USED IN BOTH FIELDS')
+ENDIF
+
+IF (PAREA(IDI) .LT. 0.0) THEN
+   IF(LKECHO)WRITE(JOSTND,571) RRINCS(IDI)
+571    FORMAT (T13,'PROPORTION ROOTS INFECTED=',F4.2, &
+             /T13,'ROOT DISEASE AREA WILL BE CALCULATED FROM THE ', &
+             'PROPORTION OF INFECTED PLOTS IN THE STAND.')
+
+ELSE
+   IF (LMTRIC) THEN
+      IF(LKECHO)WRITE(JOSTND,585) RRINCS(IDI), PAREA(IDI) * ACTOHA
+585       FORMAT (T13,'PROPORTION ROOTS INFECTED=',F4.2, &
+                     ' ;DISEASE AREA = ',F6.2,' HA')
+   ELSE
+      IF(LKECHO)WRITE(JOSTND,545) RRINCS(IDI), PAREA(IDI)
+545       FORMAT (T13,'PROPORTION ROOTS INFECTED=',F4.2, &
+                     ' ;DISEASE AREA = ',F6.2,' ACRES')
+   ENDIF
+ENDIF
+
+IF (LONECT(IDI) .EQ. 1.0) THEN
+  IF(LKECHO)WRITE(JOSTND,547)
+547   FORMAT (T13,'THE STAND WILL BE MODELLED AS ONE DISEASE CENTER')
+ENDIF
+
+GOTO 590
+
+550 CONTINUE
+IF(LKECHO)WRITE(JOSTND,551) KEYWRD, DISTYP(IDI)
+551 FORMAT (/1X,A8,'   ROOT DISEASE IS ', A12 / &
+         T13,'ROOT DISEASE INITIALIZATION KEYWORD; ', &
+         ' ROOT DISEASE CENTERS READ IN '/ &
+            T13,'INITIALIZATION WILL BE WITH USER-SUPPLIED DATA', &
+                ' UNLESS THE RRTREIN KEYWORD IS USED IN THE', &
+                ' RUNSTREAM')
+
+IF (LINIT) THEN
+   IF (LMTRIC) THEN
+      IF(LKECHO)WRITE(JOSTND,572) NCENTS(IDI), PRKILL(IDI)/ACTOHA, &
+                            PRUN(IDI)/ACTOHA
+   ELSE
+      IF(LKECHO)WRITE(JOSTND,542)NCENTS(IDI),PRKILL(IDI),PRUN(IDI)
+   ENDIF
+ELSE
+   IF(LKECHO)WRITE(JOSTND,543) NCENTS(IDI)
+   IF (LMTRIC.AND.LKECHO)WRITE(JOSTND,575)
+   IF (.NOT.LMTRIC.AND.LKECHO)WRITE(JOSTND,576)
+   IF ((LNOTBK(3).OR.LNOTBK(4)).AND.LKECHO)WRITE(JOSTND,544)
+ENDIF
+
+IF(LKECHO)WRITE(JOSTND,552) RRINCS(IDI)
+552 FORMAT (T13,'PROPORTION ROOTS INFECTED=',F4.2)
+
+IF(LKECHO)WRITE(JOSTND,553)
+553 FORMAT (//,T13,'X-COORD    Y-COORD   RADIUS')
+IF(LKECHO)WRITE(JOSTND,554)
+554 FORMAT (T13,'------------------------------')
+
+DO 556 IC=1,NCENTS(IDI)
+   IF (LMTRIC) THEN
+      IF(LKECHO)WRITE(JOSTND,555) PCENTS(IDI,IC,1) * FTTOM, &
+                            PCENTS(IDI,IC,2) * FTTOM, &
+                            PCENTS(IDI,IC,3) * FTTOM
+   ELSE
+      IF(LKECHO)WRITE(JOSTND,555) PCENTS(IDI,IC,1), &
+                     PCENTS(IDI,IC,2),PCENTS(IDI,IC,3)
+   ENDIF
+555    FORMAT (T13,F7.1,4X,F7.1,2X,F7.1)
+556 CONTINUE
+
+590 CONTINUE
+GO TO 90
+
+6 CONTINUE
+!
+!  ==========  OPTION NUMBER 6: TTDMULT ==============================
+!
+!     TIME TO DEATH MULTIPLIERS
+!     CHECK THAT ROOT DISEASE TYPE IS ACCEPTABLE
+!
+IPOINT = 0
+IF (LNOTBK(2)) IPOINT = INT(ARRAY(2))
+IF (ARRAY(1) .GT. 0.0) IRGEN(8) = INT(ARRAY(1))
+IHB = 1
+IF (IRGEN(8) .NE. 3000) IHB = 2
+IF (INT(ARRAY(2)) .LE. ITOTRR) GOTO 601
+
+WRITE(JOSTND,602)
+602 FORMAT (/, ' ********   ERROR IN DISEASE TYPE, TTDMULT KEYWORD')
+WRITE(JOSTND,603)
+603 FORMAT (' ********   KEYWORD WILL AFFECT ALL SPECIFIED DISEASE ', &
+           'TYPES')
+IPOINT = 0
+
+601 CONTINUE
+
+!.... SET WHICH ROOT DISEASE SPECIES SHOULD BE MODIFIED
+
+IRMIN = MINRR
+IRMAX = MAXRR
+IF (IPOINT .GT. 0) THEN
+   IRMIN = IPOINT
+   IRMAX = IPOINT
+ENDIF
+
+!.... CALL SPDECD TO GET SPECIES CODE (ALPHA OR NUMERIC).
+
+CALL SPDECD(3,ISPC,NSP(1,1),MAXSP,JOSTND,IRECNT,KEYWRD, &
+               ARRAY,KARD)
+
+!.... NOW, CHECK WHETHER ONLY ONE VALUE TO BE CHANGED, OR ALL
+
+IF (ISPC .GE. 1 .AND. ISPC .LE. MAXSP) THEN
+
+!....    ONLY ONE TREE SPECIES VALUE TO BE CHANGED
+!....    (FOR ONE OR MORE RR TYPES)
+
+   DO 670 IDI=IRMIN,IRMAX
+      HABFAC(IRTSPC(ISPC),IDI,IHB) = ARRAY(4)
+670    CONTINUE
+
+ELSEIF (ISPC .EQ. 0) THEN
+
+!....    ALL SPECIES GET CHANGED
+
+   READ (IREAD,606) (HABFAC(IRTSPC(KSP),IRMIN,IHB),KSP=1,MAXSP)
+   DO 672 IDI=IRMIN+1,IRMAX
+      DO 671 KSP=1,MAXSP
+         HABFAC(IRTSPC(KSP),IDI,IHB) = &
+                  HABFAC(IRTSPC(KSP),IRMIN,IHB)
+671       CONTINUE
+672    CONTINUE
+
+! 606    FORMAT (11F5.2)
+!     Increased Format 606 columns to 24 species (RNH, Dec98)
+606    FORMAT (24F5.2)
+!
+ELSE
+
+!....    ERROR IN READING IN SPECIES CODE
+
+   WRITE(JOSTND,610) KEYWRD
+610    FORMAT (' ********   ERROR IN KEYWORD ', A8, ', SPECIES ', &
+              'CODE NOT VALID.  KEYWORD IGNORED.')
+   GOTO 90
+
+ENDIF
+
+!.... OUTPUT FOR TTDMULT KEYWORD
+
+IF(LKECHO)WRITE(JOSTND,620) KEYWRD
+620 FORMAT (/1X,A8,'   TIME TO DEATH MULTIPLIERS ')
+IF(LKECHO)WRITE(JOSTND,621)
+621 FORMAT (//T13,'MULTIPLIERS ARE RELATIVE TO INTERIOR', &
+           ' DOUGLAS-FIR')
+IF(LKECHO)WRITE(JOSTND,622)
+622 FORMAT (T13,'ON DOUGLAS-FIR HABITAT')
+IF(LKECHO)WRITE(JOSTND,623)
+623 FORMAT (/T13,5X,'SPECIES',14X,'MULTIPLIER')
+IF(LKECHO)WRITE(JOSTND,624)
+624 FORMAT (T13,41('-'))
+
+DO 675 IDI=IRMIN,IRMAX
+   IF(LKECHO)WRITE(JOSTND,680) DISTYP(IDI)
+   IF(LKECHO)WRITE(JOSTND,681)
+
+   DO 630 KSP=1,MAXSP
+      IF(LKECHO)WRITE(JOSTND,631) RRJSP(IRTSPC(KSP)), &
+                            HABFAC(IRTSPC(KSP),IDI,1)
+630    CONTINUE
+675 CONTINUE
+
+680 FORMAT (T13,A16)
+681 FORMAT (T13,16('-'))
+631 FORMAT (T13,A16,13X,F5.2)
+
+IF (IRGEN(8) .EQ. 3000) GOTO 640
+IF(LKECHO)WRITE(JOSTND,641) IRGEN(8)
+641 FORMAT (/T13,'TIME TO DEATH MULTIPLIERS AFTER ',I4)
+IF(LKECHO)WRITE(JOSTND,623)
+IF(LKECHO)WRITE(JOSTND,624)
+
+DO 676 IDI=IRMIN,IRMAX
+   IF(LKECHO)WRITE(JOSTND,680) DISTYP(IDI)
+   IF(LKECHO)WRITE(JOSTND,681)
+
+   DO 642 KSP=1,MAXSP
+      IF(LKECHO)WRITE(JOSTND,631) RRJSP(IRTSPC(KSP)), &
+                           HABFAC(IRTSPC(KSP),IDI,2)
+642    CONTINUE
+676 CONTINUE
+
+640 CONTINUE
+GOTO 90
+
+7 CONTINUE
+!
+!  ==========  OPTION NUMBER 7: INFMULT ==============================
+!
+!     PROBABILITY OF INFECTION MULTIPLIERS
+!     CHECK FOR YEAR THAT MULTIPLIERS ARE TO TAKE EFFECT
+!     CHECK THAT ROOT DISEASE TYPE IS ACCEPTABLE
+
+IPOINT = 0
+IF (ARRAY(1) .GT. 0.0) IRGEN(9) = INT(ARRAY(1))
+IF (LNOTBK(2)) IPOINT = INT(ARRAY(2))
+
+!.... CHECK TO MAKE SURE ROOT DISEASE TYPE IS ACCEPTABLE
+
+IF (INT(ARRAY(2)) .GT. ITOTRR) THEN
+   WRITE(JOSTND,702)
+   WRITE(JOSTND,703)
+   IPOINT = 0
+ENDIF
+
+702 FORMAT (/,' ********   ERROR IN DISEASE TYPE, INFMULT KEYWORD')
+703 FORMAT (' ********   CHANGE WILL AFFECT ALL ACTIVE DISEASE ', &
+           'TYPES')
+
+!.... SET THE ROOT DISEASE TYPE TO BE MODIFIED
+
+IRMIN = MINRR
+IRMAX = MAXRR
+IF (IPOINT .GT. 0) THEN
+   IRMIN = IPOINT
+   IRMAX = IPOINT
+ENDIF
+
+!.... CALL SPDECD TO GET SPECIES CODE (ALPHA OR NUMERIC).
+
+CALL SPDECD(3,ISPC,NSP(1,1),MAXSP,JOSTND,IRECNT,KEYWRD, &
+               ARRAY,KARD)
+
+!.... NOW, CHECK WHETHER ONLY ONE VALUE TO BE CHANGED, OR ALL
+
+IF (ISPC .GE. 1 .AND. ISPC .LE. MAXSP) THEN
+
+!....    ONLY ONE VALUE TO BE CHANGED
+
+   DO 770 IDI=IRMIN,IRMAX
+      IF (IRGEN(9) .EQ. 3000) THEN
+         PNINF(IRTSPC(ISPC),IDI) = ARRAY(4)
+      ELSE
+         SSSFAC(IRTSPC(ISPC),IDI) = &
+                  ARRAY(4) / PNINF(IRTSPC(ISPC),IDI)
+      ENDIF
+770    CONTINUE
+
+ELSEIF (ISPC .EQ. 0) THEN
+
+!....    ALL SPECIES GET CHANGED
+
+   IF (IRGEN(9) .EQ. 3000) THEN
+      READ (IREAD,711) (PNINF(IRTSPC(KSP),IRMIN),KSP=1,MAXSP)
+   ELSE
+      READ (IREAD,711) (SSSFAC(IRTSPC(KSP),IRMIN),KSP=1,MAXSP)
+   ENDIF
+
+!     Increased Format 711 columns to 24 species (RNH, Dec98)
+711    FORMAT (24F5.2)
+! 711    FORMAT (11F5.2)
+
+   DO 772 IDI=IRMIN,IRMAX
+      DO 712 KSP=1,MAXSP
+         IF (IDI .GT. IRMIN) THEN
+            IF (IRGEN(9) .EQ. 3000) THEN
+               PNINF(IRTSPC(KSP),IDI) = PNINF(IRTSPC(KSP),IRMIN)
+            ELSE
+               SSSFAC(IRTSPC(KSP),IDI) = SSSFAC(IRTSPC(KSP),IRMIN)
+            ENDIF
+         ENDIF
+         IF (PNINF(IRTSPC(KSP),IDI) .GT. 0.0) THEN
+            SSSFAC(IRTSPC(KSP),IDI) = SSSFAC(IRTSPC(KSP),IDI) / &
+                                    PNINF(IRTSPC(KSP),IDI)
+         ENDIF
+712       CONTINUE
+772    CONTINUE
+
+ELSE
+
+!....    ERROR IN READING IN SPECIES CODE
+
+   WRITE(JOSTND,610) KEYWRD
+   GOTO 90
+ENDIF
+
+!.... OUTPUT FOR INFMULT KEYWORD
+
+720 CONTINUE
+IF(LKECHO)WRITE(JOSTND,721) KEYWRD
+721 FORMAT (/1X,A8,'   PROBABILITY OF INFECTION FOR ROOT DISEASE')
+IF(LKECHO)WRITE(JOSTND,722)
+722 FORMAT (/T13,5X,'SPECIES',14X,'PROBABILITY')
+IF(LKECHO)WRITE(JOSTND,723)
+723 FORMAT (T13,41('-'))
+
+DO 775 IDI=IRMIN,IRMAX
+   IF(LKECHO)WRITE(JOSTND,780) DISTYP(IDI)
+   IF(LKECHO)WRITE(JOSTND,781)
+
+   DO 724 KSP=1,MAXSP
+      IF(LKECHO)WRITE(JOSTND,725) RRJSP(IRTSPC(KSP)), &
+                                     PNINF(IRTSPC(KSP),IDI)
+724    CONTINUE
+775 CONTINUE
+
+780 FORMAT (T13,A16)
+781 FORMAT (T13,16('-'))
+725 FORMAT(T13,A16,13X,F5.2)
+
+IF (IRGEN(9) .EQ. 3000) GOTO 740
+IF(LKECHO)WRITE(JOSTND,726) IRGEN(9)
+726 FORMAT (/T13,'PROBABILITY OF INFECTION AFTER ',I4)
+IF(LKECHO)WRITE(JOSTND,722)
+IF(LKECHO)WRITE(JOSTND,723)
+
+DO 785 IDI=IRMIN,IRMAX
+   IF(LKECHO)WRITE(JOSTND,780) DISTYP(IDI)
+   IF(LKECHO)WRITE(JOSTND,781)
+
+   DO 730 KSP=1,MAXSP
+      TT = PNINF(IRTSPC(KSP),IDI) * SSSFAC(IRTSPC(KSP),IDI)
+      IF(LKECHO)WRITE(JOSTND,725) RRJSP(IRTSPC(KSP)), TT
+730    CONTINUE
+785 CONTINUE
+
+740 CONTINUE
+GOTO 90
+
+8 CONTINUE
+!
+!  ==========  OPTION NUMBER 8: INFSIMS ==============================
+!
+!     SET NUMBER OF SIMULATIONS TO DO THE INSIDE CENTER INFECTION
+!     SIMULATION ALSO, CAN REQUEST OUTPUT FROM THE INSIDE CENTER
+!     INFECTION SIMULATION (IN REGULAR TABLE FORMAT, WITH HEADINGS)
+!     (TO PRINT OUTPUT, FIELD 2 MUST CONTAIN SOME CHARATER, AND
+!     FIELD 3 MUST CONTAIN THE FILE NUMBER. IF FIELD 2 IS NOT BLANK
+!     AND FIELD 3 IS BLANK, THE DEFAULT FILE NUMBER WILL BE USED)
+!
+
+IF (LNOTBK(1)) NINSIM = INT(ARRAY(1))
+IF (NINSIM .GT. 50) NINSIM = 50
+
+ISDOUT = 0
+IF (LNOTBK(2)) THEN
+   ISDOUT = 25
+   IF (ARRAY(3) .GT. 0.0) ISDOUT = INT(ARRAY(3))
+ENDIF
+
+!.... OUTPUT FOR INFSIMS KEYWORD
+
+IF(LKECHO)WRITE(JOSTND,801) KEYWRD, NINSIM
+801 FORMAT(/1X,A8,'   NUMBER OF TIMES TO SIMULATE THE INSIDE ', &
+          'INFECTION DYNAMICS IS: ',I4)
+
+IF (ISDOUT .GT. 0) THEN
+   IF(LKECHO)WRITE(JOSTND,802) ISDOUT
+802    FORMAT (/T13,'   INSIDE CENTER INFECTION OUTPUT ON LOGICAL', &
+              ' UNIT ',I4)
+ENDIF
+
+GOTO 90
+
+9 CONTINUE
+
+
+!
+!  ==========  OPTION NUMBER 9: END ==================================
+!
+!     END KEYWORD. END THE ROOT DISEASE KEYWORD PROCESSING.
+!     OPEN ROOT DISEASE FILES HERE. CALL IS PUT HERE TO INSURE
+!     FILES ARE OPENED AFTER ANY DEFAULT UNITS HAVE BEEN MODIFIED BY
+!     KEYWORD.
+!
+IF(LKECHO)WRITE(JOSTND,901) KEYWRD
+901 FORMAT (/1X,A8,'   END OF ROOT DISEASE KEYWORDS')
+
+!.... IF NEITHER INITIALIZATION METHOD SPECIFIED,THE SIMULATION
+!.... CONTINUES WITHOUT ROOT DISEASE IMPACTS.
+
+IF (.NOT. RRTINV .AND. .NOT. RRMAN) THEN
+   WRITE(JOSTND,905)
+
+905    FORMAT (/' ***** FVSRD ERROR: NEITHER TREELIST OR MANUAL ', &
+               'INITIALIZATION SPECIFIED. ROOT DISEASE NOT ', &
+               'ACTIVATED.*****')
+   CALL ERRGRO (.TRUE.,4)
+   GOTO 9000
+ENDIF
+
+!.... IF TREE RECORD DATA HAS BEEN READ BEFORE ROOT DISEASE KEYWORDS
+!.... HAVE BEEN PROCESSED WRITE ERROR MESSAGE AND TERMINATE RUN. THIS IS
+!.... NECESSARY BECAUSE METHOD OF ROOT DISEASE INITIALIZATION MUST BE
+!.... SPECIFIED IN ORDER FOR INTREE TO PROPERLY PROCESS TREE RECORDS.
+
+IF (IREC1 .EQ. 0) GOTO 910
+
+WRITE(JOSTND,906)
+906 FORMAT (/' ****** WARNING ****** TREE RECORDS HAVE BEEN ', &
+      'PROCESSED BEFORE METHOD OF ROOT DISEASE INITIALIZATION HAS ', &
+      'BEEN  SPECIFIED.',/,T23,'RUN IS TERMINATED.')
+CALL RCDSET (2,.FALSE.)
+
+910 CONTINUE
+!
+!     If the RRTYPE keword has not be used the disease type for the
+!     simulation will be the defalt - annosus disease. The following
+!     statement checks for the use of RRTYPE and writes warning message
+!     to the outpu file (RNH June98)
+!
+IF (.NOT. LRTYPE) WRITE(JOSTND, 907)
+
+907 FORMAT (/' ****** WARNING: THE "RRTYPE" KEYWORD WAS NOT USED,', &
+            '>> ANNOSUS ROOT DISEASE <<, WILL BE SIMULATED.')
+
+!.... IF NO BARK BEETLES ARE SCHEDULED, AND THE USER HAS NOT SPECIFIED
+!.... THAT THE CHOICE OF NO BARK BEETLES WAS INTENTIONAL, THEN
+!.... TURN ON ALL BARK BEETLES USING THEIR DEFAULT VALUES.
+
+IF (IDOBB .LE. 0 .AND. LBBON) THEN
+   WRITE(JOSTND,911)
+911    FORMAT (/' ******* WARNING: NO BARK BEETLES WERE SPECIFIED ', &
+        'AND THE BBCLEAR KEYWORD WAS NOT USED.',/T18, &
+        'BARK BEETLES ARE ON USING THEIR DEFAULT VALUES AS FOLLOWS')
+
+!....    TYPE 1 BARK BEETLES
+
+   IDOBB = IDOBB + 1
+   PRMS(1) = RROBTS(1)
+   PRMS(2) = RROBSC(1)
+   PRMS(3) = RROBOL(1)
+   PRMS(4) = RROBMR(1)
+   PRMS(5) = 0.0
+
+   CALL OPNEW (KODE,1,MYACT(4),5,PRMS)
+   IF (KODE .GT. 0) GOTO 913
+
+   IF (LMTRIC) THEN
+      IF(LKECHO)WRITE(JOSTND, 952) PRMS(1), PRMS(2)*INTOCM, &
+                             PRMS(3)/ACTOHA, PRMS(4)
+   ELSE
+      IF(LKECHO)WRITE(JOSTND, 912) (PRMS(I), I=1,4)
+   ENDIF
+
+912    FORMAT (/1X,'BBTYPE1    TYPE 1 BARK BEETLE IS ON EVERY YEAR.', &
+              ' SPECIES =',F3.0,';  MINIMUM DBH=',F5.2,' INCHES', &
+              /T13,'MINIMUM ELIGIBLE STEMS FOR EVENT =',F7.0, &
+              ' STEMS/ACRE;   MORTALITY RATE = ',F5.3)
+952    FORMAT (/1X,'BBTYPE1    TYPE 1 BARK BEETLE IS ON EVERY YEAR.', &
+              ' SPECIES =',F3.0,';  MINIMUM DBH=',F5.2,' CMS', &
+              /T13,'MINIMUM ELIGIBLE STEMS FOR EVENT =',F7.0, &
+              ' STEMS/HA;   MORTALITY RATE = ',F5.3)
+
+913    CONTINUE
+
+!....    TYPE 3 BARK BEETLES
+
+   IDOBB = IDOBB + 1
+   IDT = 1
+
+   PRMS(1) = RROBTS(3)
+   PRMS(2) = RROBSC(3)
+   PRMS(3) = RROBOL(3)
+   PRMS(4) = RROBMR(3)
+   PRMS(5) = RROBRD(3)
+   PRMS(6) = 0.0
+
+   CALL OPNEW (KODE,1,MYACT(6),6,PRMS)
+   IF (KODE .GT. 0) GOTO 915
+
+   IF (LMTRIC) THEN
+      IF(LKECHO)WRITE(JOSTND, 954) PRMS(1), PRMS(2)*INTOCM, &
+                             PRMS(3)/ACTOHA, PRMS(4), PRMS(5)
+   ELSE
+      IF(LKECHO)WRITE(JOSTND, 914) (PRMS(I), I=1,5)
+   ENDIF
+
+914    FORMAT(/1X,'BBTYPE3     TYPE 3 BARK BEETLE IS ON EVERY YEAR', &
+             ' SPECIES =', F3.0, ';  MINIMUM DBH=', F5.2, '  INCHES', &
+             /T13, 'MINIMUM ELIGIBLE STEMS FOR EVENT= ', F7.0, &
+             ' STEMS', '/ACRE   ;  MORTALITY RATE = ', F4.2, &
+             /T13, 'MINIMUM ROOT DISEASE INFECTION= ', F4.2)
+954    FORMAT(/1X,'BBTYPE3     TYPE 3 BARK BEETLE IS ON EVERY YEAR', &
+             ' SPECIES =', F3.0, ';  MINIMUM DBH=', F5.2, '  CMS', &
+             /T13, 'MINIMUM ELIGIBLE STEMS FOR EVENT= ', F7.0, &
+             ' STEMS', '/HA   ;  MORTALITY RATE = ', F4.2, &
+             /T13, 'MINIMUM ROOT DISEASE INFECTION= ', F4.2)
+
+915    CONTINUE
+
+!....    TYPE 4 BARK BEETLES
+
+   IDOBB = IDOBB + 1
+   PRMS(1) = RROBTS(4)
+   PRMS(2) = RROBSC(4)
+   PRMS(3) = RROBOL(4)
+   PRMS(4) = RROBMR(4)
+   PRMS(5) = RROBRD(4)
+   PRMS(6) = 0.3
+   PRMS(7) = 0.15
+   PRMS(8) = 0.01
+   PRMS(9) = 0.0
+
+   CALL OPNEW (KODE,1,MYACT(9),9,PRMS)
+   IF (KODE .GT. 0) GOTO 917
+
+   IF (LMTRIC) THEN
+      IF(LKECHO)WRITE(JOSTND, 956) PRMS(1), PRMS(2)*INTOCM, &
+                             PRMS(3)/ACTOHA, (PRMS(I),I=4,8)
+   ELSE
+      IF(LKECHO)WRITE(JOSTND,  916) (PRMS(I), I=1,8)
+   ENDIF
+
+916    FORMAT(/1X,'BBTYPE4    TYPE 4 BARK BEETLE IS ON EVERY YEAR', &
+         ' SPECIES =',F3.0,';  MINIMUM DBH=',F5.2,'  INCHES', &
+         /T13,'MINIMUM ELIGIBLE STEMS FOR EVENT= ',F7.0,' STEMS', &
+         '/ACRE ; INFECTED MORTALITY= ',F5.3, &
+         /T13,'MINIMUM ROOT DISEASE INFECTION= ',F5.2, &
+         ' UNINFECTED-WITHIN-PATCH MORTALITY= ',F5.2, &
+         /T13,'UNINFECTED-FRINGE MORTALITY=',F5.2, &
+         ' UNINFECTED-NON-PATCH MORTALITY= ',F5.2)
+956    FORMAT(/1X,'BBTYPE4    TYPE 4 BARK BEETLE IS ON EVERY YEAR', &
+         ' SPECIES =',F3.0,';  MINIMUM DBH=',F5.2,'  CMS', &
+         /T13,'MINIMUM ELIGIBLE STEMS FOR EVENT= ',F7.0,' STEMS', &
+         '/HA ; INFECTED MORTALITY= ',F5.3, &
+         /T13,'MINIMUM ROOT DISEASE INFECTION= ',F5.2, &
+         ' UNINFECTED-WITHIN-PATCH MORTALITY= ',F5.2, &
+         /T13,'UNINFECTED-FRINGE MORTALITY=',F5.2, &
+         ' UNINFECTED-NON-PATCH MORTALITY= ',F5.2)
+
+917    CONTINUE
+ENDIF
+
+!.... IF BBTYPE II SPECIFIED BUT NOT A WINDTHROW EVENT WRITE ERROR
+!.... MESSAGE.
+
+IF (BB2GO .AND. .NOT. WINGO) THEN
+   WRITE(JOSTND,920)
+920    FORMAT(/T13,'***** WARNING, TYPE II BARK BEETLE EVENT CALLED', &
+             ' FOR BUT WINDTHROW EVENT NOT CALLED'/, &
+         T13,'TYPE II BARK BEETLE OUTBREAK CANNOT HAPPEN *****')
+ENDIF
+
+!.... IF THERE MAY BE TOO MANY BARK BEETLE EVENTS SCHEDULED THEN
+!.... PRINT A WARNING MESSAGE THAT SOME BARK BEETLES MAY NOT BE DOME
+
+IF (IDOBB .GT. 3*MAXSP) THEN
+    WRITE(JOSTND,919)
+919     FORMAT(/T13,'***** WARNING, TOO MANY BARK BEETLE EVENTS HAVE', &
+              ' BEEN SCHEDULED.'/T13,'IF ALL OF THEM ARE ACTIVE IN', &
+              ' THE SAME YEAR NOT ALL EVENTS WILL HAPPEN *****')
+ENDIF
+
+!.... IF REINEKE SPECIFIED BUT BBTYPE 1 NOT PRESENT
+
+IF (REINGO .AND. .NOT. BB1GO) THEN
+   WRITE(JOSTND,921)
+921    FORMAT(/T13,'***** WARNING, REINEKE METHOD CALLED', &
+             ' WITHOUT BBTYPE 1 EVENT:'/, &
+             T13,'REINEKE WILL HAVE NO EFFECT *****')
+ENDIF
+
+DO 923 IDI=MINRR,MAXRR
+
+!....    IF PAREA HAS NOT BEEN ENTERED BY KEYWORD THEN SET THE DEFAULT
+!....    FOR PAREA TO 25% OF SAREA.
+
+   IF (.NOT. LPAREA(IDI)) PAREA(IDI) = 0.25 * SAREA
+
+!....    If the LONECT flag has not been set and if there is only one
+!....    center and the requested root disease area is equal to the
+!....    stand area then run the stand as one center.
+!....    This code is here to catch if the SAREA keyword comes before
+!....    the RRINIT keyword.
+
+   IF (LONECT(IDI) .EQ. 0 .AND. NCENTS(IDI) .EQ. 1 .AND. &
+          PAREA(IDI) .EQ. SAREA) THEN
+      LONECT(IDI) = 1
+      IF(LKECHO)WRITE(JOSTND,*)
+      IF(LKECHO)WRITE(JOSTND,547)
+   ENDIF
+
+923 CONTINUE
+
+!.... OPEN DISK FILE FOR UNIT IRUNIT.
+
+CALL MYOPEN (IRUNIT, '   ', 4, 133, 0, 1, 1, 0, KODE)
+
+!.... PRINT MESSAGE IF ERROR OCCURED IN OPEN.
+
+IF (KODE .EQ. 1) THEN
+   WRITE(JOSTND,*) ' ERROR WHILE OPENING UNIT IRUNIT !!!!!!!'
+ENDIF
+
+!.... OPEN DISK FILE FOR UNIT IOUNIT.
+
+CALL MYOPEN (IOUNIT, '   ', 4, 133, 0, 1, 1, 0, KODE)
+
+!.... PRINT MESSAGE IF ERROR OCCURED IN OPEN.
+
+IF (KODE .EQ. 1) THEN
+   WRITE(JOSTND,*) ' ERROR WHILE OPENING UNIT IOUNIT !!!!!!!'
+ENDIF
+
+!.... OPEN DISK FILE FOR RRECHO (UNIT IRGEN(2)).
+
+!      CALL MYOPEN (IRGEN(2), 'RRECHO', 1, 133, 0, 1, 1, 0, KODE)
+
+GOTO 9000
+
+10 CONTINUE
+!
+!  ==========  OPTION NUMBER 10: SAREA ================================
+!
+!     SET THE STAND AREA IN ACRES
+!        (IF ENTERED AS HA, CHANGE TO ACRES)
+!     CHECK THAT A POSITIVE VALUE HAS BEEN ENTERED
+!
+IF (ARRAY(1) .GT. 0.0) GOTO 1010
+
+IF (LMTRIC) WRITE(JOSTND,1011) SAREA * ACTOHA
+1011 FORMAT (/T13,'***** ERROR IN STAND AREA INPUT ',F5.2, &
+           ' HECTARES ASSUMED')
+
+IF (.NOT. LMTRIC) WRITE(JOSTND,1001) SAREA
+1001 FORMAT (/T13,'***** ERROR IN STAND AREA INPUT ',F5.2, &
+           ' ACRES ASSUMED')
+GOTO 90
+
+1010 CONTINUE
+IF (.NOT. LMTRIC) SAREA = ARRAY(1)
+IF (LMTRIC) SAREA = ARRAY(1) * HATOAC
+DIMEN = SQRT(SAREA) * 208.7
+
+!.... OUTPUT FOR SAREA KEYWORD
+
+IF (LMTRIC) THEN
+   IF(LKECHO)WRITE(JOSTND,1012) KEYWRD, SAREA * ACTOHA
+1012    FORMAT(/1X, A8, '   STAND AREA =', F8.2, ' HA')
+ELSE
+   IF(LKECHO)WRITE(JOSTND,1002) KEYWRD, SAREA
+1002    FORMAT(/1X, A8, '   STAND AREA =', F8.2, ' ACRES')
+ENDIF
+GOTO 90
+
+11 CONTINUE
+!
+!  ==========  OPTION NUMBER 11: COMMENT ==============================
+!
+!     COMMENT KEYWORD.  THIS ENABLES THE USER TO WRITE OUT
+!     A DESCRIPTION OF THE PARTICULAR ROOT DISEASE SCENARIO
+!
+IF(LKECHO)WRITE(JOSTND,1101) KEYWRD
+1101 FORMAT (/1X,A8)
+
+!.... READ IN COMMENT STATEMENTS UNTIL 'END' IS ENCOUNTERED
+
+1102 CONTINUE
+READ (IREAD,1103,END=90) RECORD
+1103 FORMAT (A80)
+IRECNT = IRECNT + 1
+C4TMP = RECORD(1:4)
+CALL UPCASE (C4TMP(1:1))
+CALL UPCASE (C4TMP(2:2))
+CALL UPCASE (C4TMP(3:3))
+IF(C4TMP .EQ. 'END ') THEN
+   IF(LKECHO)WRITE(JOSTND,1105) RECORD(1:4)
+1105    FORMAT (/' ',A4)
+   GOTO 90
+ELSE
+1104    IF(LKECHO)WRITE(JOSTND,1106) RECORD
+1106    FORMAT (T13,A80)
+ENDIF
+GOTO 1102
+
+12 CONTINUE
+!
+!  ==========  OPTION NUMBER 12: RRDOUT ===============================
+!
+!     DETAILED OUTPUT KEYWORD
+!
+IRDOUT = 1
+
+!.... OUTPUT FOR RRDOUT KEYWORD
+
+IF(LKECHO)WRITE(JOSTND,1201) KEYWRD
+1201 FORMAT (/1X,A8,'   DETAILED ROOT DISEASE OUTPUT WILL BE PRINTED')
+GOTO 90
+
+13 CONTINUE
+!
+!  ==========  OPTION NUMBER 13: INFKILL ==============================
+!
+!     KEYWORD FOR INFECTION AT DEATH
+!     CHECK THAT ROOT DISEASE TYPE IS ACCEPTABLE
+!
+IPOINT = 0
+IF (LNOTBK(1)) IPOINT = INT(ARRAY(1))
+
+!.... IF ROOT DISEASE TYPE IS NOT VALID THEN SET VALUES FOR ALL
+!.... ROOT DISEASE TYPES.
+
+IF (INT(ARRAY(1)) .GT. ITOTRR) THEN
+   WRITE(JOSTND,1302) ITOTRR,ARRAY(1)
+   WRITE(JOSTND,1303)
+   IPOINT = 0
+ENDIF
+
+1302 FORMAT (/,' ********   ERROR IN DISEASE TYPE, INFKILL KEYWORD.', &
+           ' VALUE MUST BE LESS THAN ',I2,' VALUE ON KEYWORD=',F4.0)
+1303 FORMAT (' ********   CHANGE WILL AFFECT ALL ACTIVE DISEASE ', &
+           'TYPES')
+
+!.... SET ROOT DISEASE TYPE TO BE MODIFIED.
+
+IRMIN = MINRR
+IRMAX = MAXRR
+IF (IPOINT .GT. 0) THEN
+   IRMIN = IPOINT
+   IRMAX = IPOINT
+ENDIF
+
+!.... CALL SPDECD TO GET SPECIES CODE (ALPHA OR NUMERIC).
+
+CALL SPDECD(2,ISPC,NSP(1,1),MAXSP,JOSTND,IRECNT,KEYWRD, &
+               ARRAY,KARD)
+
+!.... CHECK WHETHER ONLY ONE VALUE TO BE CHANGED, OR ALL
+
+IF (ISPC .GE. 1 .AND. ISPC .LE. MAXSP) THEN
+
+!....    ONLY ONE VALUE TO BE CHANGED
+
+   DO 1350 IDI=IRMIN,IRMAX
+      IF (LNOTBK(3)) PKILLS(IRTSPC(ISPC),IDI) = ARRAY(3)
+1350    CONTINUE
+
+ELSEIF (ISPC .EQ. 0) THEN
+
+!....    ALL SPECIES GET CHANGED
+
+   READ (IREAD,1321) (PKILLS(IRTSPC(KSP),IRMIN),KSP=1,MAXSP)
+
+   DO 1357 IDI=IRMIN+1,IRMAX
+      DO 1355 KSP=1,MAXSP
+         PKILLS(IRTSPC(KSP),IDI) = PKILLS(IRTSPC(KSP),IRMIN)
+1355       CONTINUE
+1357    CONTINUE
+!1321    FORMAT (11F5.2)
+1321    FORMAT (24F5.2)
+ELSE
+
+!....    ERROR IN READING IN SPECIES CODE
+
+   WRITE(JOSTND,610) KEYWRD
+   GOTO 90
+ENDIF
+
+!.... OUTPUT FOR INFKILL KEYWORD
+
+1330 CONTINUE
+
+IF(LKECHO)WRITE(JOSTND,1331) KEYWRD
+1331 FORMAT (/1X,A8,'   PROPORTION ROOT INFECTION AT DEATH')
+IF(LKECHO)WRITE(JOSTND,1332)
+1332 FORMAT (/T13,5X,'SPECIES',8X,'PROPORTION INFECTED')
+IF(LKECHO)WRITE(JOSTND,1333)
+1333 FORMAT (T13,41('-'))
+
+DO 1360 IDI=IRMIN,IRMAX
+   IF(LKECHO)WRITE(JOSTND,1365) DISTYP(IDI)
+   IF(LKECHO)WRITE(JOSTND,1366)
+
+   DO 1334 KSP=1,MAXSP
+      IF(LKECHO)WRITE(JOSTND,1335) RRJSP(IRTSPC(KSP)), &
+               PKILLS(IRTSPC(KSP),IDI)
+1334    CONTINUE
+1360 CONTINUE
+
+1365 FORMAT (T13,A16)
+1366 FORMAT (T13,16('-'))
+1335 FORMAT (T13,A16,13X,F5.2)
+
+GOTO 90
+
+14 CONTINUE
+!
+!  ==========  OPTION NUMBER 14: WINDTHR ===============================
+!
+!     WINDTHROW KEYWORD
+!
+WINGO = .TRUE.
+IDT = 1
+IF (LNOTBK(1)) IDT = INT(ARRAY(1))
+PRMS(1) = ROWIND
+PRMS(2) = ROWMIN
+
+IF (LNOTBK(2)) PRMS(1) = ARRAY(2)
+IF (LNOTBK(3)) PRMS(2) = ARRAY(3)
+CALL OPNEW (KODE,IDT,MYACT(3),2,PRMS)
+IF (KODE .GT. 0) GOTO 90
+
+!.... OUTPUT FOR WINDTHR KEYWORD
+
+IF(LKECHO)WRITE(JOSTND,1401) KEYWRD, IDT,PRMS(1),PRMS(2)
+1401 FORMAT(/1X,A8,'   WINDTHROW EVENT TO BE ATTEMPTED IN DATE/CYCLE=', &
+          I4, ';   PROPORTION TO WINDTHROW =', F4.2, &
+          /T13, 'MINIMUM ELIGIBLE STEMS FOR EVENT =', F7.0)
+GOTO 90
+
+15 CONTINUE
+!
+!  ==========  OPTION NUMBER 15: BBTYPE1 ===============================
+!
+!     BARK BEETLE TYPE # 1
+!
+BB1GO = .TRUE.
+IDOBB = IDOBB + 1
+
+IDT = 1
+IF (LNOTBK(1)) IDT = INT(ARRAY(1))
+
+!.... SET THE DEFAULTS FOR SPECIES, MINIMUM DBH, MIN ELIGIBLE TPA,
+!.... MORTALITY RATE, AND NUMBER OF OUTBREAKS.
+
+PRMS(1) = RROBTS(1)
+PRMS(2) = RROBSC(1)
+PRMS(3) = RROBOL(1)
+PRMS(4) = RROBMR(1)
+PRMS(5) = 0.0
+
+IF (LNOTBK(2)) THEN
+
+!....    CALL SPDECD TO GET SPECIES CODE (ALPHA OR NUMERIC).
+
+   CALL SPDECD(2,ISPC,NSP(1,1),MAXSP,JOSTND,IRECNT,KEYWRD, &
+               ARRAY,KARD)
+
+   IF (ISPC .GE. 1 .AND. ISPC .LE. MAXSP) THEN
+
+!....       VALID SPECIES CODE.
+
+      PRMS(1) = ARRAY(2)
+
+   ELSE
+
+!....       INVALID SPECIES CODE.
+
+      WRITE(JOSTND,1510) KARD(2), ISPC
+1510       FORMAT (' ********   SPECIES = ', A3, ' (',I2,') ', &
+                 'NOT VALID. DEFAULT WILL BE USED.')
+
+      ISPC = INT(RROBTS(1))
+      KARD(2)(1:2) = NSP(ISPC,1)(1:2)
+      KARD(2)(3:3) = ' '
+   ENDIF
+ELSE
+   ISPC = INT(RROBTS(1))
+   KARD(2)(1:2) = NSP(ISPC,1)(1:2)
+   KARD(2)(3:3) = ' '
+ENDIF
+
+IF (LNOTBK(5)) PRMS(4) = ARRAY(5)
+IF (LNOTBK(6)) PRMS(5) = ARRAY(6)
+
+IF (LMTRIC) THEN
+   IF (LNOTBK(3)) PRMS(2) = ARRAY(3) * CMTOIN
+   IF (LNOTBK(4)) PRMS(3) = ARRAY(4) / HATOAC
+ELSE
+   IF (LNOTBK(3)) PRMS(2) = ARRAY(3)
+   IF (LNOTBK(4)) PRMS(3) = ARRAY(4)
+ENDIF
+
+CALL OPNEW (KODE,IDT,MYACT(4),5,PRMS)
+IF (KODE .GT. 0) GOTO 90
+
+!.... DIAGNOSTIC OUTPUT FOR BBTYPE1 KEYWORD: STEMS/ACRE METHOD
+
+IF (.NOT. REINGO) THEN
+   IF (LMTRIC) THEN
+      IF(LKECHO)WRITE(JOSTND, 1530) KEYWRD, IDT, KARD(2), ISPC, &
+                PRMS(2) * INTOCM, PRMS(3) / ACTOHA, PRMS(4)
+   ELSE
+      IF(LKECHO)WRITE(JOSTND, 1520) KEYWRD, IDT, KARD(2), ISPC, &
+                (PRMS(I), I=2,4)
+   ENDIF
+
+1520    FORMAT (/1X,A8,'   TYPE 1 BARK BEETLE TO BE ATTEMPTED IN DATE', &
+              '/CYCLE=', I5, ';   SPECIES =', A3, '(', I2, '); ', &
+              'MINIMUM DBH=', F5.2, ' INCHES', &
+              /T13, 'MINIMUM ELIGIBLE STEMS FOR EVENT =', F7.2, &
+              ' STEMS/ACRE;   MORTALITY RATE = ', F5.3)
+
+1530    FORMAT (/1X,A8,'   TYPE 1 BARK BEETLE TO BE ATTEMPTED IN DATE', &
+              '/CYCLE=', I5, ';   SPECIES =', A3, '(', I2, '); ', &
+              'MINIMUM DBH=', F5.2, ' CMS', &
+              /T13, 'MINIMUM ELIGIBLE STEMS FOR EVENT =', F7.2, &
+              ' STEMS/HA;   MORTALITY RATE = ', F5.3)
+
+ENDIF
+
+!.... DIAGNOSTIC OUTPUT FOR BBTYPE1 KEYWORD: REINEKE METHOD
+
+IF (REINGO) THEN
+   IF (LMTRIC) THEN
+      IF(LKECHO)WRITE(JOSTND,1550) KEYWRD, IDT, KARD(2), ISPC, &
+              PRMS(2) * INTOCM, PRMS(3) / ACTOHA, PRMS(4)
+   ELSE
+      IF(LKECHO)WRITE(JOSTND,1540) KEYWRD, IDT, KARD(2), ISPC, &
+              (PRMS(I), I=2,4)
+   ENDIF
+
+1540    FORMAT (/1X,A8,'   TYPE 1 BARK BEETLE TO BE ATTEMPTED IN DATE', &
+              '/CYCLE=', I5, ';   SPECIES =', A3, '(', I2, '); ', &
+              'MINIMUM DBH=', F5.2, ' INCHES', &
+              /T13, 'MINIMUM REINEKE SDI=', F5.3, &
+              '  MORTALITY RATE = ', F5.3)
+
+1550    FORMAT (/1X,A8,'   TYPE 1 BARK BEETLE TO BE ATTEMPTED IN DATE', &
+              '/CYCLE=', I5, ';   SPECIES =', A3, '(', I2, '); ', &
+              'MINIMUM DBH=', F5.2, ' CMS', &
+              /T13, 'MINIMUM REINEKE SDI=', F5.3, &
+              '  MORTALITY RATE = ', F5.3)
+
+ENDIF
+
+IF (PRMS(5) .EQ. 1.0) THEN
+   IF(LKECHO)WRITE(JOSTND,1560)
+ELSE
+   IF(LKECHO)WRITE(JOSTND,1570)
+ENDIF
+
+1560 FORMAT (9X, '   ONLY ONE OUTBREAK WILL BE SCHEDULED FOR THIS ', &
+           'BARK BEETLE.')
+
+1570 FORMAT (9X, '   MULTIPLE OUTBREAKS WILL BE SCHEDULED FOR THIS ', &
+           'BARK BEETLE.')
+
+GOTO 90
+
+16 CONTINUE
+!
+!  ==========  OPTION NUMBER 16: BBTYPE2 =============================
+!
+!     TYPE 2 BARK BEETLES
+!
+BB2GO = .TRUE.
+IDOBB = IDOBB + 1
+
+IDT = 1
+IF (LNOTBK(1)) IDT = INT(ARRAY(1))
+
+!.... SET THE DEFAULTS FOR SPECIES, MINIMUM DBH, MIN TPA WINDTHROWN,
+!.... MORTALITY RATE, AND NUMBER OF OUTBREAKS.
+
+PRMS(1) = RROBTS(2)
+PRMS(2) = RROBSC(2)
+PRMS(3) = RROBOL(2)
+PRMS(4) = RROBMR(2)
+PRMS(5) = 0.0
+
+IF (LNOTBK(2)) THEN
+
+!....    CALL SPDECD TO GET SPECIES CODE (ALPHA OR NUMERIC).
+
+   CALL SPDECD(2,ISPC,NSP(1,1),MAXSP,JOSTND,IRECNT,KEYWRD, &
+               ARRAY,KARD)
+
+   IF (ISPC .GE. 1 .AND. ISPC .LE. MAXSP) THEN
+
+!....       VALID SPECIES CODE.
+
+      PRMS(1) = ARRAY(2)
+
+   ELSE
+
+!....       INVALID SPECIES CODE.
+
+      WRITE(JOSTND, 1510) KARD(2), ISPC
+      ISPC = INT(RROBTS(2))
+      KARD(2)(1:2) = NSP(ISPC,1)(1:2)
+      KARD(2)(3:3) = ' '
+   ENDIF
+ELSE
+   ISPC = INT(RROBTS(2))
+   KARD(2)(1:2) = NSP(ISPC,1)(1:2)
+   KARD(2)(3:3) = ' '
+ENDIF
+
+IF (LNOTBK(5)) PRMS(4) = ARRAY(5)
+IF (LNOTBK(6)) PRMS(5) = ARRAY(6)
+
+IF (LMTRIC) THEN
+   IF (LNOTBK(3)) PRMS(2) = ARRAY(3) * CMTOIN
+   IF (LNOTBK(4)) PRMS(3) = ARRAY(4) / HATOAC
+ELSE
+   IF (LNOTBK(3)) PRMS(2) = ARRAY(3)
+   IF (LNOTBK(4)) PRMS(3) = ARRAY(4)
+ENDIF
+
+CALL OPNEW (KODE,IDT,MYACT(5),5,PRMS)
+IF (KODE .GT. 0) GOTO 90
+
+!.... OUTPUT FOR BBTYPE2 KEYWORD
+
+IF (LMTRIC) THEN
+
+   IF(LKECHO)WRITE(JOSTND,1611) KEYWRD, IDT, KARD(2), ISPC, &
+                          PRMS(2) * INTOCM, &
+                          PRMS(3) / ACTOHA, PRMS(4)
+1611    FORMAT (/1X,A8,'   TYPE 2 BARK BEETLE TO BE ATTEMPTED IN DATE', &
+         '/CYCLE=', I5, ';   SPECIES =', A3, '(', I2, '); ', &
+         'MINIMUM DBH=', F5.2, '  CMS', &
+         /T13, 'MINIMUM ELIGIBLE STEMS FOR EVENT =', F7.2, &
+         ' STEMS/HA ;   MORTALITY RATE = ', F4.2)
+
+ELSE
+   IF(LKECHO)WRITE(JOSTND, 1601) KEYWRD, IDT, KARD(2), ISPC, &
+                           (PRMS(I), I=2,4)
+1601    FORMAT (/1X,A8,'   TYPE 2 BARK BEETLE TO BE ATTEMPTED IN DATE', &
+         '/CYCLE=', I5, ';   SPECIES =', A3, '(', I2, '); ', &
+         'MINIMUM DBH=', F5.2, '  INCHES', &
+         /T13, 'MINIMUM ELIGIBLE STEMS FOR EVENT =', F7.2, &
+         ' STEMS/ACRE ;   MORTALITY RATE = ', F4.2)
+
+ENDIF
+
+IF (PRMS(5) .EQ. 1.0) THEN
+   IF(LKECHO)WRITE(JOSTND,1560)
+ELSE
+   IF(LKECHO)WRITE(JOSTND,1570)
+ENDIF
+
+GOTO 90
+
+17 CONTINUE
+!
+!  ==========  OPTION NUMBER 17: BBTYPE3 ==============================
+!
+!     TYPE 3 BARK BEETLES
+!
+!     Changed order of paramter fields: 10/94
+!
+
+IDOBB = IDOBB + 1
+
+IDT = 1
+IF (LNOTBK(1)) IDT = INT(ARRAY(1))
+
+!.... SET THE DEFAULTS FOR SPECIES, MINIMUM DBH, MINIMUM ELIGIBLE TPA,
+!.... MORTALITY RATE, MINIMUM PROPORTION ROOTS INFECTED, AND
+!.... NUMBER OF OUTBREAKS.
+
+PRMS(1) = RROBTS(3)
+PRMS(2) = RROBSC(3)
+PRMS(3) = RROBOL(3)
+PRMS(4) = RROBMR(3)
+PRMS(5) = RROBRD(3)
+PRMS(6) = 0.0
+
+IF (LNOTBK(2)) THEN
+
+!....    CALL SPDECD TO GET SPECIES CODE (ALPHA OR NUMERIC).
+
+   CALL SPDECD(2,ISPC,NSP(1,1),MAXSP,JOSTND,IRECNT,KEYWRD, &
+               ARRAY,KARD)
+
+   IF (ISPC .GE. 1 .AND. ISPC .LE. MAXSP) THEN
+
+!....       VALID SPECIES CODE.
+
+      PRMS(1) = ARRAY(2)
+
+   ELSE
+
+!....       INVALID SPECIES CODE.
+
+      WRITE(JOSTND,1510) KARD(2), ISPC
+      ISPC = INT(RROBTS(3))
+      KARD(2)(1:2) = NSP(ISPC,1)(1:2)
+      KARD(2)(3:3) = ' '
+   ENDIF
+ELSE
+   ISPC = INT(RROBTS(3))
+   KARD(2)(1:2) = NSP(ISPC,1)(1:2)
+   KARD(2)(3:3) = ' '
+ENDIF
+
+IF (LMTRIC) THEN
+   IF (LNOTBK(3)) PRMS(2) = ARRAY(3) * CMTOIN
+   IF (LNOTBK(4)) PRMS(3) = ARRAY(4) / HATOAC
+ELSE
+   IF (LNOTBK(3)) PRMS(2) = ARRAY(3)
+   IF (LNOTBK(4)) PRMS(3) = ARRAY(4)
+ENDIF
+
+IF (LNOTBK(5)) PRMS(5) = ARRAY(5)
+IF (LNOTBK(6)) PRMS(6) = ARRAY(6)
+IF (LNOTBK(7)) PRMS(4) = ARRAY(7)
+
+CALL OPNEW (KODE,IDT,MYACT(6),6,PRMS)
+IF (KODE .GT. 0) GOTO 90
+
+!.... OUTPUT FOR BBTYPE3 KEYWORD
+
+IF (LMTRIC) THEN
+
+   IF(LKECHO)WRITE(JOSTND,1711) KEYWRD, IDT, KARD(2), ISPC, &
+               PRMS(2)*INTOCM,PRMS(3)/ACTOHA, PRMS(4), PRMS(5)
+1711    FORMAT(/1X,A8,'   TYPE 3 BARK BEETLE TO BE ATTEMPTED IN DATE', &
+         '/CYCLE=', I5, ';   SPECIES =', A3, '(', I2, '); ', &
+         'MINIMUM DBH=', F5.2, '  CMS', &
+         /T13, 'MINIMUM ELIGIBLE STEMS FOR EVENT= ', F7.2, &
+         ' STEMS/HA   ;  MORTALITY RATE = ', F4.2, &
+         /T13, 'MINIMUM ROOT DISEASE INFECTION= ', F4.2)
+
+ELSE
+   IF(LKECHO)WRITE(JOSTND, 1701) KEYWRD, IDT, KARD(2), ISPC, &
+                           (PRMS(I), I=2,5)
+1701    FORMAT(/1X,A8,'   TYPE 3 BARK BEETLE TO BE ATTEMPTED IN DATE', &
+         '/CYCLE=', I5, ';   SPECIES =', A3, '(', I2, '); ', &
+         'MINIMUM DBH=', F5.2, '  INCHES', &
+         /T13, 'MINIMUM ELIGIBLE STEMS FOR EVENT= ', F7.2, &
+         ' STEMS/ACRE   ;  MORTALITY RATE = ', F4.2, &
+         /T13, 'MINIMUM ROOT DISEASE INFECTION= ', F4.2)
+
+ENDIF
+
+IF (PRMS(6) .EQ. 1.0) THEN
+   IF(LKECHO)WRITE(JOSTND,1560)
+ELSE
+   IF(LKECHO)WRITE(JOSTND,1570)
+ENDIF
+
+GO TO 90
+
+18 CONTINUE
+!
+!  ==========  OPTION NUMBER 18: INOCSPAN =============================
+!
+!     Minimum life span of inoculum
+
+!.... For each disease type, if a value was entered, set the XMINLF
+!.... array to the user defined value and then print out the value.
+
+DO 1820 IDI = 1, ITOTRR
+   IF (LNOTBK(IDI)) THEN
+      XMINLF(IDI) = ARRAY(IDI)
+      IF(LKECHO)WRITE(JOSTND,1830)KEYWRD,DISTYP(IDI),XMINLF(IDI)
+   ENDIF
+1820 CONTINUE
+
+1830 FORMAT (/1X,A8,'   MINIMUM LIFE SPAN FOR ',A12,' INOCULUM IS', &
+              F4.0, ' YEARS')
+
+GOTO 90
+
+19 CONTINUE
+!
+!  ==========  OPTION NUMBER 19: RRCOMP  ==============================
+!
+IF (ARRAY(1) .GT. 400.0 .OR. ARRAY(1) .LE. 0.0) GOTO 1910
+IRCOMP = INT(ARRAY(1))
+GOTO 1920
+
+1910 CONTINUE
+WRITE(JOSTND,1911) ARRAY(1)
+1911 FORMAT (/1X,A8,'   *** ERROR, COMPRESSION TARGET READ AS ',F5.0, &
+           '.', /, T13, 'VALUE IS OUT OF BOUNDS. SET TO 400.')
+IRCOMP = 400
+
+GOTO 1930
+
+!.... OUTPUT FOR RRCOMP KEYWORD
+
+1920 CONTINUE
+IF(LKECHO)WRITE(JOSTND,1921) KEYWRD, IRCOMP
+1921 FORMAT (/1X,A8,'   COMPRESSION TARGET=',I5,' RECORDS')
+
+1930 CONTINUE
+GOTO 90
+
+20 CONTINUE
+!
+!  ==========  OPTION NUMBER 20: RRECHO ===============================
+!
+!     MACHINE READABLE SUMMARY OUTPUT KEYWORD.
+!     IRGEN(7) IS SET TO 1 IF RRECHO IS TO BE PRINTED.
+!
+IF (ARRAY(1) .GT. 0.0) IRGEN(2) = INT(ARRAY(1))
+IRGEN(7) = 1
+
+!M    IF (ARRAY(2) .GT. 0.0) IRGEN(7) = INT(ARRAY(2))
+
+!.... OUTPUT FOR RRECHO KEYWORD
+
+IF(LKECHO)WRITE(JOSTND,2001) KEYWRD, IRGEN(2)
+2001 FORMAT (/1X,A8,'   MACHINE READABLE OUTPUT ON LOGICAL UNIT ',I4)
+
+!M    IF (IRGEN(7) .NE. 0) IF(LKECHO)WRITE(JOSTND,2002)
+!M  2002 FORMAT (T13,'OUTPUT WILL BE IN LOTUS READABLE FORMAT')
+
+GOTO 90
+
+21 CONTINUE
+!
+!  ==========  OPTION NUMBER 21: STREAD ===============================
+!
+!     Modified 10/94 to use multiple keywords instead of supplemental
+!     records.
+!
+IRGEN(3) = 1
+
+!.... TEST TO MAKE SURE NONE OF THE FIRST FOUR FIELDS ARE BLANK.
+
+DO 2110 I=1,4
+   IF (.NOT.LNOTBK(I)) THEN
+      WRITE(JOSTND,2101)
+2101       FORMAT(/,' **** BLANK FIELD IN STREAD.  KEYWORD IGNORED.')
+      GOTO 90
+   ENDIF
+2110 CONTINUE
+
+!.... CALL SPDECD TO GET SPECIES CODE (ALPHA OR NUMERIC).
+
+CALL SPDECD(1,ISPC,NSP(1,1),MAXSP,JOSTND,IRECNT,KEYWRD, &
+               ARRAY,KARD)
+
+IF (ISPC .LT. 1 .OR. ISPC .GT. MAXSP) THEN
+
+!....    INVALID SPECIES CODE.
+
+   WRITE(JOSTND,2102) KARD(1), ISPC
+2102    FORMAT (/,' **** STREAD: INVALID SPECIES. ', &
+              'SPECIES = ', A3, ' (', I2, ').  KEYWORD IGNORED.')
+   GOTO 90
+ENDIF
+
+ISL = INT(ARRAY(2))
+IF (ISL .LT. 1 .OR. ISL .GT. 5) THEN
+   WRITE(JOSTND,2103) ISL
+2103    FORMAT (/,' **** STREAD: STUMP CLASS=',I3, ' OUT OF RANGE.', &
+              ' KEYWORD IGNORED.')
+   GOTO 90
+ENDIF
+
+DEN = ARRAY(3)
+IF (DEN .LT. 0.0) THEN
+   WRITE(JOSTND,2104) DEN
+2104    FORMAT (/,' **** STREAD: NEGATIVE NUMBER OF STUMPS=',F6.1, &
+              ' KEYWORD IGNORED.')
+   GOTO 90
+ENDIF
+
+IRRSP = INT(ARRAY(4))
+IF (IRRSP .LT. 1 .OR. IRRSP .GT. ITOTRR) THEN
+   WRITE(JOSTND,2105) IRRSP
+2105    FORMAT (/,' **** STREAD: DISEASE TYPE=',I2, ' OUT OF RANGE.', &
+              ' KEYWORD IGNORED.')
+   GOTO 90
+ENDIF
+
+IF (LNOTBK(5)) THEN
+   JAGE = INT(ARRAY(5))
+ELSE
+   JAGE = 0
+ENDIF
+
+IF (JAGE .LT. 0) THEN
+   WRITE(JOSTND,2106) JAGE
+2106    FORMAT (/,' **** STREAD: NEGATIVE YEARS SINCE DEATH=',I4, &
+              ' KEYWORD IGNORED.')
+   GOTO 90
+ENDIF
+
+ISTFLG = 1
+
+!.... CONVERT STUMP CLASS TO DIAMETER (INCHES)
+
+DIAM = STCUT(ISL) + 6.0
+
+!.... ESTIMATE ROOT RADIUS
+
+CALL RDROOT(ISPC,DIAM,ANS,PROOT(IRTSPC(ISPC)),RSLOP(IRTSPC(ISPC)), &
+               0.0)
+RTD = ANS
+
+!.... ADD TO STUMP ARRAY
+
+CALL RDSTP (ISL,ISPC,DEN,DIAM,RTD)
+
+!     IF(LKECHO)WRITE(JOSTND,2159) 'AFTER', ISL, ISPC, DEN, DIAM, RTD, IRRSP
+!2159 FORMAT (1X,A10,' ISL=',I4, ' ISPC=',I4, '   DEN=',F8.2,
+!    &        '   DIAM=',F8.2, '   RTD=',F8.2,
+!    &        '   IRRSP=',I4)
+
+!.... RESET AGE TO USER INPUT, IF DIFFERENT FROM THAT SET IN RDSTP
+
+IF (JAGE .NE. IYEAR) THEN
+   JRAGED(IRRSP,ISPS(IRTSPC(ISPC)),ISL,1) = -JAGE
+ENDIF
+ISTFLG = 0
+
+!.... WRITE OUTPUT FOR STREAD KEYWORD.
+
+IF(LKECHO)WRITE(JOSTND,2131) KEYWRD, KARD(1), ISPC, ISL, DEN, &
+                       DISTYP(IRRSP), JAGE
+2131 FORMAT (/, 1X, A8, '   STUMPS ENTERED WITH FOLLOWING ATTRIBUTES:', &
+           /, T13, 'SPECIES = ', A3, '(', I2, ')   STUMP CLASS = ', &
+           I2, '   NUMBER OF STUMPS = ', F6.1, '   DISEASE TYPE = ', &
+           A12, '   YEARS SINCE DEATH = ', I3)
+
+GOTO 90
+
+22 CONTINUE
+!
+!  ==========  OPTION NUMBER 22: TDISTN ===============================
+!
+!     TREE DISTRIBUTION FOR SPREAD MODEL
+!
+IF (ARRAY(1) .GT. 0.0) IRGEN(4) = INT(ARRAY(1))
+IF (ARRAY(2) .EQ. 0.0 .OR. ARRAY(2) .EQ. 1.0) &
+       IRSTYP = INT(ARRAY(2))
+IF (LNOTBK(3)) RRSFRN = ARRAY(3)
+
+!.... OUPUT FOR TDISTN KEYWORD
+
+IF ((IRSTYP.EQ.0).AND.LKECHO)WRITE(JOSTND,2200) KEYWRD
+IF ((IRSTYP.EQ.1).AND.LKECHO)WRITE(JOSTND,2201) KEYWRD
+2200 FORMAT (/,1X,A8,'   TREE DISTRIBUTION IS RANDOM')
+2201 FORMAT (/,1X,A8,'   TREE DISTRIBUTION IS LATTICE')
+
+IF (IRGEN(4) .EQ. 3000) GOTO 2230
+
+IF(LKECHO)WRITE(JOSTND,2202) IRGEN(4)
+2202 FORMAT (T13,'SPATIAL DISTRIBUTION WILL CHANGE', &
+         ' TO OTHER FORM IN ',I4)
+
+2230 CONTINUE
+IRG = IRGEN(4)
+IF (((IRSTYP .EQ. 1).OR.(IRG .NE. 3000)).AND. &
+      LKECHO)WRITE(JOSTND,2231) RRSFRN
+2231 FORMAT (T13,'STANDARD DEVIATION OF LATTICE DISTRIBUTION IS ',F7.3)
+
+GOTO 90
+
+23 CONTINUE
+!
+!  ==========  OPTION NUMBER 23: RRJUMP ==============================
+!
+!     SPECIFIES THE EXTENT TO WHICH ROOT DISEASE CENTERS WILL EXPAND
+!     AFTER A CUT.
+!
+
+!.... WRITE OUT KEYWORD INFO.
+
+IF(LKECHO)WRITE(JOSTND,2301) KEYWRD
+2301 FORMAT (/,1X,A8,'   NUMBER OF RADII THE AREA IN SPECIFIED ROOT ', &
+         'DISEASE WILL JUMP OUT')
+
+!.... FOR EACH DISEASE TYPE, IF A VALUE WAS ENTERED, SET THE TNJUMP
+!.... ARRAY TO THE USER DEFINED VALUE AND THEN PRINT OUT THE VALUE.
+
+DO 2305 IDI=1,ITOTRR
+   IF (LNOTBK(IDI)) THEN
+
+!....       A VALUE WAS ENTERED FOR THIS DISEASE TYPE (IDI), SET
+!....       TNJUMP ARRAY.
+
+      TNJUMP(IDI) = ARRAY(IDI)
+
+!....       OUTPUT VALUE FOR DISEASE TYPE (IDI)
+
+      IF(LKECHO)WRITE(JOSTND,2312) DISTYP(IDI), TNJUMP(IDI)
+   ENDIF
+2305 CONTINUE
+
+2312 FORMAT (T13,1X,A12,5X,F5.2)
+
+GOTO 90
+
+24 CONTINUE
+!
+!  ==========  OPTION NUMBER 24: RRMINK ================================
+!
+!     MINIMUM YEARS TO KILL TREES
+!
+DO 2420 IDI=1,ITOTRR
+   IF (LNOTBK(IDI)) THEN
+      XMINKL(IDI) = ARRAY(IDI)
+
+!....       OUTPUT FOR RRMINK KEYWORD
+
+      IF(LKECHO)WRITE(JOSTND,2401)KEYWRD,XMINKL(IDI),DISTYP(IDI)
+   ENDIF
+2420 CONTINUE
+
+2401 FORMAT (/1X,A8,'   NO HABITAT INFLUENCE BELOW ',F4.0, &
+           ' YEARS, ',A12 )
+
+GOTO 90
+
+25 CONTINUE
+!
+!  ==========  OPTION NUMBER 25: RSEED ================================
+!
+!     KEYWORD FOR REINITIALIZING ROOT DISEASE RANDOM NUMBER GENERATOR
+!
+IF (LNOTBK(1).AND.ARRAY(1).EQ.0.0) CALL GETSED (ARRAY(1))
+IF (LNOTBK(1)) DSEED = ARRAY(1)
+
+IF(LKECHO)WRITE(JOSTND,2501) KEYWRD, DSEED
+2501 FORMAT (/1X,A8,'   SEED TO REINITIALIZE RANDOM NUMBER GENERATOR=', &
+      F10.2)
+
+GOTO 90
+
+26 CONTINUE
+!
+!  ==========  OPTION NUMBER 26: PLREAD ===============================
+!
+!     KEYWORD TO READ IN SUB-PLOT ID'S
+!
+IDI = MINRR
+IF (LNOTBK(1)) IDI = INT(ARRAY(1))
+
+K = 0
+LONECT(IDI) = 2
+
+2601 READ (IREAD,2602) IDSPLT
+2602 FORMAT (I4)
+
+IF (IDSPLT .EQ. -999) GOTO 2610
+K = K + 1
+IRDPLT(IDI,K) = IDSPLT
+GOTO 2601
+
+2610 CONTINUE
+
+!.... WRITE KEYWORD, DISEASE SUB-PLOTS
+
+IF (K .LE. 25) M = K
+IF (K .GT. 25) M = 25
+
+IF(LKECHO)WRITE(JOSTND,2611) KEYWRD, DISTYP(IDI), &
+         (IRDPLT(IDI,J),J=1,M)
+2611 FORMAT (/1X,A8,'   ROOT DISEASE IS ', A12 / &
+           T13, 'DISEASE SUBPLOTS READ IN'/ &
+           T13, 'DISEASED PLOTS=', 25(I4))
+
+IF (K .LE. 25) GOTO 90
+
+IF(LKECHO)WRITE(JOSTND,2612)
+2612 FORMAT (/)
+NEXT = M + 1
+
+IF(LKECHO)WRITE(JOSTND,2613) (IRDPLT(IDI,J),J=NEXT,K)
+2613 FORMAT (T27,25I4)
+GOTO 90
+
+27 CONTINUE
+!
+!  ==========  OPTION NUMBER 27: --RDv3-- =============================
+!
+!     THIS IS NOT AN ACTUAL KEYWORD. IT IS JUST A PLACEHOLDER OCCUPYING
+!     THE SPACE OF A KEYWORD THAT WAS REMOVED.
+
+!.... OUTPUT
+
+IF(LKECHO)WRITE(JOSTND,2710) KEYWRD
+2710 FORMAT (/1X,A8,'   THIS RD KEYWORD ARRAY POSITION IS NOT USED.')
+
+GOTO 90
+
+28 CONTINUE
+!
+!  ==========  OPTION NUMBER 28: RRTREIN  =============================
+!
+!     THIS KEYWORD USED WHEN ROOT DISEASE INITIALIZATION IS TAKEN
+!     DIRECTLY FROM THE INPUT TREELIST.
+!
+RRTINV = .TRUE.
+
+!.... OUTPUT FOR RRTREIN KEYWORD
+
+IF(LKECHO)WRITE(JOSTND,2856) KEYWRD
+2856 FORMAT (/1X,A8,'   ROOT DISEASE INITIALIZATION IS FROM TREELIST')
+
+GOTO 90
+
+29 CONTINUE
+!
+!  ==========  OPTION NUMBER 29: INFCOLO  =============================
+!
+!     USED TO CHANGE THE PROPORTION OF ROOT SYSTEMS COLONIZED AFTER
+!     DEATH.
+!
+IPOINT = 0
+IF (LNOTBK(3)) IPOINT = INT(ARRAY(3))
+
+IF (INT(ARRAY(3)) .GT. ITOTRR) THEN
+   WRITE(JOSTND,2960) KEYWRD, ARRAY(3),ITOTRR
+   IPOINT = 0
+ENDIF
+
+2960 FORMAT (/T13,A8,'**** INVALID DISEASE TYPE. VALUE ENTERED: ', &
+           F3.0,' VALUE MUST BE LESS THAN ',I2, &
+           /T13,8X, 'CHANGE WILL AFFECT ALL DISEASE TYPES')
+
+!.... SET ROOT DISEASE TYPE TO BE MODIFIED.
+
+IRMIN = MINRR
+IRMAX = MAXRR
+IF (IPOINT .GT. 0) THEN
+   IRMIN = IPOINT
+   IRMAX = IPOINT
+ENDIF
+
+!.... CALL SPDECD TO GET SPECIES CODE (ALPHA OR NUMERIC).
+
+CALL SPDECD(1,ISPC,NSP(1,1),MAXSP,JOSTND,IRECNT,KEYWRD, &
+               ARRAY,KARD)
+
+IF (ISPC .GE. 1 .AND. ISPC .LE. MAXSP) THEN
+
+!....    ONLY ONE SPECIES TO BE CHANGED.
+
+   DO 2965 IDI=IRMIN,IRMAX
+      IF (LNOTBK(2)) PCOLO(IRTSPC(ISPC),IDI) = ARRAY(2)
+2965    CONTINUE
+
+ELSE
+
+!....    ALL SPECIES GET CHANGED.
+
+   READ (IREAD,2921) (PCOLO(IRTSPC(KSP),IRMIN), KSP=1,MAXSP)
+
+!     Increased Format 2921 columns to 24 species (RNH, Dec98)
+2921    FORMAT (24F5.2)
+!2921    FORMAT (11F5.2)
+
+   DO 2967 IDI=IRMIN+1,IRMAX
+      DO 2966 KSP=1,MAXSP
+         PCOLO(IRTSPC(KSP),IDI) = PCOLO(IRTSPC(KSP),IRMIN)
+2966       CONTINUE
+2967    CONTINUE
+ENDIF
+
+!.... OUTPUT FOR INFCOLO KEYWORD
+
+2930 CONTINUE
+IF(LKECHO)WRITE(JOSTND,2931) KEYWRD
+2931 FORMAT (/1X,A8,'   PROPORTION ROOT COLONIZED AT DEATH')
+IF(LKECHO)WRITE(JOSTND,2932)
+2932 FORMAT (/T13,5X,'SPECIES',8X,'PROPORTION COLONIZED')
+IF(LKECHO)WRITE(JOSTND,2933)
+2933 FORMAT (T13,41('-'))
+
+DO 2970 IDI=IRMIN,IRMAX
+   IF(LKECHO)WRITE(JOSTND,2971) DISTYP(IDI)
+   IF(LKECHO)WRITE(JOSTND,2972)
+   DO 2934 KSP=1,MAXSP
+      IF(LKECHO)WRITE(JOSTND,2935) RRJSP(IRTSPC(KSP)), &
+               PCOLO(IRTSPC(KSP),IDI)
+2934    CONTINUE
+2970 CONTINUE
+
+2935 FORMAT (T13,A16,13X,F5.2)
+2971 FORMAT (T13,A16)
+2972 FORMAT (T13,16('-'))
+
+GOTO 90
+
+30 CONTINUE
+!
+!  ==========  OPTION NUMBER 30: BORATE  =============================
+!
+IF (MINRR .GT. 2 .AND. MAXRR .GT. 2) THEN
+   WRITE(JOSTND,3002)
+3002    FORMAT(/,' **** BORATE: INVALID DISEASE TYPE ACTIVE. ', &
+            'BORATE APPLIES ONLY TO ANNOSUS.', &
+            /T13,'KEYWORD WILL BE IGNORED.')
+   GOTO 90
+ENDIF
+
+IDT = 1
+IF (LNOTBK(1)) IDT = INT(ARRAY(1))
+
+PRMS(1) = BOTRT
+PRMS(2) = BODBH
+
+IF (LNOTBK(2)) PRMS(1) = ARRAY(2)
+IF (LNOTBK(3)) PRMS(2) = ARRAY(3)
+
+IF (LMTRIC .AND. LNOTBK(3)) PRMS(2) = ARRAY(3) * CMTOIN
+
+CALL OPNEW (KODE,IDT,MYACT(7),2,PRMS)
+IF (KODE .GT. 0) GOTO 90
+
+LBORAX(1) = .TRUE.
+
+IF (LMTRIC) THEN
+   IF(LKECHO)WRITE(JOSTND,3010) KEYWRD,IDT,PRMS(1),PRMS(2)*INTOCM
+ELSE
+   IF(LKECHO)WRITE(JOSTND,3010) KEYWRD,IDT, (PRMS(I), I=1,2)
+ENDIF
+
+3010 FORMAT (/1X,A8,'   BORATE WILL BE APPLIED IN DATE/CYCLE=',I5, &
+          '     PROP TREAT:', F4.2, '   MIN DBH:', F6.2)
+
+!      IF (LNOTBK(1) .AND. ARRAY(1) .GE. 0.0 .AND. ARRAY(1) .LE. 1.0)
+!     &   BOTRT = ARRAY(1)
+!      IF (LNOTBK(2)) BODBH = ARRAY(2)
+
+!      IF(LKECHO)WRITE(JOSTND,3000) BOTRT, BODBH
+! 3000 FORMAT (/1X,'BORAX      PROP TREAT:', F4.2, '   MIN DBH:', F6.2)
+
+GOTO 90
+
+31 CONTINUE
+!
+!  ==========  OPTION NUMBER 31: SPORE    =============================
+!
+!     FIELD 5 CONTAINS THE DISEASE TYPE.  1 = P TYPE.  2 = S TYPE.
+!
+IDT = 1
+IF (LNOTBK(1)) IDT = INT(ARRAY(1))
+
+IDI = INT(ARRAY(6))
+IF (IDI .NE. 2) IDI = 1
+
+PRMS(1) = SPINF(IDI)
+PRMS(2) = SPDBH(IDI)
+PRMS(3) = SPYTK(IDI)
+PRMS(4) = SPTRAN(IDI)
+PRMS(5) = IDI
+
+IF (LNOTBK(2)) PRMS(1) = ARRAY(2)
+IF (LNOTBK(3)) PRMS(2) = ARRAY(3)
+IF (LNOTBK(4)) PRMS(3) = ARRAY(4)
+IF (LNOTBK(5)) PRMS(4) = ARRAY(5)
+
+IF (LMTRIC .AND. LNOTBK(3)) PRMS(2) = ARRAY(3) * CMTOIN
+
+CALL OPNEW (KODE,IDT,MYACT(8),5,PRMS)
+IF (KODE .GT. 0) GOTO 90
+
+IF (LMTRIC) THEN
+   IF(LKECHO)WRITE(JOSTND,3100) KEYWRD,IDT,PRMS(1),PRMS(2)*INTOCM, &
+                          PRMS(3),PRMS(4),PRMS(5)
+ELSE
+   IF(LKECHO)WRITE(JOSTND,3100) KEYWRD,IDT,(PRMS(I), I=1,5)
+ENDIF
+
+3100 FORMAT (/1X,A8,'   IN DATE/CYCLE : ',I4,' VALUES WILL BE ', &
+           'CHANGED TO :', &
+           /T13, 'PROPORTION OF STUMPS TO INFECT :',F4.2, &
+           /T13, 'MINIMUM STUMP DIAMETER TO FORM NEW CENTERS :',F6.2, &
+           /T13, 'MULTIPLIER FOR TIME-TO-DEATH :',F7.2, &
+           /T13, 'MULTIPLIER FOR PROBABILITY OF INFECTION :', F6.2, &
+           /T13, 'DISEASE TYPE :',F3.0)
+
+GOTO 90
+
+32 CONTINUE
+!
+!  ==========  OPTION NUMBER 32: BBTYPE4 ==============================
+!
+!     TYPE 4 BARK BEETLES
+!
+!     Changed order of parameter fields: 10/94
+!
+IDOBB = IDOBB + 1
+
+IDT = 1
+IF (LNOTBK(1)) IDT = INT(ARRAY(1))
+
+!.... SET THE DEFAULTS FOR SPECIES, MINIMUM DBH, MINIMUM ELIGIBLE TPA,
+!.... MORTALITY RATE, AND MINIMUM PROPORTION ROOTS INFECTED.
+
+PRMS(1) = RROBTS(4)
+PRMS(2) = RROBSC(4)
+PRMS(3) = RROBOL(4)
+PRMS(4) = RROBMR(4)
+PRMS(5) = RROBRD(4)
+
+!.... SET THE DEFAULTS FOR MORTALITY RATES AND NUMBER OF OUTBREAKS.
+
+PRMS(6) = 0.3
+PRMS(7) = 0.15
+PRMS(8) = 0.01
+PRMS(9) = 0.0
+
+IF (LNOTBK(2)) THEN
+
+!....    CALL SPDECD TO GET SPECIES CODE (ALPHA OR NUMERIC).
+
+   CALL SPDECD(2,ISPC,NSP(1,1),MAXSP,JOSTND,IRECNT,KEYWRD, &
+                  ARRAY,KARD)
+
+   IF (ISPC .GE. 1 .AND. ISPC .LE. MAXSP) THEN
+
+!....       VALID SPECIES CODE.
+
+      PRMS(1) = ARRAY(2)
+
+   ELSE
+
+!....       INVALID SPECIES CODE.
+
+      IF(LKECHO)WRITE(JOSTND,1510) KARD(2), ISPC
+      ISPC = INT(RROBTS(4))
+      KARD(2)(1:2) = NSP(ISPC,1)(1:2)
+      KARD(2)(3:3) = ' '
+   ENDIF
+ELSE
+   ISPC = INT(RROBTS(4))
+   KARD(2)(1:2) = NSP(ISPC,1)(1:2)
+   KARD(2)(3:3) = ' '
+ENDIF
+
+IF (LMTRIC) THEN
+   IF (LNOTBK(3)) PRMS(2) = ARRAY(3) * CMTOIN
+   IF (LNOTBK(4)) PRMS(3) = ARRAY(4) / HATOAC
+ELSE
+   IF (LNOTBK(3)) PRMS(2) = ARRAY(3)
+   IF (LNOTBK(4)) PRMS(3) = ARRAY(4)
+ENDIF
+
+IF (LNOTBK(5)) PRMS(5) = ARRAY(5)
+IF (LNOTBK(6)) PRMS(9) = ARRAY(6)
+IF (LNOTBK(7)) PRMS(4) = ARRAY(7)
+
+3201 READ (IREAD,3202) T1, T2, T3
+3202 FORMAT (A10,A10,A10)
+
+IF (T1.NE.'          ') READ (T1,'(G10.0)') PRMS(6)
+IF (T2.NE.'          ') READ (T2,'(G10.0)') PRMS(7)
+IF (T3.NE.'          ') READ (T3,'(G10.0)') PRMS(8)
+
+CALL OPNEW (KODE,IDT,MYACT(9),9,PRMS)
+IF (KODE .GT. 0) GOTO 90
+
+!.... OUTPUT FOR BBTYPE4 KEYWORD
+
+IF (LMTRIC) THEN
+   IF(LKECHO)WRITE(JOSTND,3213) KEYWRD, IDT, KARD(2), ISPC, &
+               PRMS(2)*INTOCM,PRMS(3)/ACTOHA, PRMS(5), PRMS(4), &
+                          (PRMS(I),I=6,8)
+ELSE
+   IF(LKECHO)WRITE(JOSTND,3203) KEYWRD,IDT,KARD(2),ISPC,PRMS(2), &
+                          PRMS(3), PRMS(5), PRMS(4), (PRMS(I),I=6,8)
+ENDIF
+
+3203 FORMAT(/1X, A8, '   TYPE 4 BARK BEETLE TO BE ATTEMPTED IN DATE', &
+          '/CYCLE=', I5, ';   SPECIES =', A3, '(', I2, ');  ', &
+          'MINIMUM DBH=', F5.2, '  INCHES', &
+          /T13, 'MINIMUM ELIGIBLE STEMS FOR EVENT= ', F7.2, &
+          ' STEMS/ACRE ; MINIMUM ROOT DISEASE INFECTION= ', F5.2, &
+          /T13, 'INFECTED MORTALITY= ', F5.3, &
+          ' UNINFECTED-WITHIN-PATCH MORTALITY= ', F5.2, &
+          /T13, 'UNINFECTED-FRINGE MORTALITY=', F5.2, &
+          ' UNINFECTED-NON-PATCH MORTALITY= ', F5.2)
+
+3213 FORMAT(/1X, A8, '   TYPE 4 BARK BEETLE TO BE ATTEMPTED IN DATE', &
+          '/CYCLE=', I5, ';   SPECIES =', A3, '(', I2, ');  ', &
+          'MINIMUM DBH=', F5.2, '  CMS', &
+          /T13, 'MINIMUM ELIGIBLE STEMS FOR EVENT= ', F7.2, &
+          ' STEMS/HA ; MINIMUM ROOT DISEASE INFECTION= ', F5.2, &
+          /T13, 'INFECTED MORTALITY= ', F5.3, &
+          ' UNINFECTED-WITHIN-PATCH MORTALITY= ', F5.2, &
+          /T13, 'UNINFECTED-FRINGE MORTALITY=', F5.2, &
+          ' UNINFECTED-NON-PATCH MORTALITY= ', F5.2)
+
+IF (PRMS(9) .EQ. 1.0) THEN
+   IF(LKECHO)WRITE(JOSTND,1560)
+ELSE
+   IF(LKECHO)WRITE(JOSTND,1570)
+ENDIF
+
+GO TO 90
+
+33 CONTINUE
+!
+!  ==========  OPTION NUMBER 33: DNSCALC ==============================
+!
+!     PROCESS THE ARGUMENTS TO IMPLEMENT THE REINEKE STAND DENSITY
+!     INDEX METHOD FOR EVALUATING THE THRESHOLD FOR A BARK BEETLE
+!     TYPE 1 OUTBREAK.
+!     ASSIGN REINEK(4) IF THE ARGUMENT IS { -2.5 <= arg <= -0.5 }
+!
+REINGO = .TRUE.
+
+DO 3300 I=1,3
+   IF (LNOTBK(I)) REINEK(I) = ARRAY(I)
+   IF (REINEK(I) .NE. 0) REINEK(I) = 1
+3300 CONTINUE
+
+IF (LMTRIC) ARRAY(4) = (ARRAY(4) / HATOAC) / CMTOIN
+IF (LNOTBK(4) .AND. ARRAY(4) .LE. -0.5 .AND. ARRAY(4) .GE. -2.5) &
+       REINEK(4) = ARRAY(4)
+
+!.... OUTPUT FOR DNSCALC KEYWORD
+
+IF(LKECHO)WRITE(JOSTND, 3302) KEYWRD
+
+IF (REINEK(1) .EQ. 0) THEN
+   IF(LKECHO)WRITE(JOSTND, 3303) 'TREES/ACRE'
+ELSE
+   IF(LKECHO) &
+      WRITE(JOSTND, 3303) 'REINEKE STAND DENSITY INDEX (SDI)'
+ENDIF
+
+IF (REINEK(2) .EQ. 0) THEN
+   IF(LKECHO)WRITE(JOSTND, 3303) 'ENTIRE STAND'
+ELSE
+   IF(LKECHO) &
+      WRITE(JOSTND, 3303) 'ONLY CLEAN (OUTSIDE DISEASE PATCHES)'
+ENDIF
+
+IF (REINEK(3) .EQ. 0) THEN
+   IF(LKECHO)WRITE(JOSTND, 3303) 'ONLY LIVING TREES'
+ELSE
+   IF(LKECHO) &
+      WRITE(JOSTND, 3303) 'ALL TREES (LIVING AND STANDING DEAD)'
+ENDIF
+
+IF (REINEK(1) .NE. 0) THEN
+   IF (LMTRIC) THEN
+      IF(LKECHO)WRITE(JOSTND, 3306) (REINEK(4) / ACTOHA) / INTOCM
+   ELSE
+      IF(LKECHO)WRITE(JOSTND, 3306) REINEK(4)
+   ENDIF
+ENDIF
+
+3302 FORMAT (/1X,A8, '  DNSCALC (REINEKE) OPTIONS:')
+3303 FORMAT (1X, A40, ' USED TO CALCULATE OUTBREAK DENSITY THRESHOLD')
+3306 FORMAT (1X, ' SLOPE OF SDI FUNCTION = ', F5.3)
+
+GO TO 90
+
+34 CONTINUE
+!
+!  ==========  OPTION NUMBER 34: SMCOUT ===============================
+!
+!     OUTPUT FROM THE SPREAD RATE MONTE CARLO SIMULATION
+!     (IN REGULAR TABLE FORMAT, WITH HEADINGS)
+!
+IMCOUT = 26
+IF (ARRAY(1) .GT. 0.0) IMCOUT = INT(ARRAY(1))
+
+!.... OUTPUT FOR SMCOUT KEYWORD
+
+IF(LKECHO)WRITE(JOSTND,3401) KEYWRD, IMCOUT
+3401 FORMAT (/1X,A8,'   SPREAD RATE MONTE CARLO OUTPUT ON LOGICAL', &
+                  ' UNIT ',I4)
+
+GOTO 90
+
+35 CONTINUE
+!
+!  ==========  OPTION NUMBER 35: BBOUT ===============================
+!
+!     OUTPUT DETAILING BARK BEETLE MORTALITY BY SIZE CLASS
+!     (IN REGULAR TABLE FORMAT, WITH HEADINGS)
+
+IBBOUT = 27
+IF (ARRAY(1) .GT. 0.0) IBBOUT = INT(ARRAY(1))
+
+!.... OUTPUT FOR BBOUT KEYWORD
+
+IF(LKECHO)WRITE(JOSTND,3501) KEYWRD, IBBOUT
+3501 FORMAT (/1X,A8,'   DETAILED BARK BEETLE MORTALITY OUTPUT ON ', &
+                  'LOGICAL UNIT ',I4)
+
+GOTO 90
+
+36 CONTINUE
+!
+!  ==========  OPTION NUMBER 36: PLOTINF ===============================
+!
+!     Set the percent infected in each plot. If a plot is not mentioned,
+!     assume there is no infection and that all trees in that plot are
+!     outside centers.
+
+!.... Set the root disease type from field 1.
+
+IDI = MINRR
+IF (LNOTBK(1)) IDI = INT(ARRAY(1))
+
+!.... Set the LONECT flag to show that the model is being run with
+!.... multiple plots and tell the model that PLOTINF is being used.
+
+LONECT(IDI) = 2
+LPLINF = .TRUE.
+
+K = 0
+
+!.... Start loop to read supplemental records.
+
+3601 READ (IREAD,3602) IDSPLT,RDPRP
+3602 FORMAT (I4,F5.2)
+
+IF (IDSPLT .EQ. -999 .OR. K .EQ. 50) GOTO 3610
+
+K = K + 1
+IANPLT(IDI,K) = IDSPLT
+PLPROP(IDI,K) = RDPRP
+GOTO 3601
+
+3610 CONTINUE
+
+!.... Set M to print out sub-plot info.  If there are more then 25
+!.... sub-plots then more then one record needs to be written.
+
+IF (K .LE. 25) M = K
+IF (K .GT. 25) M = 25
+
+!.... Write keyword.
+
+IF(LKECHO)WRITE(JOSTND,3611) KEYWRD, DISTYP(IDI), &
+         (IANPLT(IDI,J),J=1,M)
+
+3611 FORMAT (/1X,A8,'   ROOT DISEASE IS ', A12 / &
+           T13, 'DISEASE SUBPLOTS READ IN'/ &
+           T13, 'DISEASED PLOTS=', 25(I5))
+
+IF (K .LE. 25) GOTO 3655
+
+!.... Write a new line.
+
+IF(LKECHO)WRITE(JOSTND,3612)
+3612 FORMAT (/)
+
+!.... Set NEXT to print sub-plot numbers 25 to 50.
+
+NEXT = M + 1
+
+IF(LKECHO)WRITE(JOSTND,3613) (IANPLT(IDI,J),J=NEXT,K)
+3613 FORMAT (T27,25(I5))
+
+3655 CONTINUE
+
+!.... Print out the proportion of root disease in each sub-plot.
+
+IF(LKECHO)WRITE(JOSTND,3621) (PLPROP(IDI,J),J=1,M)
+3621 FORMAT (T13, 'DISEASE PROPS =',25(F5.2))
+
+IF (K .LE. 25) GOTO 90
+
+!.... Write a new line.
+
+IF(LKECHO)WRITE(JOSTND,3622)
+3622 FORMAT (/)
+
+!.... Set NEXT to print sub-plot numbers 25 to 50.
+
+NEXT = M + 1
+
+IF(LKECHO)WRITE(JOSTND,3633) (PLPROP(IDI,J),J=NEXT,K)
+3633 FORMAT (T27,25(F5.2))
+
+GOTO 90
+
+37 CONTINUE
+!
+!  ==========  OPTION NUMBER 37: SDIRMULT ===========================
+!
+!     ROOT RADIUS MULTIPLIER BASED ON SDI. USER SPECIFIES A SLOPE
+!     AND THE SDI AT WHICH THE MULTIPLIER SHOULD BE ONE. (SLOPE
+!     SHOULD NORMALLY BE NEGATIVE). DEFAULT IS NO MULTIPLER
+!
+SDNORM = 369.0
+SDISLP = -0.0033
+
+IF (LMTRIC) THEN
+   IF (ARRAY(1) .GT. 0.0) SDNORM = ARRAY(1) / HATOAC
+   IF (LNOTBK(2)) SDISLP = ARRAY(2) * HATOAC
+ELSE
+   IF (ARRAY(1) .GT. 0.0) SDNORM = ARRAY(1)
+   IF (LNOTBK(2)) SDISLP = ARRAY(2)
+ENDIF
+
+!.... OUTPUT FOR SMCOUT KEYWORD
+
+IF (LMTRIC) THEN
+   IF(LKECHO)WRITE(JOSTND,3701)KEYWRD,SDNORM/ACTOHA,SDISLP*ACTOHA
+ELSE
+   IF(LKECHO)WRITE(JOSTND,3701) KEYWRD, SDNORM, SDISLP
+ENDIF
+
+3701 FORMAT (/1X,A8,'   ROOT RADIUS MULTIPLER IS ONE AT SDI= ',F6.1, &
+           ' WITH SLOPE = ',F8.4)
+
+GOTO 90
+
+38 CONTINUE
+!
+!  ==========  OPTION NUMBER 38: TIMEDEAD ==============================
+!
+!     TIME SINCE DEATH FOR DEAD STUFF IN THE INVENTORY.  USED TO REDUCE
+!     THE AMOUNT OF INOCULUM PRESENT INITIALLY IN THE STAND BY DECAYING
+!     THEDEAD STUFF TO THE PRESENT TIME.  USER CAN SPECIFY DIFFERENT
+!     VALUES FOR EACH SIZE CLASS.  FIELD 6 (ONE VALUE FOR ALL CLASSES)
+!     ELIMINATED 10/94.
+!
+
+IF (LNOTBK(1)) DEDAGE(1) = INT(ARRAY(1))
+IF (LNOTBK(2)) DEDAGE(2) = INT(ARRAY(2))
+IF (LNOTBK(3)) DEDAGE(3) = INT(ARRAY(3))
+IF (LNOTBK(4)) DEDAGE(4) = INT(ARRAY(4))
+IF (LNOTBK(5)) DEDAGE(5) = INT(ARRAY(5))
+
+!.... OUTPUT FOR TIMEDEAD KEYWORD
+
+IF (LMTRIC) THEN
+   IF(LKECHO)WRITE(JOSTND,3811) KEYWRD, (DEDAGE(J),J=1,5)
+ELSE
+   IF(LKECHO)WRITE(JOSTND,3801) KEYWRD, (DEDAGE(J),J=1,5)
+ENDIF
+
+3801 FORMAT (/1X, A8, '   TIME SINCE DEATH OF TREES IN INVENTORY IS:', &
+           /T13, ' 0- 12":', I4, '  12-24":', I4, '  24-48":', I4, &
+           /T13, '48-100":', I4, '   >100":', I4)
+3811 FORMAT (/1X, A8, '   TIME SINCE DEATH OF TREES IN INVENTORY IS:', &
+           /T13, '  0- 30CM:', I4, '  30-61CM:', I4,'  61-122CM:',I4, &
+           /T13, '122-254CM:', I4, '   >254CM:', I4)
+
+GOTO 90
+
+39 CONTINUE
+!
+!  ==========  OPTION NUMBER 39: RRHOSTS ==============================
+!
+!     THIS KEYWORD CHANGES THE HOST TREES FOR EACH OF THE ROOT DISEASE
+!     TYPES SO THAT USERS CAN RUN THE MODEL THINKING ABOUT ROOT DISEASE
+!     AS SOME OTHER MORTALITY AGENT
+!
+ISPC = 0
+IDI = 1
+
+IF (LNOTBK(1)) THEN
+
+!....    CALL SPDECD TO GET SPECIES CODE (ALPHA OR NUMERIC).
+
+   CALL SPDECD(1,ISPC,NSP(1,1),MAXSP,JOSTND,IRECNT,KEYWRD, &
+                  ARRAY,KARD)
+
+   IF (ISPC .GE. 1 .AND. ISPC .LE. MAXSP) THEN
+
+!....       Change only one species
+
+      IF (LNOTBK(2)) IDI=INT(ARRAY(2))
+
+      IF (IDI .LT. 0 .OR. IDI .GT. ITOTRR) THEN
+
+!....          INVALID DISEASE TYPE
+
+         IF(LKECHO)WRITE(JOSTND,3965) RRJSP(IRTSPC(ISPC)), IDI
+         IDI = MAXRR
+         IF (MAXRR .LT. 3) IDI = IDITYP(IRTSPC(ISPC))
+         IF(LKECHO)WRITE(JOSTND,3966) IDI, DISTYP(IDI)
+      ELSE
+         IF (MAXRR .LT. 3) IDITYP(IRTSPC(ISPC)) = IDI
+      ENDIF
+
+   ELSEIF (ISPC .EQ. 0) THEN
+
+!....       Change all species
+
+      READ(IREAD,3963) (IHST(KSP), KSP=1,MAXSP)
+3963       FORMAT(24I5)
+!3963       FORMAT(11I5)
+
+      DO 3910 KSP=1,MAXSP
+         IDI = IHST(KSP)
+
+         IF (IDI .LT. 0 .OR. IDI .GT. ITOTRR) THEN
+
+!....             INVALID DISEASE TYPE
+
+            IF(LKECHO)WRITE(JOSTND,3965) RRJSP(IRTSPC(KSP)), IDI
+            IDI = IDITYP(IRTSPC(KSP))
+            IF(LKECHO)WRITE(JOSTND,3966) IDI, DISTYP(IDI)
+         ELSE
+
+!....             VALID DISEASE TYPE
+
+            IDITYP(IRTSPC(KSP))=IDI
+         ENDIF
+3910       CONTINUE
+
+   ELSE
+
+!....       IF SPECIES OUT OF RANGE. PRINT MESSAGE AND IGNORE THE
+!....       KEYWORD.
+
+      WRITE(JOSTND,3961) KEYWRD, KARD(1), INT(ARRAY(1))
+3961       FORMAT(1X, A8, '   ERROR!!!!    INVALID SPECIES : ', A3, &
+                ' (', I2, ');  KEYWORD IGNORED!!! ')
+   ENDIF
+ENDIF
+
+3965 FORMAT(/1X,'********   ERROR IN RRHOSTS, DISEASE TYPE OUT OF ', &
+          'RANGE (0-2)', /, T13, 'SPECIES: ', A16, &
+          ',        DISEASE TYPE: ',I5)
+3966 FORMAT(T13, 'DEFAULT TYPE USED:  ', I5, '    -    ', A12)
+
+!.... Output for RRHOSTS
+
+IF(LKECHO)WRITE(JOSTND,3971) KEYWRD
+IF(LKECHO)WRITE(JOSTND,3972)
+IF(LKECHO)WRITE(JOSTND,3973)
+
+DO 3920 KSP=1,MAXSP
+   IF (MAXRR .LT. 3) THEN
+      IF(LKECHO)WRITE(JOSTND,3975) RRJSP(IRTSPC(KSP)), &
+                            DISTYP(IDITYP(IRTSPC(KSP)))
+   ELSE
+      IF(LKECHO)WRITE(JOSTND,3975) RRJSP(IRTSPC(KSP)), &
+                            DISTYP(MAXRR)
+   ENDIF
+3920 CONTINUE
+
+3971 FORMAT(/1X, A8, '   HOST TREE SPECIES')
+3972 FORMAT(/T13, 5X, 'SPECIES', 14X, 'DISEASE TYPE')
+3973 FORMAT(T13, 41('-'))
+3975 FORMAT(T13, A16, 9X, A12)
+
+GOTO 90
+
+40 CONTINUE
+!
+!  ==========  OPTION NUMBER 40: INOCLIFE =============================
+!
+!     THIS KEYWORD CHANGES THE LIFESPAN AND DECAY PATTERN OF INOCULUM
+!     IN THE FORM OF INFECTED ROOTS ON DEAD TREES AND STUMPS.
+!     CHANGES AFFECT ALL SIZE CLASSES
+!
+
+IPOINT = 0
+
+IF (LNOTBK(7)) IPOINT = INT(ARRAY(7))
+
+!.... CHECK TO MAKE SURE ROOT DISEASE TYPE IS ACCEPTABLE
+
+IF (INT(ARRAY(7)) .GT. ITOTRR) THEN
+   WRITE(JOSTND,4010)
+   WRITE(JOSTND,4020)
+   IPOINT = 0
+ENDIF
+
+4010 FORMAT (/,' ********   ERROR IN DISEASE TYPE, INOCLIFE KEYWORD')
+4020 FORMAT (' ********   CHANGE WILL AFFECT ALL ACTIVE DISEASE ', &
+           'TYPES')
+
+!.... SET THE ROOT DISEASE TYPE TO BE MODIFIED
+
+IRMIN = MINRR
+IRMAX = MAXRR
+
+IF (IPOINT .GT. 0) THEN
+   IRMIN = IPOINT
+   IRMAX = IPOINT
+ENDIF
+
+DO 4030 IDI=IRMIN,IRMAX
+
+   IF (LMTRIC) THEN
+      IF (LNOTBK(1)) DECFN(IDI,1,1) = ARRAY(1)
+      IF (LNOTBK(2)) DECFN(IDI,2,1) = ARRAY(2) * MTOFT
+      IF (LNOTBK(3)) RSITFN(IDI,1) = ARRAY(3) * MTOFT / CMTOIN
+      IF (LNOTBK(4)) RSITFN(IDI,2) = ARRAY(4) * MTOFT
+      IF (LNOTBK(5)) YRSITF(IDI,1,1) = ARRAY(5) / CMTOIN
+      IF (LNOTBK(6)) YRSITF(IDI,2,1) = ARRAY(6) * MTOFT
+
+!....       ALSO ASSIGN THESE VARIABLES TO THE LARGER SIZE CLASS,
+!....       IF THEY WERE CHANGED
+
+      IF (LNOTBK(1)) DECFN(IDI,1,2) = ARRAY(1)
+      IF (LNOTBK(2)) DECFN(IDI,2,2) = ARRAY(2) * MTOFT
+      IF (LNOTBK(5)) YRSITF(IDI,1,2) = ARRAY(5) / CMTOIN
+      IF (LNOTBK(6)) YRSITF(IDI,2,2) = ARRAY(6) * MTOFT
+   ELSE
+      IF (LNOTBK(1)) DECFN(IDI,1,1) = ARRAY(1)
+      IF (LNOTBK(2)) DECFN(IDI,2,1) = ARRAY(2)
+      IF (LNOTBK(3)) RSITFN(IDI,1) = ARRAY(3)
+      IF (LNOTBK(4)) RSITFN(IDI,2) = ARRAY(4)
+      IF (LNOTBK(5)) YRSITF(IDI,1,1) = ARRAY(5)
+      IF (LNOTBK(6)) YRSITF(IDI,2,1) = ARRAY(6)
+
+!....       ALSO ASSIGN THESE VARIABLES TO THE LARGER SIZE CLASS,
+!....       IF THEY WERE CHANGED
+
+      IF (LNOTBK(1)) DECFN(IDI,1,2) = ARRAY(1)
+      IF (LNOTBK(2)) DECFN(IDI,2,2) = ARRAY(2)
+      IF (LNOTBK(5)) YRSITF(IDI,1,2) = ARRAY(5)
+      IF (LNOTBK(6)) YRSITF(IDI,2,2) = ARRAY(6)
+   ENDIF
+4030 CONTINUE
+
+!.... OUTPUT FOR INOCLIFE KEYWORD
+
+DO 4040 IDI=IRMIN,IRMAX
+
+   IF (LMTRIC) THEN
+      IF(LKECHO)WRITE(JOSTND,4050) KEYWRD, DISTYP(IDI), &
+                             DECFN(IDI,1,2), &
+                             DECFN(IDI,2,2)*FTTOM, &
+                             RSITFN(IDI,1)*FTTOM/INTOCM, &
+                             RSITFN(IDI,2)*FTTOM, &
+                             YRSITF(IDI,1,2)/CMTOIN, &
+                             YRSITF(IDI,2,2)*FTTOM
+   ELSE
+      IF(LKECHO)WRITE(JOSTND,4050) KEYWRD, DISTYP(IDI), &
+                             DECFN(IDI,1,2), &
+                             DECFN(IDI,2,2), RSITFN(IDI,1), &
+                             RSITFN(IDI,2), YRSITF(IDI,1,2), &
+                             YRSITF(IDI,2,2)
+   ENDIF
+4040 CONTINUE
+
+4050 FORMAT (/1X, A8, '   FOR ', A12, '   DECAY FUNCTION SLOPE IS ', &
+           F7.5, ' AND INTERCEPT IS ', F7.5, &
+           /T13, 'FUNCTION DESCRIBING THE ROOT RADIUS AT WHICH TO ', &
+           ' STOP DECAYING HAS SLOPE ', F7.5, ' AND INTERCEPT ',F7.5, &
+           /T13, 'FUNCTION DESCRIBING THE NUMBER OF YEARS TO NOT ', &
+           ' DECAY HAS SLOPE ', F7.4, ' AND INTERCEPT ', F7.4)
+
+GOTO 90
+
+41 CONTINUE
+!
+!  ==========  OPTION NUMBER 41: BBCLEAR ==============================
+!
+!     THIS KEYWORD ENSURES THAT NO BARK BEETLES WILL BE TURNED ON
+!     IN THIS SIMULATION
+!
+LBBON = .FALSE.
+
+IF(LKECHO)WRITE(JOSTND,4101) KEYWRD
+4101 FORMAT (/1X,A8,'   NO BARK BEETLES WILL BE ACTIVE')
+
+GOTO 90
+
+42 CONTINUE
+!
+!  ==========  OPTION NUMBER 42: RRTYPE ==============================
+!
+!     THIS KEYWORD TELLS THE MODEL WHICH DISEASE TYPES ARE ACTIVE IN
+!     THE STAND.
+!     FOR NOW, ASSUME THAT WE CAN HAVE ONLY ONE TYPE (1,2=ANNOSUS,
+!     3=ARMILLARIA, 4=PHELLINUS)
+!
+LRTYPE = .TRUE.
+!
+MINRR = 0
+MAXRR = 0
+
+DO 4205 IDI=1,ITOTRR
+   IF (LNOTBK(IDI)) THEN
+      IPOINT = INT(ARRAY(IDI))
+      IF (IPOINT .LT. MINRR .OR. MINRR .EQ. 0) MINRR = IPOINT
+      IF (IPOINT .GT. MAXRR) MAXRR = IPOINT
+   ENDIF
+4205 CONTINUE
+
+IF (MINRR .LE. 0) MINRR = 1
+IF (MINRR .GT. ITOTRR) MINRR = ITOTRR
+IF (MAXRR .LE. 0) MAXRR = 1
+IF (MAXRR .GT. ITOTRR) MAXRR = ITOTRR
+IF (MAXRR .LT. MINRR) MAXRR = MINRR
+
+!.... THIS NEXT STATEMENT IS TO ENSURE THAT CAN ONLY HAVE ONE TYPE
+!.... IN THE STAND
+
+IF (MAXRR .NE. MINRR .AND. (MINRR .NE. 1 .AND. MAXRR .NE.2)) THEN
+   MAXRR = MINRR
+
+   WRITE(JOSTND,4209)
+4209    FORMAT (/T13, '***ERROR IN RRTYPE KEYWORD. ONLY ONE DISEASE ', &
+             'CAN BE SIMULATED IN THE STAND.')
+ENDIF
+
+IF (MINRR .EQ. MAXRR) THEN
+   IF(LKECHO)WRITE(JOSTND,4210) KEYWRD, DISTYP(MINRR)
+4210    FORMAT (/1X,A8,3X,A15,' WILL BE SIMULATED.')
+ELSEIF (MAXRR .EQ. MINRR+1) THEN
+   IF(LKECHO)WRITE(JOSTND,4215)KEYWRD,DISTYP(MINRR),DISTYP(MAXRR)
+4215    FORMAT (/1X,A8,3X,A15,' AND ',A15,' WILL BE SIMULATED.')
+ENDIF
+
+GOTO 90
+!
+! ================ ENTRY POINT RDKEY =============================
+!
+!     SPECIAL ENTRY TO RETREIVE KEYWORDS
+!
+ENTRY RDKEY(KEY,PASKEY)
+PASKEY = TABLE(KEY)
+
+9000 RETURN
+END

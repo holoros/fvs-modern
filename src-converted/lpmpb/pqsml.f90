@@ -1,0 +1,39 @@
+DOUBLE PRECISION FUNCTION PQSML  (X,P,Q)
+IMPLICIT NONE
+!----------
+! LPMPB $Id$
+!----------
+!
+!     PART OF THE MOUNTAIN PINE BEETLE EXTENSION OF PROGNOSIS SYSTEM.
+!
+! Revision History
+!   02/08/88 Last noted revision date.
+!   07/02/10 Lance R. David (FMSC)
+!     Added IMPLICIT NONE.
+!----------
+!
+!OMMONS
+!
+!
+INCLUDE 'MPBETA.f90'
+!
+!
+!OMMONS
+!
+DOUBLE PRECISION P,Q,S,U,V,X,XK,MPBGAM
+!
+U = X**P
+S = U/P
+XK = 0.
+1 XK = XK + 1.
+U = (XK-Q)*X*U/XK
+V = U/(XK+P)
+S = S+ V
+IF(DABS(V) .GT. DABS(EPS*S)) GO TO 1
+!     WRITE(16,777) P,Q,S
+777 FORMAT('IN PQSML, P,Q,S', 3D16.8)
+PQSML = S*MPBGAM(P+Q)/(MPBGAM(P)*MPBGAM(Q))
+!     WRITE(16,444) PQSML
+444 FORMAT('PQSML=',D16.8)
+RETURN
+END

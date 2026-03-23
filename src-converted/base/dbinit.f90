@@ -1,0 +1,22 @@
+SUBROUTINE DBINIT
+IMPLICIT NONE
+!----------
+! BASE $Id$
+!----------
+!
+!
+!OMMONS
+!
+!
+INCLUDE 'DBSTK.f90'
+!
+!
+!OMMONS
+!
+!
+ALLSUB='$**SUB'
+MAXTOP=255
+ITOP=0
+MAXLEN=20
+RETURN
+END
