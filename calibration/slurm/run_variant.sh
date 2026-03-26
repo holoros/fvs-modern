@@ -82,6 +82,7 @@ fi
 # Check if required R scripts exist
 for script in 01_fetch_fia_data 02_fit_diameter_growth 03_fit_height_diameter \
               03b_fit_height_increment 04_fit_mortality 05_fit_crown_ratio \
+              08_fetch_stand_data 09_fit_stand_density \
               06_posterior_to_json 07_diagnostics; do
     if [ ! -f "${SCRIPTS_DIR}/${script}.R" ]; then
         log_step "ERROR" "Script not found: ${script}.R"
@@ -189,6 +190,32 @@ if Rscript "${SCRIPTS_DIR}/05_fit_crown_ratio.R" \
     log_step "STEP05" "Crown ratio model completed successfully"
 else
     log_step "WARN" "Crown ratio model failed (non-fatal; continuing)"
+fi
+
+# ============================================================================
+# Step 08: Fetch Stand-Level Data
+# ============================================================================
+
+log_step "STEP08" "Extracting stand-level density data from FIA..."
+
+if Rscript "${SCRIPTS_DIR}/08_fetch_stand_data.R" \
+    --variant "$VARIANT" >> "$VARIANT_LOG" 2>&1; then
+    log_step "STEP08" "Stand-level data extraction completed successfully"
+else
+    log_step "WARN" "Stand-level data extraction failed (non-fatal; continuing)"
+fi
+
+# ============================================================================
+# Step 09: Fit Stand Density Parameters (SDIMAX, BAMAX, self-thinning)
+# ============================================================================
+
+log_step "STEP09" "Calibrating stand-level density parameters..."
+
+if Rscript "${SCRIPTS_DIR}/09_fit_stand_density.R" \
+    --variant "$VARIANT" >> "$VARIANT_LOG" 2>&1; then
+    log_step "STEP09" "Stand density calibration completed successfully"
+else
+    log_step "WARN" "Stand density calibration failed (non-fatal; continuing)"
 fi
 
 # ============================================================================

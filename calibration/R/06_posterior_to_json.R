@@ -462,6 +462,131 @@ if (file.exists(cr_summary_file)) {
 }
 
 # =============================================================================
+# 6. Stand-Level Density Parameters (SDIMAX, BAMAX, self-thinning slope)
+# =============================================================================
+
+logger::log_info("=== Processing stand-level density posteriors ===")
+
+sdimax_file <- file.path(output_dir, "species_sdimax_calibrated.csv")
+bamax_file <- file.path(output_dir, "species_bamax_calibrated.csv")
+slope_file <- file.path(output_dir, "self_thinning_slopes.csv")
+overall_file <- file.path(output_dir, "stand_density_overall.csv")
+
+if (file.exists(sdimax_file)) {
+  sdimax_calibrated <- read_csv(sdimax_file, show_col_types = FALSE) %>% as_tibble()
+  logger::log_info("Loaded {nrow(sdimax_calibrated)} species SDIMAX estimates")
+
+  # Determine which SDI parameter this variant uses
+  sdi_param <- NULL
+  sdi_category <- NULL
+  for (cat_name in names(original_config$categories)) {
+    cat_data <- original_config$categories[[cat_name]]
+    for (k in names(cat_data)) {
+      if (k %in% c("SDICON", "R5SDI", "R4SDI", "FMSDI")) {
+        sdi_param <- k
+        sdi_category <- cat_name
+      }
+    }
+  }
+
+  if (!is.null(sdi_param)) {
+    original_sdi <- unlist(original_config$categories[[sdi_category]][[sdi_param]])
+    n_sdi <- length(original_sdi)
+
+    # Get FIA species codes from config
+    fia_species_codes <- unlist(original_config$categories$species_definitions$FIAJSP)
+    spcd_to_idx <- setNames(seq_along(fia_species_codes), fia_species_codes)
+
+    # Update SDIMAX values where calibrated data exists
+    updated_sdi <- original_sdi
+    n_updated_sdi <- 0
+
+    for (i in seq_len(nrow(sdimax_calibrated))) {
+      sp <- sdimax_calibrated$SPCD[i]
+      idx <- spcd_to_idx[as.character(sp)]
+      if (!is.na(idx) && idx <= n_sdi) {
+        updated_sdi[idx] <- round(sdimax_calibrated$sdimax_combined[i])
+        n_updated_sdi <- n_updated_sdi + 1
+      }
+    }
+
+    original_config$categories[[sdi_category]][[sdi_param]] <- as.list(updated_sdi)
+    logger::log_info("  {sdi_param}: {n_updated_sdi}/{n_sdi} species updated")
+  }
+
+  components_updated <- c(components_updated, "sdimax")
+} else {
+  logger::log_info("SDIMAX calibration not found (run 09_fit_stand_density.R first)")
+  components_skipped <- c(components_skipped, "sdimax")
+}
+
+# Update BAMAX if applicable
+if (file.exists(bamax_file)) {
+  bamax_calibrated <- read_csv(bamax_file, show_col_types = FALSE) %>% as_tibble()
+  logger::log_info("Loaded {nrow(bamax_calibrated)} species BAMAX estimates")
+
+  bamax_param <- NULL
+  bamax_category <- NULL
+  for (cat_name in names(original_config$categories)) {
+    cat_data <- original_config$categories[[cat_name]]
+    for (k in names(cat_data)) {
+      if (k %in% c("BAMAXA", "BAMAX1")) {
+        bamax_param <- k
+        bamax_category <- cat_name
+      }
+    }
+  }
+
+  if (!is.null(bamax_param)) {
+    original_bamax <- unlist(original_config$categories[[bamax_category]][[bamax_param]])
+    n_bamax <- length(original_bamax)
+
+    fia_species_codes <- unlist(original_config$categories$species_definitions$FIAJSP)
+    spcd_to_idx <- setNames(seq_along(fia_species_codes), fia_species_codes)
+
+    updated_bamax <- original_bamax
+    n_updated_bamax <- 0
+
+    for (i in seq_len(nrow(bamax_calibrated))) {
+      sp <- bamax_calibrated$SPCD[i]
+      idx <- spcd_to_idx[as.character(sp)]
+      if (!is.na(idx) && idx <= n_bamax) {
+        updated_bamax[idx] <- round(bamax_calibrated$bamax_combined[i])
+        n_updated_bamax <- n_updated_bamax + 1
+      }
+    }
+
+    original_config$categories[[bamax_category]][[bamax_param]] <- as.list(updated_bamax)
+    logger::log_info("  {bamax_param}: {n_updated_bamax}/{n_bamax} species updated")
+  }
+
+  components_updated <- c(components_updated, "bamax")
+}
+
+# Update self-thinning slopes in BNORML if available
+if (file.exists(slope_file)) {
+  slopes <- read_csv(slope_file, show_col_types = FALSE) %>% as_tibble()
+
+  if ("BNORML" %in% names(original_config$categories$other)) {
+    # BNORML is typically a lookup table by diameter class, not by species
+    # Log the calibrated slopes for reference but don't overwrite BNORML structure
+    # (BNORML format varies by variant and is used for DBH class conversion)
+    overall_results <- if (file.exists(overall_file)) {
+      read_csv(overall_file, show_col_types = FALSE)
+    } else NULL
+
+    if (!is.null(overall_results)) {
+      if (!"self_thinning" %in% names(original_config$categories)) {
+        original_config$categories$self_thinning <- list()
+      }
+      original_config$categories$self_thinning$CALIBRATED_SLOPE <- overall_results$pop_slope_bayes[1]
+      original_config$categories$self_thinning$REINEKE_STANDARD <- -1.605
+      logger::log_info("  Self-thinning slope: {round(overall_results$pop_slope_bayes[1], 4)}")
+    }
+  }
+}
+
+# =============================================================================
 # Add Calibration Metadata
 # =============================================================================
 
@@ -469,15 +594,16 @@ logger::log_info("Adding calibration metadata...")
 
 original_config$calibration <- list(
   date = as.character(Sys.Date()),
-  method = "Bayesian MCMC (CmdStanR + brms)",
+  method = "Bayesian MCMC (CmdStanR + brms) and quantile regression",
   fia_data_source = "rFIA package",
   r_version = paste(R.version$major, R.version$minor, sep = "."),
   prior_type = "Informative (from original FVS parameters)",
   components_updated = as.list(components_updated),
   components_skipped = as.list(components_skipped),
   notes = paste0(
-    "Calibration based on FIA remeasurement pairs. ",
-    length(components_updated), " of 5 component models integrated."
+    "Calibration based on FIA data. ",
+    length(components_updated), " of 7 component models integrated ",
+    "(tree: DG, H-D, HG, mortality, CR; stand: SDIMAX, BAMAX)."
   )
 )
 
