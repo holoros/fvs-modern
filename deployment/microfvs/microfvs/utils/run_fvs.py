@@ -37,6 +37,9 @@ def run_fvs(
     config_version: str | None = None,
     config_dir: str | None = None,
     custom_config: str | None = None,
+    uncertainty: bool = False,
+    n_draws: int = 100,
+    seed: int | None = None,
 ) -> FvsResult | list[FvsResult]:
     """Runs a batch of FVS simulations and returns the result(s).
 
@@ -81,11 +84,37 @@ def run_fvs(
         config_dir (str, optional): Override path to the config directory.
         custom_config (str, optional): Path to a user supplied JSON
             config. Required when config_version='custom'.
+        uncertainty (bool, optional): Enable Monte Carlo uncertainty
+            estimation. When True, runs FVS n_draws times with different
+            parameter sets sampled from the Bayesian posterior. Returns
+            a list of FvsResults regardless of the limit parameter.
+        n_draws (int, optional): Number of posterior draws for uncertainty
+            estimation. Default is 100. Ignored when uncertainty=False.
+        seed (int, optional): Random seed for reproducible uncertainty
+            draws. Ignored when uncertainty=False.
 
     Returns:
-        A single FvsResult (if `limit`=1) or a list of FvsResults if
-        `limit` > 1.
+        A single FvsResult (if `limit`=1 and uncertainty=False) or a
+        list of FvsResults if `limit` > 1 or uncertainty=True.
     """  # noqa: W505
+    # If uncertainty mode, delegate to the ensemble runner
+    if uncertainty and config_version and config_version.lower() in ("calibrated", "custom"):
+        return _run_fvs_ensemble(
+            stand_init=stand_init,
+            tree_init=tree_init,
+            limit=limit,
+            treatments=treatments,
+            disturbances=disturbances,
+            template=template,
+            template_params=template_params,
+            stand_stock_params=stand_stock_params,
+            config_version=config_version,
+            config_dir=config_dir,
+            custom_config=custom_config,
+            n_draws=n_draws,
+            seed=seed,
+        )
+
     results: list[FvsResult] = []
 
     stand_init_df = pd.DataFrame.from_records([stand_init.model_dump()])
@@ -181,3 +210,147 @@ def run_fvs(
     if limit == 1:
         return results[0]
     return results
+
+
+def _run_fvs_ensemble(
+    stand_init: FvsStandInit,
+    tree_init: FvsTreeInit | None,
+    limit: int,
+    treatments,
+    disturbances,
+    template: str,
+    template_params: dict,
+    stand_stock_params,
+    config_version: str,
+    config_dir: str | None,
+    custom_config: str | None,
+    n_draws: int,
+    seed: int | None,
+) -> list[FvsResult]:
+    """Run FVS ensemble for uncertainty quantification.
+
+    Executes FVS n_draws times, each time injecting a different set of
+    parameters drawn from the Bayesian posterior distribution. The result
+    is a list of FvsResults whose variation represents parameter uncertainty
+    in the projections.
+
+    This function is called internally by run_fvs() when uncertainty=True.
+    """
+    import logging
+
+    try:
+        from config.uncertainty import UncertaintyEngine
+        from config.config_loader import FvsConfigLoader
+    except ImportError:
+        raise ImportError(
+            "config.uncertainty and config.config_loader must be importable "
+            "for uncertainty estimation. Add fvs-modern root to PYTHONPATH."
+        )
+
+    stand_init_df = pd.DataFrame.from_records([stand_init.model_dump()])
+    if not (len(stand_init_df) > 0):
+        raise ValueError("Must provide data for one or more stands.")
+
+    if tree_init is None:
+        tree_init_df = pd.DataFrame(columns=FvsTreeInitRecord.__fields__.keys())
+    else:
+        tree_init_df = tree_init.to_dataframe()
+
+    # Use the first stand's variant for the uncertainty engine
+    fvs_variant = stand_init_df.iloc[0][FVS_VARIANT_COLUMN_NAME]
+
+    engine = UncertaintyEngine(
+        fvs_variant.lower(),
+        config_dir=config_dir,
+        seed=seed,
+    )
+
+    default_loader = FvsConfigLoader(
+        fvs_variant.lower(),
+        version="default",
+        config_dir=config_dir,
+    )
+    default_config = default_loader.config
+
+    actual_n = min(n_draws, engine.n_draws)
+    ensemble_results: list[FvsResult] = []
+
+    logging.info(f"Running uncertainty ensemble: {actual_n} draws for {fvs_variant}")
+
+    for draw_i in range(actual_n):
+        draw_idx = engine.sample_draw_index()
+        draw = engine.get_draw(draw_idx)
+
+        # Generate keywords for this specific draw
+        draw_keywords = engine.generate_keywords_for_draw(
+            draw, default_config, draw_idx=draw_idx
+        )
+
+        # Run each stand with this draw's parameters
+        for idx, row in stand_init_df.iterrows():
+            with tempfile.TemporaryDirectory() as temp_dir:
+                db_path = os.path.join(temp_dir, FVS_DATABASE_NAME)
+                conn = sqlite3.connect(db_path)
+
+                stand_id = row[STAND_ID_COLUMN_NAME]
+                stand_data = stand_init_df.loc[idx:idx]
+                stand_data.to_sql(
+                    "fvs_standinit", conn, if_exists="replace", index=False
+                )
+                tree_data = tree_init_df.loc[
+                    tree_init_df[STAND_ID_COLUMN_NAME] == stand_id
+                ]
+                tree_data.to_sql(
+                    "fvs_treeinit", conn, if_exists="replace", index=False
+                )
+
+                params = FvsKeyfileTemplateParams(
+                    variant=fvs_variant,
+                    stand_id=stand_id,
+                    treatments=treatments,
+                    disturbances=disturbances,
+                    **template_params,
+                )
+                keyfile = FvsKeyfile(template=template, params=params)
+
+                keyfile_path = os.path.join(temp_dir, keyfile.name + ".key")
+                keyfile_content = keyfile.content
+
+                # Inject draw specific parameters before PROCESS
+                if "PROCESS" in keyfile_content:
+                    keyfile_content = keyfile_content.replace(
+                        "PROCESS",
+                        draw_keywords + "\nPROCESS",
+                    )
+                else:
+                    keyfile_content += "\n" + draw_keywords
+
+                with open(keyfile_path, "w") as f:
+                    f.write(keyfile_content)
+
+                cmd = [
+                    f"/usr/local/bin/FVS{keyfile.fvs_variant.lower()}",
+                    f"--keywordfile={keyfile.name}.key",
+                ]
+                process = subprocess.run(cmd, capture_output=True, cwd=temp_dir)
+
+                ensemble_results.append(
+                    FvsResult.from_files(
+                        fvs_keyfile=keyfile,
+                        process=process,
+                        path_to_dbout=db_path,
+                        path_to_outfile=keyfile_path.replace(".key", ".out"),
+                        add_stand_stock=stand_stock_params.add_stand_stock,
+                        dbh_class=stand_stock_params.dbh_class,
+                        large_dbh=stand_stock_params.large_dbh,
+                    )
+                )
+
+            if len(ensemble_results) >= limit * actual_n:
+                break
+
+        if (draw_i + 1) % 10 == 0 or draw_i == actual_n - 1:
+            logging.info(f"  Completed draw {draw_i + 1}/{actual_n}")
+
+    logging.info(f"Ensemble complete: {len(ensemble_results)} total results")
+    return ensemble_results

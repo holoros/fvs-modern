@@ -620,6 +620,209 @@ write(json_output, file = output_file)
 logger::log_info("Saved calibrated config to {output_file}")
 
 # =============================================================================
+# 8. Export Full Posterior Draws for Uncertainty Propagation
+# =============================================================================
+#
+# In addition to the point estimate (median) JSON, we export the full set
+# of posterior draws so that the Python runtime can sample parameter vectors
+# for Monte Carlo uncertainty propagation through FVS projections.
+#
+# The draws file stores N posterior samples (default 500) for each component
+# model. At runtime, the UncertaintyEngine picks a single draw index and
+# assembles a complete parameter vector from correlated draws across all
+# components, preserving the joint posterior structure.
+# =============================================================================
+
+logger::log_info("=== Exporting posterior draws for uncertainty propagation ===")
+
+n_draws_to_keep <- 500  # subsample from the full MCMC chain
+draws_list <- list()
+
+# Helper: subsample posterior draws from a CSV of MCMC output
+# Expects columns: .draw (or .iteration), variable, value
+# OR wide format with one row per draw and columns per parameter
+subsample_draws <- function(draws_df, n_keep = n_draws_to_keep) {
+  if (is.null(draws_df) || nrow(draws_df) == 0) return(NULL)
+
+  # Detect format: long (variable, value) vs wide (parameters as columns)
+  if ("variable" %in% names(draws_df) && "value" %in% names(draws_df)) {
+    # Long format from CmdStanR summary: not raw draws, skip
+    return(NULL)
+  }
+
+  # Wide format: each row is a posterior draw, columns are parameters
+  n_available <- nrow(draws_df)
+  if (n_available <= n_keep) {
+    return(draws_df)
+  }
+
+  # Systematic thinning to preserve chain mixing
+  idx <- round(seq(1, n_available, length.out = n_keep))
+  return(draws_df[idx, ])
+}
+
+# Load raw posterior draws files (these are the actual MCMC samples,
+# not the summary statistics loaded earlier)
+
+# Diameter growth draws
+dg_draws_file <- file.path(output_dir, "diameter_growth_samples.rds")
+if (!file.exists(dg_draws_file)) {
+  dg_draws_file <- file.path(output_dir, "diameter_growth_draws.csv")
+}
+
+if (file.exists(dg_draws_file)) {
+  logger::log_info("Loading diameter growth draws...")
+  if (grepl("\\.rds$", dg_draws_file)) {
+    dg_draws_raw <- readRDS(dg_draws_file)
+  } else {
+    dg_draws_raw <- fread(dg_draws_file)
+  }
+  dg_sub <- subsample_draws(as.data.frame(dg_draws_raw))
+  if (!is.null(dg_sub)) {
+    # Convert to list of lists for JSON serialization
+    # Each element is a named list of parameter values for one draw
+    draws_list$diameter_growth <- lapply(seq_len(nrow(dg_sub)), function(i) {
+      as.list(dg_sub[i, , drop = FALSE])
+    })
+    logger::log_info("  Kept {length(draws_list$diameter_growth)} diameter growth draws")
+  }
+}
+
+# Height diameter draws
+hd_draws_file <- file.path(output_dir, "height_diameter_samples.rds")
+if (!file.exists(hd_draws_file)) {
+  hd_draws_file <- file.path(output_dir, "height_diameter_draws.csv")
+}
+
+if (file.exists(hd_draws_file)) {
+  logger::log_info("Loading height diameter draws...")
+  if (grepl("\\.rds$", hd_draws_file)) {
+    hd_draws_raw <- readRDS(hd_draws_file)
+  } else {
+    hd_draws_raw <- fread(hd_draws_file)
+  }
+  hd_sub <- subsample_draws(as.data.frame(hd_draws_raw))
+  if (!is.null(hd_sub)) {
+    draws_list$height_diameter <- lapply(seq_len(nrow(hd_sub)), function(i) {
+      as.list(hd_sub[i, , drop = FALSE])
+    })
+    logger::log_info("  Kept {length(draws_list$height_diameter)} height diameter draws")
+  }
+}
+
+# Height increment draws (6 variants only)
+hi_draws_file <- file.path(output_dir, "height_increment_samples.rds")
+if (!file.exists(hi_draws_file)) {
+  hi_draws_file <- file.path(output_dir, "height_increment_draws.csv")
+}
+
+if (file.exists(hi_draws_file)) {
+  logger::log_info("Loading height increment draws...")
+  if (grepl("\\.rds$", hi_draws_file)) {
+    hi_draws_raw <- readRDS(hi_draws_file)
+  } else {
+    hi_draws_raw <- fread(hi_draws_file)
+  }
+  hi_sub <- subsample_draws(as.data.frame(hi_draws_raw))
+  if (!is.null(hi_sub)) {
+    draws_list$height_increment <- lapply(seq_len(nrow(hi_sub)), function(i) {
+      as.list(hi_sub[i, , drop = FALSE])
+    })
+    logger::log_info("  Kept {length(draws_list$height_increment)} height increment draws")
+  }
+}
+
+# Mortality draws
+mort_draws_file <- file.path(output_dir, "mortality_samples.rds")
+if (!file.exists(mort_draws_file)) {
+  mort_draws_file <- file.path(output_dir, "mortality_draws.csv")
+}
+
+if (file.exists(mort_draws_file)) {
+  logger::log_info("Loading mortality draws...")
+  if (grepl("\\.rds$", mort_draws_file)) {
+    mort_draws_raw <- readRDS(mort_draws_file)
+  } else {
+    mort_draws_raw <- fread(mort_draws_file)
+  }
+  mort_sub <- subsample_draws(as.data.frame(mort_draws_raw))
+  if (!is.null(mort_sub)) {
+    draws_list$mortality <- lapply(seq_len(nrow(mort_sub)), function(i) {
+      as.list(mort_sub[i, , drop = FALSE])
+    })
+    logger::log_info("  Kept {length(draws_list$mortality)} mortality draws")
+  }
+}
+
+# Crown ratio draws
+cr_draws_file <- file.path(output_dir, "crown_ratio_samples.rds")
+if (!file.exists(cr_draws_file)) {
+  cr_draws_file <- file.path(output_dir, "crown_ratio_draws.csv")
+}
+
+if (file.exists(cr_draws_file)) {
+  logger::log_info("Loading crown ratio draws...")
+  if (grepl("\\.rds$", cr_draws_file)) {
+    cr_draws_raw <- readRDS(cr_draws_file)
+  } else {
+    cr_draws_raw <- fread(cr_draws_file)
+  }
+  cr_sub <- subsample_draws(as.data.frame(cr_draws_raw))
+  if (!is.null(cr_sub)) {
+    draws_list$crown_ratio <- lapply(seq_len(nrow(cr_sub)), function(i) {
+      as.list(cr_sub[i, , drop = FALSE])
+    })
+    logger::log_info("  Kept {length(draws_list$crown_ratio)} crown ratio draws")
+  }
+}
+
+# Stand density draws (SDIMAX posterior from Bayesian quantile regression)
+sdi_draws_file <- file.path(output_dir, "stand_density_samples.rds")
+if (!file.exists(sdi_draws_file)) {
+  sdi_draws_file <- file.path(output_dir, "stand_density_draws.csv")
+}
+
+if (file.exists(sdi_draws_file)) {
+  logger::log_info("Loading stand density draws...")
+  if (grepl("\\.rds$", sdi_draws_file)) {
+    sdi_draws_raw <- readRDS(sdi_draws_file)
+  } else {
+    sdi_draws_raw <- fread(sdi_draws_file)
+  }
+  sdi_sub <- subsample_draws(as.data.frame(sdi_draws_raw))
+  if (!is.null(sdi_sub)) {
+    draws_list$stand_density <- lapply(seq_len(nrow(sdi_sub)), function(i) {
+      as.list(sdi_sub[i, , drop = FALSE])
+    })
+    logger::log_info("  Kept {length(draws_list$stand_density)} stand density draws")
+  }
+}
+
+# Save draws JSON
+if (length(draws_list) > 0) {
+  draws_output <- list(
+    variant = variant,
+    n_draws = n_draws_to_keep,
+    calibration_date = as.character(Sys.Date()),
+    components = names(draws_list),
+    draws = draws_list
+  )
+
+  draws_file <- file.path(calibrated_dir, paste0(variant, "_draws.json"))
+  draws_json <- toJSON(draws_output, pretty = FALSE, auto_unbox = TRUE, digits = 6)
+  write(draws_json, file = draws_file)
+  logger::log_info("Saved {length(draws_list)} component draw sets to {draws_file}")
+
+  # Also report file size (draws files can be large)
+  fsize_mb <- file.size(draws_file) / 1024^2
+  logger::log_info("Draws file size: {round(fsize_mb, 1)} MB")
+} else {
+  logger::log_info("No raw posterior draws found; uncertainty propagation requires")
+  logger::log_info("  saving MCMC draws in the fitting scripts (02-05, 09).")
+  logger::log_info("  Add posterior::as_draws_df(fit) output to each fitting script.")
+}
+
+# =============================================================================
 # Summary Report
 # =============================================================================
 

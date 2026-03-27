@@ -48,6 +48,13 @@ class FVS(FvsCore):
             Required when config_version='custom'. Allows calibration
             to independent datasets (cooperative plots, regional
             inventories, silvicultural trials, etc.)
+        uncertainty: Enable Monte Carlo uncertainty estimation using
+            posterior draws from the Bayesian calibration. When True,
+            run_ensemble() will execute FVS n_draws times with different
+            parameter sets sampled from the posterior distribution.
+        n_draws: Number of posterior draws to use for uncertainty
+            estimation. Ignored when uncertainty=False. Default is 100.
+        seed: Random seed for reproducible uncertainty draws.
     """
 
     def __init__(
@@ -56,6 +63,9 @@ class FVS(FvsCore):
         config_version: str | None = None,
         config_dir: str | os.PathLike | None = None,
         custom_config: str | os.PathLike | None = None,
+        uncertainty: bool = False,
+        n_draws: int = 100,
+        seed: int | None = None,
     ):
         super().__init__(lib_path=lib_path)
         self._initialize_attributes()
@@ -63,6 +73,11 @@ class FVS(FvsCore):
         self._config_dir = config_dir
         self._custom_config = custom_config
         self._config_applied = False
+        self._uncertainty = uncertainty
+        self._n_draws = n_draws
+        self._seed = seed
+        self._uncertainty_engine = None
+        self._ensemble_results: list[pd.DataFrame] = []
         return
 
     def _initialize_attributes(self) -> None:
@@ -621,6 +636,147 @@ class FVS(FvsCore):
                 break
 
         return
+
+    def run_ensemble(
+        self,
+        stop_point_code: int = 0,
+        stop_point_year: int = 0,
+    ) -> list[pd.DataFrame]:
+        """Run FVS multiple times with different posterior parameter draws.
+
+        This method implements Monte Carlo uncertainty propagation by:
+          1. Loading posterior draws from the calibration pipeline
+          2. For each draw, reloading the keyfile, applying that draw's
+             parameters, running FVS, and collecting the summary table
+          3. Returning the list of summary DataFrames
+
+        The ensemble can then be summarized into credible intervals using
+        UncertaintyEngine.summarize_ensemble().
+
+        Requires uncertainty=True and config_version='calibrated' or 'custom'
+        to have been set at initialization.
+
+        Args:
+            stop_point_code: FVS stop point code (see run() docstring)
+            stop_point_year: FVS stop point year
+
+        Returns:
+            List of summary DataFrames, one per posterior draw
+        """
+        if not self._uncertainty:
+            raise RuntimeError(
+                "Uncertainty mode not enabled. Set uncertainty=True at initialization."
+            )
+
+        if self._config_version not in ("calibrated", "custom"):
+            raise RuntimeError(
+                "Uncertainty estimation requires config_version='calibrated' or 'custom'."
+            )
+
+        if self.keyfile_path is None:
+            raise AttributeError("No keyfile loaded yet. Call load_keyfile() first.")
+
+        # Lazy import to avoid circular dependency at module load
+        try:
+            from config.uncertainty import UncertaintyEngine
+            from config.config_loader import FvsConfigLoader
+        except ImportError:
+            raise ImportError(
+                "config.uncertainty and config.config_loader must be importable. "
+                "Add the fvs-modern root to PYTHONPATH."
+            )
+
+        # Initialize the uncertainty engine and config loader
+        if self._uncertainty_engine is None:
+            self._uncertainty_engine = UncertaintyEngine(
+                self.variant.lower(),
+                config_dir=self._config_dir,
+                seed=self._seed,
+            )
+
+        loader = FvsConfigLoader(
+            self.variant.lower(),
+            version="default",
+            config_dir=self._config_dir,
+        )
+        default_config = loader.config
+
+        keyfile_path = self.keyfile_path
+        self._ensemble_results = []
+        n = min(self._n_draws, self._uncertainty_engine.n_draws)
+
+        logging.info(f"Running uncertainty ensemble: {n} draws for variant {self.variant}")
+
+        for i in range(n):
+            draw_idx = self._uncertainty_engine.sample_draw_index()
+            draw = self._uncertainty_engine.get_draw(draw_idx)
+
+            # Reload FVS for a fresh simulation
+            self._reload_fvs()
+            self.load_keyfile(keyfile_path)
+
+            # Advance to stop point 7 (after input read, before imputation)
+            self.set_stop_point_codes(7, 0)
+            while self.itrncd == 0:
+                self._fvs(self._itrncd)
+                if self.restart_code != 0:
+                    break
+
+            # Apply this draw's parameters
+            self._uncertainty_engine.apply_draw_to_fvs(
+                self, draw, default_config
+            )
+
+            # Run the full simulation
+            self.set_stop_point_codes(stop_point_code, stop_point_year)
+            while self.itrncd == 0:
+                self._fvs(self._itrncd)
+                if self.restart_code != 0:
+                    break
+
+            # Collect summary
+            summ = self.summary
+            if summ is not None:
+                summ = summ.copy()
+                summ["_draw"] = i
+                summ["_draw_idx"] = draw_idx
+                self._ensemble_results.append(summ)
+
+            if (i + 1) % 10 == 0 or i == n - 1:
+                logging.info(f"  Completed draw {i + 1}/{n}")
+
+        logging.info(f"Ensemble complete: {len(self._ensemble_results)} successful runs")
+        return self._ensemble_results
+
+    @property
+    def uncertainty_results(self) -> list[pd.DataFrame]:
+        """Results from the most recent ensemble run.
+
+        Returns:
+            List of FVS summary DataFrames, one per posterior draw
+        """
+        return self._ensemble_results
+
+    @property
+    def uncertainty_summary(self) -> pd.DataFrame | None:
+        """Summarized ensemble results with credible intervals.
+
+        Convenience property that calls UncertaintyEngine.summarize_ensemble()
+        on the stored ensemble results.
+
+        Returns:
+            DataFrame with mean, std, and quantile columns per variable,
+            or None if no ensemble has been run yet
+        """
+        if not self._ensemble_results:
+            return None
+
+        try:
+            from config.uncertainty import UncertaintyEngine
+            return UncertaintyEngine.summarize_ensemble(self._ensemble_results)
+        except ImportError:
+            logging.warning("config.uncertainty not importable for summary")
+            return None
 
     def _species_attr(
         self,

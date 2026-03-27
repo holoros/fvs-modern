@@ -249,7 +249,9 @@ config/
   ne.json                     # Default parameters
   calibrated/
     ne.json                   # Calibrated parameters (from pipeline)
+    ne_draws.json             # Full posterior draws (for uncertainty)
   config_loader.py            # Runtime parameter switching module
+  uncertainty.py              # Monte Carlo uncertainty propagation engine
 
 calibration/
   output/variants/{variant}/
@@ -263,6 +265,132 @@ calibration/
       prior_vs_posterior.png
       sdimax_comparison.png
 ```
+
+## Uncertainty Estimation
+
+A major advantage of the Bayesian calibration is that it produces full
+posterior distributions, not just point estimates. This means every
+parameter has a distribution reflecting how much the data informed it
+relative to the prior. The uncertainty propagation system uses these
+distributions to compute credible intervals on FVS projection outputs
+(basal area, volume, TPA, mortality, etc.).
+
+### How It Works
+
+The calibration pipeline (06_posterior_to_json.R) exports 500 posterior
+draws for each component model into a companion file:
+`config/calibrated/{variant}_draws.json`. At runtime, the
+`UncertaintyEngine` samples draw indices and assembles complete parameter
+vectors, then FVS is run repeatedly with different parameter sets. All
+components within a single draw share the same MCMC iteration index, which
+preserves correlations between growth and mortality parameters.
+
+The spread of the resulting projection ensemble represents the uncertainty
+attributable to parameter estimation. This is parametric uncertainty only;
+it does not include process error (stochastic mortality, regeneration),
+model structural uncertainty, or climate nonstationarity.
+
+### Usage
+
+#### Python API (fvs2py)
+
+```python
+from fvs2py import FVS
+
+# Run 100 posterior draws to get projection confidence bands
+fvs = FVS("path/to/FVSne.so",
+           config_version="calibrated",
+           uncertainty=True,
+           n_draws=100,
+           seed=42)
+
+fvs.load_keyfile("stand.key")
+ensemble = fvs.run_ensemble()
+
+# ensemble is a list of 100 DataFrames (one per draw)
+
+# Get summarized results with credible intervals
+summary = fvs.uncertainty_summary
+# Columns: (variable, mean), (variable, std), (variable, q0025), etc.
+```
+
+#### REST API (microfvs)
+
+```python
+from microfvs.utils.run_fvs import run_fvs
+
+# Returns a list of FvsResult objects, one per draw
+ensemble = run_fvs(stand_init, tree_init,
+                   config_version="calibrated",
+                   uncertainty=True,
+                   n_draws=100,
+                   seed=42)
+```
+
+#### Manual Draw Selection
+
+For advanced use cases where you want to inspect individual draws or
+apply them selectively:
+
+```python
+from config.uncertainty import UncertaintyEngine
+
+engine = UncertaintyEngine("ne", seed=42)
+
+# Get a specific draw
+draw = engine.get_draw(42)
+# draw = {"diameter_growth": {"b0[1]": -2.1, ...}, "mortality": {...}, ...}
+
+# Compute multipliers for this draw
+from config.config_loader import FvsConfigLoader
+loader = FvsConfigLoader("ne", version="default")
+multipliers = engine.compute_multipliers_for_draw(draw, loader.config)
+# multipliers = {"growth_mult": array([...]), "mort_mult": array([...]), ...}
+```
+
+#### Summarizing Results
+
+```python
+from config.uncertainty import UncertaintyEngine
+
+# Summarize an ensemble into credible intervals
+summary = UncertaintyEngine.summarize_ensemble(
+    ensemble_results,
+    quantiles=[0.025, 0.10, 0.50, 0.90, 0.975]
+)
+
+# Convert to long format for plotting (e.g., with ggplot2 or matplotlib)
+long_df = UncertaintyEngine.ensemble_to_long(
+    summary,
+    variables=["BA", "TPA", "VOLUME"]
+)
+```
+
+### Interpreting Uncertainty Bands
+
+Wider credible intervals indicate greater parametric uncertainty. This
+typically occurs when:
+
+  1. Fewer FIA observations were available for that species or region
+  2. The model structure is a poor fit to the data (high residual variance)
+  3. The prior (original FVS parameter) was far from the data, creating
+     tension between prior and likelihood
+
+Narrow intervals indicate the data strongly informed the parameter, and
+projections are relatively insensitive to remaining uncertainty. For
+management planning, the 90% credible interval (5th to 95th percentile)
+provides a defensible range of expected outcomes.
+
+### Performance Considerations
+
+Each draw requires a full FVS simulation, so n_draws=100 takes roughly
+100x the time of a single run. For interactive use, 50 draws may be
+sufficient for approximate intervals. For publication or decision support,
+200 to 500 draws are recommended to stabilize the tails.
+
+The fvs2py pathway (shared library) is faster per draw than microfvs
+(subprocess) because it avoids process startup overhead. For large
+ensembles, fvs2py is strongly preferred.
 
 ## Technical Details
 
