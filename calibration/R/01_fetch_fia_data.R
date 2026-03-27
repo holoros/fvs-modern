@@ -1,426 +1,623 @@
 #!/usr/bin/env Rscript
-#
+# =============================================================================
 # FVS Bayesian Calibration: FIA Data Fetch and Preparation
-# Downloads FIA data and prepares remeasurement pairs for calibration
 #
-# Usage: Rscript calibration/R/01_fetch_fia_data.R
+# Downloads or reads locally stored FIA data and prepares remeasurement pairs
+# for calibrating tree level models (diameter growth, height, mortality, crown).
 #
+# Supports two modes:
+#   1. Download via rFIA (default, for local workstation use)
+#   2. Local FIA directory (for HPC with pre downloaded ENTIRE_FIA.zip)
+#
+# Usage:
+#   Rscript calibration/R/01_fetch_fia_data.R --variant ne
+#   Rscript calibration/R/01_fetch_fia_data.R --variant ne --fia-dir /path/to/fia
+# =============================================================================
 
 library(rFIA)
 library(tidyverse)
 library(data.table)
-library(parallel)
-library(progress)
+library(jsonlite)
 library(logger)
 
-# ============================================================================
+# =============================================================================
+# Parse Command Line Arguments
+# =============================================================================
+
+args <- commandArgs(trailingOnly = TRUE)
+variant <- "ne"
+fia_dir <- NULL
+
+if (length(args) > 0) {
+  for (i in seq_along(args)) {
+    if (args[i] == "--variant" & i < length(args)) {
+      variant <- args[i + 1]
+    }
+    if (args[i] == "--fia-dir" & i < length(args)) {
+      fia_dir <- args[i + 1]
+    }
+  }
+}
+
+# =============================================================================
 # Configuration
-# ============================================================================
+# =============================================================================
 
-project_root <- "/home/aweiskittel/Documents/Claude/fvs-modern"
+project_root <- Sys.getenv("FVS_PROJECT_ROOT",
+                           "/home/aweiskittel/Documents/Claude/fvs-modern")
 calibration_dir <- file.path(project_root, "calibration")
-fia_data_dir <- file.path(calibration_dir, "data", "raw_fia")
-processed_data_dir <- file.path(calibration_dir, "data", "processed")
+processed_dir <- file.path(calibration_dir, "data", "processed", variant)
+config_dir <- file.path(project_root, "config")
 
-# Set up logging
-log_file <- file.path(calibration_dir, "logs", "01_fetch_fia_data.log")
+# If fia_dir not passed as arg, check environment variable
+if (is.null(fia_dir)) {
+  env_fia <- Sys.getenv("FVS_FIA_DATA_DIR", "")
+  if (nchar(env_fia) > 0) fia_dir <- env_fia
+}
+
+dir.create(processed_dir, showWarnings = FALSE, recursive = TRUE)
+
+log_file <- file.path(calibration_dir, "logs",
+                      paste0("01_fetch_fia_data_", variant, ".log"))
+dir.create(dirname(log_file), showWarnings = FALSE, recursive = TRUE)
 logger::log_appender(logger::appender_file(log_file), index = 1)
-logger::log_info("Starting FIA data fetch and preparation")
+logger::log_info("Starting FIA data fetch for variant {variant}")
+if (!is.null(fia_dir)) {
+  logger::log_info("Using local FIA directory: {fia_dir}")
+}
 
-# ============================================================================
-# FVS Variant to Region Mapping
-# This maps FVS variant codes to FIA regions (states)
-# ============================================================================
+# =============================================================================
+# FVS Variant to State Mapping (CORRECTED)
+#
+# Each variant covers a specific geographic region. States listed here are
+# the FIA state abbreviations whose plots fall within that variant's domain.
+# =============================================================================
 
 variant_states <- list(
-  "acd" = c("AL", "AR", "FL", "GA", "KY", "LA", "MS", "NC", "OK", "SC", "TN", "TX", "VA", "WV"),
-  "ak"  = c("AK"),
-  "bc"  = c("BC"),
-  "bm"  = c("AZ", "NM"),
-  "ca"  = c("CA"),
-  "ci"  = c("UT", "WY"),
-  "cr"  = c("CO"),
-  "cs"  = c("CO"),
-  "ec"  = c("CT", "MA", "NH", "RI", "VT"),
-  "em"  = c("IL", "IN", "MI", "MN", "MO", "OH", "WI"),
-  "ie"  = c("IA", "NE"),
-  "kt"  = c("KS"),
-  "ls"  = c("ME"),
-  "nc"  = c("NC"),
-  "ne"  = c("NE"),
-  "oc"  = c("OR", "WA"),
-  "on"  = c("ON"),
-  "op"  = c("OR"),
-  "pn"  = c("OR", "WA"),
-  "sn"  = c("NV", "CA"),
-  "so"  = c("AZ", "NM"),
-  "tt"  = c("TX"),
-  "ut"  = c("UT"),
-  "wc"  = c("WA"),
-  "ws"  = c("WA")
+  ne  = c("ME", "NH", "VT", "MA", "CT", "RI", "NY", "PA", "NJ", "DE", "MD", "WV"),
+  ls  = c("MI", "MN", "WI"),
+  cs  = c("IN", "IL", "IA", "MO", "OH", "KY"),
+  sn  = c("VA", "NC", "SC", "GA", "FL", "AL", "MS", "TN", "AR", "LA", "TX", "OK"),
+  ca  = c("CA"),
+  oc  = c("CA"),
+  pn  = c("WA", "OR"),
+  wc  = c("WA", "OR"),
+  nc  = c("WA", "OR"),
+  ie  = c("ID", "MT"),
+  ci  = c("ID", "MT"),
+  kt  = c("MT"),
+  em  = c("ID", "MT", "WY", "CO", "UT", "NV", "AZ", "NM"),
+  cr  = c("CO", "AZ", "NM"),
+  so  = c("OR", "CA"),
+  bm  = c("OR"),
+  ec  = c("WA", "OR"),
+  tt  = c("UT", "NV"),
+  ut  = c("UT", "NV"),
+  ws  = c("CA", "OR", "WA"),
+  op  = c("OR"),
+  ak  = c("AK"),
+  acd = c("ME", "NH", "VT"),
+  bc  = c("ME"),   # Placeholder: BC uses Canadian NFI data
+  on  = c("ME")    # Placeholder: ON uses Canadian NFI data
 )
 
-# Get all unique states needed
-all_states <- unique(unlist(variant_states))
+states <- variant_states[[variant]]
+if (is.null(states)) {
+  logger::log_error("Unknown variant: {variant}")
+  stop("Unknown variant: ", variant)
+}
 
-logger::log_info("Fetching FIA data for {length(all_states)} states")
+logger::log_info("Variant {variant} maps to states: {paste(states, collapse = ', ')}")
 
-# ============================================================================
-# Fetch FIA Data
-# ============================================================================
+# =============================================================================
+# Load FVS Config for Species Mapping and Bark Ratios
+# =============================================================================
 
-# Download FIA data for all states
-# rFIA will cache data locally in tempdir() by default
-fia_inventory <- list()
+config_file <- file.path(config_dir, paste0(variant, ".json"))
+if (!file.exists(config_file)) {
+  logger::log_error("Config file not found: {config_file}")
+  stop("Config file not found: ", config_file)
+}
 
-pb <- progress_bar$new(
-  format = "Fetching FIA data [:bar] :current/:total (:percent)",
-  total = length(all_states),
-  clear = FALSE
-)
+config <- fromJSON(config_file)
 
-for (state in all_states) {
-  pb$tick()
+# Extract species definitions
+fia_species_codes <- unlist(config$categories$species_definitions$FIAJSP)
+n_species <- config$maxsp
+
+# Bark ratio parameters (species indexed)
+bkrat_params <- config$categories$bark_ratio$BKRAT
+avg_bark_ratio <- mean(bkrat_params, na.rm = TRUE)
+
+logger::log_info("Config: {n_species} species, avg bark ratio = {round(avg_bark_ratio, 3)}")
+
+# =============================================================================
+# Load FIA Data (Download or Read Local)
+# =============================================================================
+
+logger::log_info("Loading FIA data for {length(states)} states...")
+
+# Determine FIA source directory
+if (!is.null(fia_dir)) {
+  # Local mode: ENTIRE_FIA.zip was unzipped to fia_dir
+  # Expect state subdirectories like fia_dir/ME/, fia_dir/NH/, etc.
+  # OR flat structure with state prefix files like ME_TREE.csv, ME_PLOT.csv
+  fia_source_dir <- fia_dir
+  logger::log_info("Reading from local FIA directory: {fia_source_dir}")
+} else {
+  # Download mode: use rFIA to fetch data
+
+  fia_source_dir <- file.path(calibration_dir, "data", "fia_raw")
+  dir.create(fia_source_dir, showWarnings = FALSE, recursive = TRUE)
+  logger::log_info("Download mode: FIA data cached in {fia_source_dir}")
+}
+
+# Process each state
+all_tree_data <- list()
+all_cond_data <- list()
+all_plot_data <- list()
+
+for (state in states) {
+  logger::log_info("Processing state: {state}")
+
   tryCatch({
-    fia_inventory[[state]] <- rFIA::readFIA(
-      nCores = 1,
-      states = state
-    )
+    if (!is.null(fia_dir)) {
+      # -----------------------------------------------------------------------
+      # Local FIA mode
+      # -----------------------------------------------------------------------
+      # Check for state subdirectory first, then flat structure
+      state_subdir <- file.path(fia_source_dir, state)
+
+      if (dir.exists(state_subdir) && length(list.files(state_subdir)) > 0) {
+        db <- readFIA(dir = state_subdir, common = TRUE)
+      } else {
+        # Try reading from the main directory (flat ENTIRE_FIA structure)
+        db <- readFIA(dir = fia_source_dir, states = state, common = TRUE)
+      }
+    } else {
+      # -----------------------------------------------------------------------
+      # Download mode
+      # -----------------------------------------------------------------------
+      state_dir <- file.path(fia_source_dir, state)
+      if (!dir.exists(state_dir) || length(list.files(state_dir)) == 0) {
+        logger::log_info("Downloading FIA data for {state}...")
+        getFIA(states = state, dir = fia_source_dir, load = FALSE)
+      }
+      db <- readFIA(dir = file.path(fia_source_dir, state), common = TRUE)
+    }
+
+    # Extract TREE table
+    tree_df <- db$TREE %>%
+      as_tibble() %>%
+      filter(
+        STATUSCD %in% c(1, 2),     # Live and recently dead
+        DIA >= 1.0,                 # Minimum 1 inch DBH
+        !is.na(TPA_UNADJ),
+        TPA_UNADJ > 0
+      ) %>%
+      select(
+        CN, PLT_CN, CONDID, SUBP, TREE, INVYR, CYCLE, SUBCYCLE,
+        STATUSCD, SPCD, DIA, HT, CR, ACTUALHT,
+        TPA_UNADJ, BHAGE, TOTAGE, PREV_TRE_CN
+      ) %>%
+      mutate(state = state)
+
+    # Extract COND table
+    cond_df <- db$COND %>%
+      as_tibble() %>%
+      select(
+        PLT_CN, CONDID, INVYR,
+        FORTYPCD, FLDTYPCD, STDAGE, STDSZCD, STDORGCD,
+        SITECLCD, SICOND, SISP, SLOPE, ASPECT,
+        BALIVE, LIVE_CANOPY_CVR_PCT
+      )
+
+    # Extract PLOT table
+    plot_df <- db$PLOT %>%
+      as_tibble() %>%
+      select(CN, INVYR, LAT, LON, ELEV, MEASYEAR) %>%
+      rename(PLT_CN = CN)
+
+    all_tree_data[[state]] <- tree_df
+    all_cond_data[[state]] <- cond_df
+    all_plot_data[[state]] <- plot_df
+
+    logger::log_info("State {state}: {nrow(tree_df)} tree records loaded")
+
   }, error = function(e) {
-    logger::log_warn("Error fetching data for {state}: {e$message}")
+    logger::log_error("Failed to process state {state}: {e$message}")
   })
 }
 
-logger::log_info("Successfully fetched FIA data for {length(fia_inventory)} states")
+# Combine across states
+tree_all <- bind_rows(all_tree_data)
+cond_all <- bind_rows(all_cond_data)
+plot_all <- bind_rows(all_plot_data)
 
-# ============================================================================
-# Extract Tree-Level Remeasurement Pairs
-# ============================================================================
+logger::log_info("Combined: {nrow(tree_all)} tree records across {length(all_tree_data)} states")
 
-logger::log_info("Extracting remeasurement pairs...")
+# =============================================================================
+# Join Tree + Condition + Plot
+# =============================================================================
 
-# Combine all FIA data
-fia_all <- do.call(rbind, fia_inventory)
+combined <- tree_all %>%
+  left_join(cond_all, by = c("PLT_CN", "CONDID", "INVYR")) %>%
+  left_join(plot_all, by = c("PLT_CN", "INVYR"))
 
-# Extract tree data with remeasurement information
-tree_data <- fia_all$tree %>%
-  as_tibble() %>%
-  mutate(
-    # Ensure unique identification
-    tree_id = paste(PLT_CN, SUBP, TREE,
-                    sep = "_")
+# =============================================================================
+# Build Remeasurement Pairs (Same Tree, Two Inventories)
+# =============================================================================
+
+logger::log_info("Building remeasurement pairs from PREV_TRE_CN linkages...")
+
+# Method 1: Use PREV_TRE_CN for exact tree linkage (preferred)
+trees_with_prev <- combined %>%
+  filter(!is.na(PREV_TRE_CN), PREV_TRE_CN > 0)
+
+# Match current tree to its previous measurement
+prev_trees <- combined %>%
+  select(CN, PLT_CN, CONDID, INVYR, STATUSCD, SPCD, DIA, HT, CR,
+         TPA_UNADJ, SLOPE, ASPECT, SICOND, SITECLCD, BALIVE,
+         LAT, LON, ELEV, MEASYEAR) %>%
+  rename_with(~ paste0(.x, "_t1"), .cols = c(INVYR, STATUSCD, DIA, HT, CR,
+                                              TPA_UNADJ, MEASYEAR))
+
+remeas <- trees_with_prev %>%
+  rename(
+    INVYR_t2 = INVYR,
+    STATUSCD_t2 = STATUSCD,
+    DIA_t2 = DIA,
+    HT_t2 = HT,
+    CR_t2 = CR,
+    TPA_UNADJ_t2 = TPA_UNADJ,
+    MEASYEAR_t2 = MEASYEAR
   ) %>%
-  select(
-    PLT_CN, SUBP, TREE, STATUSCD, DIA, HT, SPCD,
-    tree_id, INVYR
-  ) %>%
-  arrange(tree_id, INVYR)
-
-# Get plot location and environmental data
-plot_data <- fia_all$plot %>%
-  as_tibble() %>%
-  select(
-    PLT_CN, LAT, LON, ELEV, SLOPE, ASPECT,
-    PLOT_STATUS_CD, MEASMON, MEASYEAR
-  )
-
-# Link tree data with plot data
-tree_plot <- tree_data %>%
-  left_join(plot_data, by = "PLT_CN")
-
-# Identify remeasurement pairs
-# A remeasurement pair: same tree measured twice with alive status both times
-remeasurement_pairs <- tree_plot %>%
-  group_by(tree_id) %>%
-  filter(n() >= 2) %>%  # At least 2 measurements
-  arrange(INVYR) %>%
-  # Create pairs: measurement i and i+1
-  mutate(
-    next_meas = lead(INVYR),
-    DIA_t1 = DIA,
-    DIA_t2 = lead(DIA),
-    HT_t1 = HT,
-    HT_t2 = lead(HT),
-    SPCD_obs = SPCD,
-    years_interval = next_meas - INVYR,
-    status_t1 = STATUSCD,
-    status_t2 = lead(STATUSCD)
+  left_join(
+    prev_trees,
+    by = c("PREV_TRE_CN" = "CN")
   ) %>%
   filter(
-    !is.na(DIA_t2),
-    !is.na(years_interval),
-    status_t1 == 1,  # Alive at measurement 1
-    status_t2 == 1,  # Alive at measurement 2
-    !is.na(DIA_t1),
-    !is.na(DIA_t2),
-    DIA_t1 > 0,
-    DIA_t2 > 0,
-    years_interval > 0,
-    years_interval <= 15  # Reasonable measurement interval
-  ) %>%
-  select(
-    PLT_CN, tree_id, SPCD = SPCD_obs, INVYR, next_meas,
-    DIA_t1, DIA_t2, HT_t1, HT_t2, years_interval,
-    LAT, LON, ELEV, SLOPE, ASPECT,
-    MEASMON, MEASYEAR
+    !is.na(DIA_t1), !is.na(DIA_t2),
+    DIA_t1 > 0, DIA_t2 > 0
   )
 
-logger::log_info("Found {nrow(remeasurement_pairs)} remeasurement pairs")
+# Compute measurement interval
+remeas <- remeas %>%
+  mutate(
+    years_interval = INVYR_t2 - INVYR_t1
+  ) %>%
+  filter(
+    years_interval > 0,
+    years_interval <= 15
+  )
 
-# ============================================================================
-# Compute Bark Ratio (Inside-Bark Diameter)
-# Use standard FVS bark ratio models
-# ============================================================================
+logger::log_info("Found {nrow(remeas)} remeasurement pairs via PREV_TRE_CN")
 
-# Load bark ratio parameters from config
-config_file <- file.path(project_root, "config", "ca.json")  # Use CA as reference
-config <- jsonlite::fromJSON(config_file)
-bkrat_params <- config$categories$bark_ratio$BKRAT
+# If PREV_TRE_CN yields too few pairs, fall back to tree_id matching
+if (nrow(remeas) < 100) {
+  logger::log_warn("Few PREV_TRE_CN pairs; falling back to tree_id matching")
 
-# Function to compute inside-bark diameter from outside-bark
-# Using FVS standard: DIB = DOB * BKRAT (simplified)
-# For full accuracy, would use: DIB = B0 + B1 * DOB + B2 * DOB^2
-# Here we use the provided BKRAT as average bark ratio per species
-compute_inside_bark <- function(dob, spcd, bkrat_vector) {
-  # Map species code to index (1-based)
-  # Assuming species codes are in order in the config
-  # Use average bark ratio if species not found
-  avg_bkrat <- mean(bkrat_vector, na.rm = TRUE)
-  dib <- dob * avg_bkrat
-  return(dib)
+  combined <- combined %>%
+    mutate(tree_id = paste(PLT_CN, SUBP, TREE, sep = "_"))
+
+  remeas <- combined %>%
+    filter(STATUSCD == 1) %>%
+    group_by(tree_id) %>%
+    filter(n() >= 2) %>%
+    arrange(INVYR) %>%
+    mutate(
+      DIA_t1 = DIA,
+      DIA_t2 = lead(DIA),
+      HT_t1 = HT,
+      HT_t2 = lead(HT),
+      CR_t1 = CR,
+      CR_t2 = lead(CR),
+      INVYR_t1 = INVYR,
+      INVYR_t2 = lead(INVYR),
+      STATUSCD_t1 = STATUSCD,
+      STATUSCD_t2 = lead(STATUSCD),
+      years_interval = lead(INVYR) - INVYR
+    ) %>%
+    filter(
+      !is.na(DIA_t2),
+      DIA_t1 > 0, DIA_t2 > 0,
+      years_interval > 0, years_interval <= 15
+    ) %>%
+    ungroup()
+
+  logger::log_info("Fallback yielded {nrow(remeas)} remeasurement pairs")
 }
 
-# For now, use average bark ratio across all species
-# (More sophisticated models would use species specific ratios)
-avg_bark_ratio <- mean(bkrat_params, na.rm = TRUE)
+# =============================================================================
+# Compute Inside Bark Diameters and Diameter Growth
+# =============================================================================
 
-remeasurement_pairs <- remeasurement_pairs %>%
+# Map FIA species codes to FVS species indices for bark ratio lookup
+fia_to_fvs <- setNames(seq_along(fia_species_codes), fia_species_codes)
+
+remeas <- remeas %>%
   mutate(
-    # Convert outside-bark to inside-bark diameter
-    DIB_t1 = DIA_t1 * avg_bark_ratio,
-    DIB_t2 = DIA_t2 * avg_bark_ratio,
-    # Compute diameter increment on squared scale (FVS Wykoff model uses DDS)
+    # Map species to FVS index (use 1 as fallback for unknown species)
+    fvs_sp_idx = as.integer(fia_to_fvs[as.character(SPCD)]),
+    fvs_sp_idx = ifelse(is.na(fvs_sp_idx), 1L, fvs_sp_idx),
+
+    # Species specific bark ratio where available, otherwise average
+    bark_ratio = ifelse(
+      fvs_sp_idx <= length(bkrat_params) & bkrat_params[fvs_sp_idx] > 0,
+      bkrat_params[fvs_sp_idx],
+      avg_bark_ratio
+    ),
+
+    # Inside bark diameters
+    DIB_t1 = DIA_t1 * bark_ratio,
+    DIB_t2 = DIA_t2 * bark_ratio,
+
+    # Squared diameter increment (FVS Wykoff model predicts ln(DDS))
     DDS = DIB_t2^2 - DIB_t1^2,
-    ln_DDS = log(DDS + 0.001)  # Add small constant for numerical stability
+
+    # Annual height increment
+    HT_annual = ifelse(
+      !is.na(HT_t1) & !is.na(HT_t2) & HT_t2 > HT_t1,
+      (HT_t2 - HT_t1) / years_interval,
+      NA_real_
+    ),
+
+    # Annual crown ratio change
+    CR_annual = ifelse(
+      !is.na(CR_t1) & !is.na(CR_t2),
+      (CR_t2 - CR_t1) / years_interval,
+      NA_real_
+    )
   )
 
-# ============================================================================
-# Compute Derived Variables
-# ============================================================================
+# =============================================================================
+# Compute Stand Level Covariates (BA, BAL, SDI, etc.)
+# =============================================================================
 
-logger::log_info("Computing derived variables...")
+logger::log_info("Computing stand level covariates...")
 
-# Need to compute:
-# - Stand-level metrics (BA, CCF, BAL, etc.)
-# - Site index (from height-diameter relationship)
-# - Crown ratio
-# - Slope/aspect transformations
-
-# For each plot, compute BA (basal area in sq ft per acre) and other metrics
-stand_metrics <- tree_plot %>%
-  filter(STATUSCD == 1) %>%  # Only living trees
-  group_by(PLT_CN, INVYR) %>%
+# Stand metrics from live trees at time 1
+stand_metrics <- combined %>%
+  filter(STATUSCD == 1, !is.na(DIA), DIA > 0) %>%
+  group_by(PLT_CN, CONDID, INVYR) %>%
   summarise(
-    # Basal area (convert from sq cm to sq ft per acre)
-    BA_sqftpa = sum((DIA^2 * 0.005454) / 0.01, na.rm = TRUE),
-    # Count of trees >= 1 inch DBH per acre
-    TPA_1 = n() / 0.01,
-    # Dominant height (mean of tallest 100 trees per acre)
-    HDTOP = mean(HT[DIA >= quantile(DIA, 0.85, na.rm = TRUE)],
-                 na.rm = TRUE),
+    BA_ft2ac = sum(TPA_UNADJ * 0.005454 * DIA^2, na.rm = TRUE),
+    TPA = sum(TPA_UNADJ, na.rm = TRUE),
+    QMD = sqrt(BA_ft2ac / TPA / 0.005454),
+    SDI = TPA * (QMD / 10)^1.605,
+    top_ht = {
+      ht_sorted <- sort(HT[!is.na(HT)], decreasing = TRUE)
+      if (length(ht_sorted) >= 5) mean(ht_sorted[1:min(5, length(ht_sorted))])
+      else if (length(ht_sorted) > 0) mean(ht_sorted)
+      else NA_real_
+    },
     .groups = "drop"
   )
 
-# Compute site index using height-age-diameter relationship
-# Simplified version: SI based on height of largest trees
-site_index_data <- stand_metrics %>%
+# Basal Area in Larger trees (BAL) for each tree
+bal_data <- combined %>%
+  filter(STATUSCD == 1, !is.na(DIA), DIA > 0) %>%
+  group_by(PLT_CN, CONDID, INVYR) %>%
+  arrange(desc(DIA)) %>%
   mutate(
-    # Temporary site index estimate
-    SI_tmp = HDTOP * 50  # Placeholder; refined in height diameter fit
+    tree_ba = TPA_UNADJ * 0.005454 * DIA^2,
+    BAL_ft2ac = cumsum(tree_ba) - tree_ba  # BA of trees larger than this one
+  ) %>%
+  select(PLT_CN, CONDID, INVYR, SUBP, TREE, SPCD, BAL_ft2ac) %>%
+  ungroup()
+
+# Site index: use SICOND from FIA condition table where available
+site_index <- cond_all %>%
+  filter(!is.na(SICOND), SICOND > 0) %>%
+  distinct(PLT_CN, CONDID, INVYR, SICOND)
+
+# =============================================================================
+# Join Covariates to Remeasurement Pairs
+# =============================================================================
+
+# Use time 1 inventory year for covariate matching
+remeas <- remeas %>%
+  left_join(
+    stand_metrics %>% rename(BA = BA_ft2ac),
+    by = c("PLT_CN.y" = "PLT_CN", "CONDID" = "CONDID", "INVYR_t1" = "INVYR")
+  ) %>%
+  left_join(
+    bal_data,
+    by = c("PLT_CN.x" = "PLT_CN", "CONDID" = "CONDID",
+           "INVYR_t2" = "INVYR", "SUBP" = "SUBP", "TREE" = "TREE", "SPCD" = "SPCD")
+  ) %>%
+  left_join(
+    site_index,
+    by = c("PLT_CN.y" = "PLT_CN", "CONDID" = "CONDID", "INVYR_t1" = "INVYR")
+  ) %>%
+  mutate(
+    # Use SICOND as site index; fall back to top_ht if missing
+    SI = coalesce(SICOND, top_ht),
+    # Use BALIVE from condition table if BAL computation failed
+    BAL = coalesce(BAL_ft2ac, BALIVE)
   )
 
-# Add stand metrics to remeasurement pairs
-remeasurement_pairs <- remeasurement_pairs %>%
-  left_join(
-    stand_metrics %>%
-      select(PLT_CN, INVYR, BA_sqftpa, TPA_1, HDTOP),
-    by = c("PLT_CN", "INVYR")
-  ) %>%
-  left_join(
-    site_index_data %>%
-      select(PLT_CN, INVYR, SI_tmp),
-    by = c("PLT_CN", "INVYR")
-  ) %>%
-  rename(SI = SI_tmp, BA = BA_sqftpa)
+# =============================================================================
+# Compute Derived Model Variables
+# =============================================================================
 
-# ============================================================================
-# Compute Basal Area Larger (BAL) and Crown Ratio
-# ============================================================================
-
-# BAL = basal area of trees larger than subject tree
-# Need to recompute from raw tree data
-bal_data <- tree_plot %>%
-  filter(STATUSCD == 1, !is.na(DIA)) %>%
-  group_by(PLT_CN, INVYR) %>%
-  arrange(DIA) %>%
+remeas <- remeas %>%
   mutate(
-    # Convert to inside bark for fair comparison
-    DIB_plot = DIA * avg_bark_ratio,
-    # Basal area in sq cm
-    BA_tree = pi * (DIB_plot / 2)^2,
-    # BAL = sum of BA for trees larger than this tree
-    BAL_sqft = cumsum(BA_tree * 0.000323) - (BA_tree * 0.000323)
-  ) %>%
-  select(PLT_CN, INVYR, TREE, SUBP, BAL_sqft) %>%
-  ungroup()
-
-# Add BAL to main dataset
-remeasurement_pairs <- remeasurement_pairs %>%
-  left_join(bal_data, by = c("PLT_CN", "INVYR", "TREE", "SUBP"))
-
-# Crown ratio: HT / (max HT in plot)
-crown_data <- tree_plot %>%
-  filter(STATUSCD == 1) %>%
-  group_by(PLT_CN, INVYR) %>%
-  mutate(
-    max_ht = max(HT, na.rm = TRUE),
-    CR = HT / max_ht
-  ) %>%
-  select(PLT_CN, INVYR, TREE, SUBP, CR) %>%
-  ungroup()
-
-remeasurement_pairs <- remeasurement_pairs %>%
-  left_join(crown_data, by = c("PLT_CN", "INVYR", "TREE", "SUBP"))
-
-# ============================================================================
-# Compute Slope and Aspect Transformations
-# ============================================================================
-
-remeasurement_pairs <- remeasurement_pairs %>%
-  mutate(
-    # Convert degrees to radians
+    # Slope / aspect transformations
     ASPECT_rad = ASPECT * pi / 180,
-    # Compound transformation for slope and aspect
     SLOPE_SASP = SLOPE * sin(ASPECT_rad),
     SLOPE_CASP = SLOPE * cos(ASPECT_rad),
-    # Elevation in hundreds of feet
     ELEV_100ft = ELEV / 100,
-    # Convert elevation to kilometers
-    ELEV_km = ELEV / 3280.84
-  )
 
-# ============================================================================
-# Additional Model Variables
-# ============================================================================
+    # Logarithmic transforms for Wykoff model
+    ln_DBH = log(DIA_t1),
+    DBH_sq = DIA_t1^2,
+    ln_SI = log(pmax(SI, 1)),
+    CR_pct = CR_t1 * 100,  # FIA stores 0 to 1, some models want 0 to 100
 
-remeasurement_pairs <- remeasurement_pairs %>%
-  mutate(
-    # Logarithmic transformations (for Wykoff model)
-    ln_DBH_t1 = log(DIA_t1),
-    DBH_sq_t1 = DIA_t1^2,
-    ln_SI = log(pmax(SI, 1)),  # Avoid log(0)
-    SLOPE_sq = SLOPE^2,
-    ELEV_sq = ELEV_km^2,
-    CR_sq = CR^2,
-    # Annual increment (normalize to years)
+    # Annual DDS
     DDS_annual = DDS / years_interval,
-    ln_DDS_annual = log(DDS_annual + 0.001),
-    # Standardized variables (for priors)
-    ln_DBH_std = scale(ln_DBH_t1)[, 1],
-    SLOPE_std = scale(SLOPE)[, 1],
-    ELEV_std = scale(ELEV_km)[, 1],
-    CR_std = scale(CR)[, 1]
-  ) %>%
-  # Remove any rows with missing critical values
+    ln_DDS = log(pmax(DDS, 0.001))
+  )
+
+# =============================================================================
+# Quality Filters
+# =============================================================================
+
+logger::log_info("Applying quality filters...")
+
+n_before <- nrow(remeas)
+
+remeas_clean <- remeas %>%
   filter(
-    !is.na(DDS),
-    !is.na(DIA_t1),
-    !is.na(SI),
-    !is.na(BAL_sqft),
-    !is.na(BA),
-    !is.na(CR),
+    !is.na(DDS), DDS > 0,
+    !is.na(DIA_t1), DIA_t1 >= 1.0,
+    !is.na(SI), SI > 0,
+    !is.na(BA), BA > 0,
     !is.na(SLOPE),
-    !is.na(ELEV),
-    DDS > 0
+    !is.na(ELEV)
   )
 
-logger::log_info("After QA/QC: {nrow(remeasurement_pairs)} observations")
+logger::log_info("Quality filter: {n_before} -> {nrow(remeas_clean)} observations ({round(100 * nrow(remeas_clean)/n_before, 1)}% retained)")
 
-# ============================================================================
-# Assign FVS Variants Based on Plot Location
-# ============================================================================
+# =============================================================================
+# Save Diameter Growth Dataset
+# =============================================================================
 
-# Load variant geographic boundaries (simplified: use state mapping)
-# In production, would use spatial intersection with variant shapefiles
-remeasurement_pairs <- remeasurement_pairs %>%
-  mutate(
-    # Get state from coordinates (simplified; production code would use spatial join)
-    # For now, assign variant based on region heuristic
-    variant = case_when(
-      LAT > 42 & LON < -70 ~ "ec",  # Northeast
-      LAT > 42 & LON >= -70 & LON < -80 ~ "ls",  # Maine
-      LAT < 40 & LAT > 35 & LON > -85 ~ "kt",  # Central plains
-      LAT < 35 ~ "acd",  # South
-      LAT >= 40 & LON < -100 ~ "op",  # Pacific NW
-      TRUE ~ "em"  # Midwest default
-    )
+dg_out <- remeas_clean %>%
+  transmute(
+    PLT_CN = coalesce(PLT_CN.x, PLT_CN.y),
+    tree_id = paste(PLT_CN, SUBP, TREE, sep = "_"),
+    SPCD, fvs_sp_idx, variant = !!variant,
+    # Measurements
+    DIA_t1, DIA_t2, DIB_t1, DIB_t2, DDS, ln_DDS,
+    HT_t1, HT_t2, HT_annual,
+    CR_t1, CR_t2, CR_annual,
+    years_interval,
+    STATUSCD_t1, STATUSCD_t2,
+    # Covariates
+    ln_DBH, DBH_sq, ln_SI, SI,
+    SLOPE, SLOPE_SASP, SLOPE_CASP,
+    ELEV, ELEV_100ft,
+    CR_pct, BAL, BA, SDI, QMD, TPA,
+    # Location
+    LAT, LON
   )
 
-# ============================================================================
-# Partition by Variant and Save
-# ============================================================================
+dg_file <- file.path(processed_dir, "diameter_growth.csv")
+write_csv(dg_out, dg_file)
+logger::log_info("Saved diameter growth data: {nrow(dg_out)} obs to {dg_file}")
 
-logger::log_info("Saving data by variant...")
+# =============================================================================
+# Save Height Growth Dataset (trees with valid height remeasurements)
+# =============================================================================
 
-# Create output directory structure
-for (var in unique(remeasurement_pairs$variant)) {
-  var_dir <- file.path(processed_data_dir, var)
-  dir.create(var_dir, showWarnings = FALSE, recursive = TRUE)
-}
+ht_out <- remeas_clean %>%
+  filter(!is.na(HT_t1), !is.na(HT_t2), HT_t1 > 4.5, HT_t2 > HT_t1) %>%
+  transmute(
+    PLT_CN = coalesce(PLT_CN.x, PLT_CN.y),
+    tree_id = paste(PLT_CN, SUBP, TREE, sep = "_"),
+    SPCD, fvs_sp_idx, variant = !!variant,
+    DIA_t1, HT_t1, HT_t2, HT_annual,
+    years_interval,
+    ln_DBH, SI, BA, BAL, CR_pct,
+    SLOPE, ELEV, LAT, LON
+  )
 
-# Save by variant
-for (var in unique(remeasurement_pairs$variant)) {
-  var_data <- remeasurement_pairs %>%
-    filter(variant == var) %>%
-    select(
-      # Identifiers
-      PLT_CN, tree_id, SPCD, variant,
-      # Measurements
-      DIA_t1, DIA_t2, DIB_t1, DIB_t2, DDS, ln_DDS,
-      HT_t1, HT_t2, years_interval,
-      # Covariates
-      ln_DBH_t1, DBH_sq_t1, ln_SI, SLOPE, SLOPE_sq,
-      SLOPE_SASP, SLOPE_CASP, ELEV_km, ELEV_sq,
-      CR, CR_sq, BAL_sqft, BA,
-      # Location
-      LAT, LON, ELEV,
-      # Standardized versions
-      ln_DBH_std, SLOPE_std, ELEV_std, CR_std
-    )
+ht_file <- file.path(processed_dir, "height_growth.csv")
+write_csv(ht_out, ht_file)
+logger::log_info("Saved height growth data: {nrow(ht_out)} obs to {ht_file}")
 
-  # Save as CSV
-  output_file <- file.path(processed_data_dir, var, "diameter_growth.csv")
-  write_csv(var_data, output_file)
+# =============================================================================
+# Save Height Diameter Dataset (all live trees with HT and DIA)
+# =============================================================================
 
-  logger::log_info("Saved {nrow(var_data)} observations for variant {var}")
-}
+hd_out <- combined %>%
+  filter(STATUSCD == 1, !is.na(DIA), DIA >= 1.0, !is.na(HT), HT > 4.5) %>%
+  left_join(site_index, by = c("PLT_CN", "CONDID", "INVYR")) %>%
+  transmute(
+    PLT_CN, CONDID, INVYR,
+    SPCD,
+    fvs_sp_idx = as.integer(fia_to_fvs[as.character(SPCD)]),
+    fvs_sp_idx = ifelse(is.na(fvs_sp_idx), 1L, fvs_sp_idx),
+    variant = !!variant,
+    DIA, HT,
+    SI = coalesce(SICOND, 50),  # Default SI = 50 if missing
+    LAT, LON, ELEV
+  )
 
-# ============================================================================
-# Summary Statistics
-# ============================================================================
+hd_file <- file.path(processed_dir, "height_diameter.csv")
+write_csv(hd_out, hd_file)
+logger::log_info("Saved height diameter data: {nrow(hd_out)} obs to {hd_file}")
+
+# =============================================================================
+# Save Mortality Dataset (live trees + trees that died between measurements)
+# =============================================================================
+
+mort_out <- remeas %>%
+  filter(
+    STATUSCD_t1 == 1,          # Alive at time 1
+    !is.na(DIA_t1), DIA_t1 >= 1.0,
+    !is.na(SI), SI > 0,
+    !is.na(BA), BA > 0,
+    years_interval > 0
+  ) %>%
+  transmute(
+    PLT_CN = coalesce(PLT_CN.x, PLT_CN.y),
+    tree_id = paste(PLT_CN, SUBP, TREE, sep = "_"),
+    SPCD, fvs_sp_idx, variant = !!variant,
+    DIA = DIA_t1, HT = HT_t1, CR = CR_t1,
+    died = as.integer(STATUSCD_t2 == 2),  # 1 = died, 0 = survived
+    years_interval,
+    ln_DBH = log(DIA_t1), SI, BA, BAL,
+    CR_pct = CR_t1 * 100,
+    SLOPE, ELEV, LAT, LON
+  )
+
+mort_file <- file.path(processed_dir, "mortality.csv")
+write_csv(mort_out, mort_file)
+logger::log_info("Saved mortality data: {nrow(mort_out)} obs ({sum(mort_out$died)} deaths)")
+
+# =============================================================================
+# Save Crown Ratio Change Dataset
+# =============================================================================
+
+cr_out <- remeas_clean %>%
+  filter(!is.na(CR_t1), !is.na(CR_t2), CR_t1 > 0) %>%
+  transmute(
+    PLT_CN = coalesce(PLT_CN.x, PLT_CN.y),
+    tree_id = paste(PLT_CN, SUBP, TREE, sep = "_"),
+    SPCD, fvs_sp_idx, variant = !!variant,
+    DIA = DIA_t1, DIA_sq = DIA_t1^2,
+    CR_init = CR_t1, CR_final = CR_t2,
+    delta_CR = CR_annual,
+    years_interval,
+    SI, BA, BAL,
+    SLOPE, ELEV, LAT, LON
+  )
+
+cr_file <- file.path(processed_dir, "crown_ratio_change.csv")
+write_csv(cr_out, cr_file)
+logger::log_info("Saved crown ratio change data: {nrow(cr_out)} obs to {cr_file}")
+
+# =============================================================================
+# Summary
+# =============================================================================
 
 cat("\n")
-cat("========================================\n")
-cat("FIA Data Fetch and Preparation Complete\n")
-cat("========================================\n")
-cat("Total remeasurement pairs:", nrow(remeasurement_pairs), "\n")
-cat("Variants represented:", n_distinct(remeasurement_pairs$variant), "\n")
-cat("Species represented:", n_distinct(remeasurement_pairs$SPCD), "\n")
-cat("Date range:", min(remeasurement_pairs$INVYR), "-",
-    max(remeasurement_pairs$INVYR), "\n")
-cat("Measurement intervals (years):\n")
-print(summary(remeasurement_pairs$years_interval))
-cat("\nData saved to:", processed_data_dir, "\n\n")
+cat("==========================================\n")
+cat("FIA Data Preparation Complete\n")
+cat("==========================================\n")
+cat("Variant:", variant, "\n")
+cat("States:", paste(states, collapse = ", "), "\n")
+cat("FIA source:", ifelse(!is.null(fia_dir), fia_dir, "rFIA download"), "\n")
+cat("\nDatasets created:\n")
+cat("  Diameter growth:", nrow(dg_out), "observations\n")
+cat("  Height growth:  ", nrow(ht_out), "observations\n")
+cat("  Height diameter:", nrow(hd_out), "observations\n")
+cat("  Mortality:      ", nrow(mort_out), "observations",
+    "(", sum(mort_out$died), "deaths )\n")
+cat("  Crown ratio:    ", nrow(cr_out), "observations\n")
+cat("\nOutput directory:", processed_dir, "\n\n")
 
-logger::log_info("FIA data fetch and preparation complete")
-logger::log_info("Total observations: {nrow(remeasurement_pairs)}")
+logger::log_info("FIA data preparation complete for variant {variant}")

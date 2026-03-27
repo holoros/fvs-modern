@@ -32,11 +32,15 @@ library(logger)
 
 args <- commandArgs(trailingOnly = TRUE)
 variant <- "ne"
+fia_dir <- NULL
 
 if (length(args) > 0) {
   for (i in seq_along(args)) {
     if (args[i] == "--variant" & i < length(args)) {
       variant <- args[i + 1]
+    }
+    if (args[i] == "--fia-dir" & i < length(args)) {
+      fia_dir <- args[i + 1]
     }
   }
 }
@@ -45,8 +49,15 @@ if (length(args) > 0) {
 # Configuration
 # =============================================================================
 
-project_root <- "/home/aweiskittel/Documents/Claude/fvs-modern"
+project_root <- Sys.getenv("FVS_PROJECT_ROOT",
+                           "/home/aweiskittel/Documents/Claude/fvs-modern")
 calibration_dir <- file.path(project_root, "calibration")
+
+# If fia_dir not passed as arg, check environment variable
+if (is.null(fia_dir)) {
+  env_fia <- Sys.getenv("FVS_FIA_DATA_DIR", "")
+  if (nchar(env_fia) > 0) fia_dir <- env_fia
+}
 processed_dir <- file.path(calibration_dir, "data", "processed", variant)
 config_dir <- file.path(project_root, "config")
 
@@ -118,9 +129,15 @@ logger::log_info("Config has {n_species} species, {sum(fia_species > 0)} with FI
 
 logger::log_info("Loading FIA data for {length(states)} states...")
 
-# Load or download FIA databases
-fia_dir <- file.path(calibration_dir, "data", "fia_raw")
-dir.create(fia_dir, showWarnings = FALSE, recursive = TRUE)
+# Determine FIA source
+if (is.null(fia_dir)) {
+  fia_source_dir <- file.path(calibration_dir, "data", "fia_raw")
+  dir.create(fia_source_dir, showWarnings = FALSE, recursive = TRUE)
+  logger::log_info("Download mode: FIA data cached in {fia_source_dir}")
+} else {
+  fia_source_dir <- fia_dir
+  logger::log_info("Local FIA mode: reading from {fia_source_dir}")
+}
 
 all_stand_data <- list()
 
@@ -128,14 +145,23 @@ for (state in states) {
   logger::log_info("Processing state: {state}")
 
   tryCatch({
-    # Download if needed
-    state_dir <- file.path(fia_dir, state)
-    if (!dir.exists(state_dir) || length(list.files(state_dir)) == 0) {
-      logger::log_info("Downloading FIA data for {state}...")
-      getFIA(states = state, dir = fia_dir, load = FALSE)
+    if (!is.null(fia_dir)) {
+      # Local mode: check for state subdirectory, then flat structure
+      state_subdir <- file.path(fia_source_dir, state)
+      if (dir.exists(state_subdir) && length(list.files(state_subdir)) > 0) {
+        db <- readFIA(dir = state_subdir, common = TRUE)
+      } else {
+        db <- readFIA(dir = fia_source_dir, states = state, common = TRUE)
+      }
+    } else {
+      # Download mode
+      state_dir <- file.path(fia_source_dir, state)
+      if (!dir.exists(state_dir) || length(list.files(state_dir)) == 0) {
+        logger::log_info("Downloading FIA data for {state}...")
+        getFIA(states = state, dir = fia_source_dir, load = FALSE)
+      }
+      db <- readFIA(state_dir, common = TRUE)
     }
-
-    db <- readFIA(state_dir, common = TRUE)
 
     # Extract tree-level data with plot conditions
     tree_dat <- db$TREE %>%

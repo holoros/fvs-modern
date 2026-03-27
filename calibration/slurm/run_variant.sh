@@ -101,7 +101,8 @@ log_step "STEP01" "Fetching and preparing FIA data..."
 if [ ! -d "${DATA_DIR}/${VARIANT}" ] || [ -z "$(ls -A ${DATA_DIR}/${VARIANT} 2>/dev/null)" ]; then
     log_step "STEP01" "Running FIA data fetch (first time for variant)..."
 
-    if Rscript "${SCRIPTS_DIR}/01_fetch_fia_data.R" >> "$VARIANT_LOG" 2>&1; then
+    if Rscript "${SCRIPTS_DIR}/01_fetch_fia_data.R" \
+        --variant "$VARIANT" >> "$VARIANT_LOG" 2>&1; then
         log_step "STEP01" "FIA data fetch completed successfully"
     else
         log_step "ERROR" "FIA data fetch failed"
