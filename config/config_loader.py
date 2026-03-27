@@ -1,25 +1,38 @@
 """
 FVS Parameter Configuration Loader
 
-Provides runtime selection between default and Bayesian calibrated parameters.
+Provides runtime selection among three parameter sets:
+
+  - "default":    Original FVS parameters extracted from Fortran source code
+  - "calibrated": Bayesian posterior estimates fit to national FIA data
+  - "custom":     User supplied JSON calibrated to independent data
+                  (cooperative plot networks, regional inventories, etc.)
+
 Works with both fvs2py (shared library API) and microfvs (keyfile/subprocess).
 
-Three usage patterns:
+Usage patterns:
 
   1. Python API (fvs2py):
-       loader = FvsConfigLoader("ne", version="calibrated")
-       fvs = FVS(lib_path)
-       fvs.load_keyfile(keyfile)
-       loader.apply_to_fvs(fvs)  # sets species attrs from calibrated config
+       # National FIA calibration
+       fvs = FVS(lib_path, config_version="calibrated")
+
+       # Custom calibration from your own plot network
+       fvs = FVS(lib_path, config_version="custom",
+                  config_dir="/path/to/my_calibration")
 
   2. Keyfile injection (microfvs or standalone FVS):
        loader = FvsConfigLoader("ne", version="calibrated")
        keywords = loader.generate_keywords()
        # Append keywords to .key file before running FVS
 
-  3. Comparison mode:
+  3. Custom calibration from independent data:
+       loader = FvsConfigLoader("ne", version="custom",
+                                custom_config="/path/to/my_ne.json")
+       loader.apply_to_fvs(fvs)  # or loader.generate_keywords()
+
+  4. Comparison mode:
        diff = FvsConfigLoader.compare("ne")
-       # Returns parameter-by-parameter differences with credible intervals
+       # Returns parameter by parameter differences with credible intervals
 """
 
 from __future__ import annotations
@@ -38,28 +51,37 @@ logger = logging.getLogger(__name__)
 class FvsConfigLoader:
     """Loads and applies FVS variant parameters from JSON configuration files.
 
-    Supports two config versions:
-      - "default": Original FVS parameters extracted from Fortran source
-      - "calibrated": Bayesian posterior estimates from FIA data
+    Supports three config versions:
+      - "default":    Original FVS parameters extracted from Fortran source
+      - "calibrated": Bayesian posterior estimates from national FIA data
+      - "custom":     User supplied JSON calibrated to independent data
     """
 
     # Auto detect project root from this file's location
     _CONFIG_DIR = Path(__file__).parent
 
-    VALID_VERSIONS = ("default", "calibrated")
+    VALID_VERSIONS = ("default", "calibrated", "custom")
 
     def __init__(
         self,
         variant: str,
         version: str = "default",
         config_dir: Optional[str | Path] = None,
+        custom_config: Optional[str | Path] = None,
     ):
         """Initialize config loader for a specific variant.
 
         Args:
             variant: FVS variant code (e.g., 'ne', 'ca', 'sn')
-            version: 'default' or 'calibrated'
-            config_dir: Override path to config directory
+            version: 'default', 'calibrated', or 'custom'
+            config_dir: Override path to config directory (where default
+                and calibrated JSONs live)
+            custom_config: Path to a user supplied JSON config file.
+                Required when version='custom'. The JSON must follow the
+                same schema as config/{variant}.json. This allows users
+                to calibrate FVS to their own plot network data (e.g.,
+                cooperative inventories, long term silvicultural trials,
+                or regional permanent sample plots).
         """
         self.variant = variant.lower()
         self.version = version.lower()
@@ -68,6 +90,14 @@ class FvsConfigLoader:
             raise ValueError(
                 f"version must be one of {self.VALID_VERSIONS}, got '{self.version}'"
             )
+
+        if self.version == "custom" and custom_config is None:
+            raise ValueError(
+                "custom_config path is required when version='custom'. "
+                "Provide the path to your calibrated JSON file."
+            )
+
+        self._custom_config_path = Path(custom_config) if custom_config else None
 
         if config_dir is not None:
             self._config_dir = Path(config_dir)
@@ -80,6 +110,8 @@ class FvsConfigLoader:
     @property
     def config_path(self) -> Path:
         """Path to the active config file."""
+        if self.version == "custom" and self._custom_config_path is not None:
+            return self._custom_config_path
         if self.version == "calibrated":
             return self._config_dir / "calibrated" / f"{self.variant}.json"
         return self._config_dir / f"{self.variant}.json"

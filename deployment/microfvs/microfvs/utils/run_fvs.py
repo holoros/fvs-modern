@@ -36,6 +36,7 @@ def run_fvs(
     stand_stock_params=FvsStandStockParams(),
     config_version: str | None = None,
     config_dir: str | None = None,
+    custom_config: str | None = None,
 ) -> FvsResult | list[FvsResult]:
     """Runs a batch of FVS simulations and returns the result(s).
 
@@ -78,6 +79,8 @@ def run_fvs(
             When 'calibrated', FVS keywords (SDIMAX, MORTMULT, etc.)
             are injected into the keyfile before running.
         config_dir (str, optional): Override path to the config directory.
+        custom_config (str, optional): Path to a user supplied JSON
+            config. Required when config_version='custom'.
 
     Returns:
         A single FvsResult (if `limit`=1) or a list of FvsResults if
@@ -128,14 +131,15 @@ def run_fvs(
                 keyfile_content = keyfile.content
 
                 # Inject calibrated parameters if requested
-                if config_version and config_version.lower() == "calibrated":
+                if config_version and config_version.lower() in ("calibrated", "custom"):
                     try:
                         from config.config_loader import FvsConfigLoader
 
                         loader = FvsConfigLoader(
                             fvs_variant.lower(),
-                            version="calibrated",
+                            version=config_version.lower(),
                             config_dir=config_dir,
+                            custom_config=custom_config,
                         )
                         cal_keywords = loader.generate_keywords(include_comments=True)
                         # Insert before the PROCESS keyword

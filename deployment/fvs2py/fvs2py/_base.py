@@ -40,9 +40,14 @@ class FVS(FvsCore):
         config_version: Which parameter set to use:
             'default'    = original FVS parameters (compiled in)
             'calibrated' = Bayesian posterior estimates from FIA data
+            'custom'     = user supplied JSON calibrated to independent data
             None         = do not apply any config overlay (same as 'default')
         config_dir: Override path to the config directory containing
             variant JSON files and calibrated/ subdirectory
+        custom_config: Path to a user supplied JSON config file.
+            Required when config_version='custom'. Allows calibration
+            to independent datasets (cooperative plots, regional
+            inventories, silvicultural trials, etc.)
     """
 
     def __init__(
@@ -50,11 +55,13 @@ class FVS(FvsCore):
         lib_path: str | os.PathLike,
         config_version: str | None = None,
         config_dir: str | os.PathLike | None = None,
+        custom_config: str | os.PathLike | None = None,
     ):
         super().__init__(lib_path=lib_path)
         self._initialize_attributes()
         self._config_version = config_version
         self._config_dir = config_dir
+        self._custom_config = custom_config
         self._config_applied = False
         return
 
@@ -515,6 +522,7 @@ class FVS(FvsCore):
                 self.variant.lower(),
                 version=self._config_version,
                 config_dir=self._config_dir,
+                custom_config=self._custom_config,
             )
             result = loader.apply_to_fvs(self)
             self._config_applied = True
@@ -586,8 +594,8 @@ class FVS(FvsCore):
             raise AttributeError(msg)
         logging.debug("Found keyfile.")
 
-        # Apply calibrated config on first run if requested
-        if self._config_version == "calibrated" and not self._config_applied:
+        # Apply calibrated or custom config on first run if requested
+        if self._config_version in ("calibrated", "custom") and not self._config_applied:
             # First pass with stop point 7 to let FVS read input,
             # then apply calibrated parameters before imputation
             self.set_stop_point_codes(7, 0)
