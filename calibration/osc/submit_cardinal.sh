@@ -65,8 +65,11 @@ echo "==========================================="
 # ============================================================================
 
 module purge
+module load ${GCC_MODULE}
 module load ${R_MODULE}
-module load ${GNU_MODULE}
+module load ${GDAL_MODULE}
+module load ${PROJ_MODULE}
+module load ${GEOS_MODULE}
 
 # ============================================================================
 # Set Environment

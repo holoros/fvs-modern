@@ -67,10 +67,12 @@ if (!is.null(fia_dir)) {
 }
 
 # =============================================================================
-# FVS Variant to State Mapping (CORRECTED)
+# FVS Variant to State Mapping
 #
-# Each variant covers a specific geographic region. States listed here are
-# the FIA state abbreviations whose plots fall within that variant's domain.
+# Used to determine which state level FIA files to load. This is a rough
+# geographic filter for efficiency; the precise variant assignment comes
+# from the FIA PLOT table's variant column (preferred) or falls back to
+# this mapping when that column is absent in older FIA vintages.
 # =============================================================================
 
 variant_states <- list(
@@ -101,6 +103,9 @@ variant_states <- list(
   on  = c("ME")    # Placeholder: ON uses Canadian NFI data
 )
 
+# FVS variant codes as they appear in FIA (uppercase two letter)
+variant_upper <- toupper(variant)
+
 states <- variant_states[[variant]]
 if (is.null(states)) {
   logger::log_error("Unknown variant: {variant}")
@@ -108,6 +113,7 @@ if (is.null(states)) {
 }
 
 logger::log_info("Variant {variant} maps to states: {paste(states, collapse = ', ')}")
+logger::log_info("Will filter on FIA variant column = '{variant_upper}' when available")
 
 # =============================================================================
 # Load FVS Config for Species Mapping and Bark Ratios
@@ -212,11 +218,30 @@ for (state in states) {
         BALIVE, LIVE_CANOPY_CVR_PCT
       )
 
-    # Extract PLOT table
-    plot_df <- db$PLOT %>%
-      as_tibble() %>%
-      select(CN, INVYR, LAT, LON, ELEV, MEASYEAR) %>%
+    # Extract PLOT table (grab variant column if it exists)
+    plot_raw <- db$PLOT %>% as_tibble()
+    plot_cols <- c("CN", "INVYR", "LAT", "LON", "ELEV", "MEASYEAR")
+
+    # FIA databases now include an FVS variant assignment per plot
+    # Column names vary: VARIANT, FVS_VARIANT, FVSVARIANT, FVSVARIANTCD
+    var_col <- intersect(
+      names(plot_raw),
+      c("VARIANT", "FVS_VARIANT", "FVSVARIANT", "FVSVARIANTCD",
+        "variant", "fvs_variant")
+    )
+    if (length(var_col) > 0) {
+      plot_cols <- c(plot_cols, var_col[1])
+      logger::log_info("Found FIA variant column: {var_col[1]}")
+    }
+
+    plot_df <- plot_raw %>%
+      select(any_of(plot_cols)) %>%
       rename(PLT_CN = CN)
+
+    # Standardize variant column name to FIA_VARIANT
+    if (length(var_col) > 0) {
+      plot_df <- plot_df %>% rename(FIA_VARIANT = !!sym(var_col[1]))
+    }
 
     all_tree_data[[state]] <- tree_df
     all_cond_data[[state]] <- cond_df
@@ -243,6 +268,40 @@ logger::log_info("Combined: {nrow(tree_all)} tree records across {length(all_tre
 combined <- tree_all %>%
   left_join(cond_all, by = c("PLT_CN", "CONDID", "INVYR")) %>%
   left_join(plot_all, by = c("PLT_CN", "INVYR"))
+
+# =============================================================================
+# Filter to Plots Assigned to This FVS Variant
+#
+# If the FIA data contains a variant column (modern FIA databases do),
+# use it for precise filtering. This is more accurate than the state
+# mapping since variant boundaries do not follow state lines in the
+# western US (e.g., Idaho contains both IE and CI plots).
+# =============================================================================
+
+has_fia_variant <- "FIA_VARIANT" %in% names(combined)
+
+if (has_fia_variant) {
+  n_before_filter <- nrow(combined)
+
+  # Standardize: strip whitespace and compare case insensitively
+  combined <- combined %>%
+    mutate(FIA_VARIANT = trimws(toupper(FIA_VARIANT))) %>%
+    filter(FIA_VARIANT == variant_upper)
+
+  logger::log_info(
+    "Filtered by FIA variant column: {n_before_filter} -> {nrow(combined)} tree records for {variant_upper}"
+  )
+
+  if (nrow(combined) == 0) {
+    logger::log_error("No plots found with FIA_VARIANT == '{variant_upper}'")
+    stop("No FIA plots matched variant ", variant_upper)
+  }
+} else {
+  logger::log_warn(
+    "No FIA variant column found in PLOT table; using state mapping only. ",
+    "This is less precise for variants that share states (e.g., IE/CI in Idaho)."
+  )
+}
 
 # =============================================================================
 # Build Remeasurement Pairs (Same Tree, Two Inventories)

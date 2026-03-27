@@ -26,11 +26,14 @@ echo ""
 
 echo "[1/5] Loading modules..."
 
-# Cardinal module names (adjust if needed)
+# Cardinal modules (gcc needed for CmdStan, spatial libs for sf/terra/rFIA)
 module purge
-module load R/4.4.0       # or latest available: module spider R
-module load gnu/13.2.0    # GNU compiler for CmdStan
-module load cmake         # needed for CmdStan
+module load gcc/12.3.0
+module load R/4.4.0
+module load gdal/3.7.3
+module load proj/9.2.1
+module load geos/3.12.0
+module load cmake         # needed for CmdStan compilation
 
 # Verify R is available
 Rscript --version

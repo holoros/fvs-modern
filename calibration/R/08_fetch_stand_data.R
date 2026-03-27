@@ -102,6 +102,8 @@ variant_states <- list(
   on = c("ME")   # Placeholder, ON uses Canadian data
 )
 
+variant_upper <- toupper(variant)
+
 states <- variant_states[[variant]]
 if (is.null(states)) {
   logger::log_error("Unknown variant: {variant}")
@@ -109,6 +111,7 @@ if (is.null(states)) {
 }
 
 logger::log_info("Variant {variant} maps to states: {paste(states, collapse = ', ')}")
+logger::log_info("Will filter on FIA variant column = '{variant_upper}' when available")
 
 # =============================================================================
 # Load FVS Config for Species Mapping
@@ -188,15 +191,40 @@ for (state in states) {
         BALIVE, LIVE_CANOPY_CVR_PCT
       )
 
-    plot_dat <- db$PLOT %>%
-      as_tibble() %>%
-      select(CN, INVYR, LAT, LON, ELEV) %>%
+    # Extract PLOT table (grab variant column if it exists)
+    plot_raw <- db$PLOT %>% as_tibble()
+    plot_cols <- c("CN", "INVYR", "LAT", "LON", "ELEV")
+
+    var_col <- intersect(
+      names(plot_raw),
+      c("VARIANT", "FVS_VARIANT", "FVSVARIANT", "FVSVARIANTCD",
+        "variant", "fvs_variant")
+    )
+    if (length(var_col) > 0) {
+      plot_cols <- c(plot_cols, var_col[1])
+      logger::log_info("Found FIA variant column: {var_col[1]}")
+    }
+
+    plot_dat <- plot_raw %>%
+      select(any_of(plot_cols)) %>%
       rename(PLT_CN = CN)
+
+    if (length(var_col) > 0) {
+      plot_dat <- plot_dat %>% rename(FIA_VARIANT = !!sym(var_col[1]))
+    }
 
     # Join tree data to plot/condition
     combined <- tree_dat %>%
       left_join(cond_dat, by = c("PLT_CN", "CONDID", "INVYR")) %>%
       left_join(plot_dat, by = c("PLT_CN", "INVYR"))
+
+    # Filter to plots assigned to this FVS variant (precise)
+    if ("FIA_VARIANT" %in% names(combined)) {
+      combined <- combined %>%
+        mutate(FIA_VARIANT = trimws(toupper(FIA_VARIANT))) %>%
+        filter(FIA_VARIANT == variant_upper)
+      logger::log_info("Filtered by FIA variant: {nrow(combined)} records for {variant_upper}")
+    }
 
     # =========================================================================
     # Compute Stand-Level Summaries per Plot/Condition/Inventory
