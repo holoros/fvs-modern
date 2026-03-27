@@ -33,11 +33,29 @@ from fvs2py.enums import FvsAttributeAccessor
 
 @class_requires_fvs_library
 class FVS(FvsCore):
-    """Main class for interacting with FVS at runtime."""
+    """Main class for interacting with FVS at runtime.
 
-    def __init__(self, lib_path: str | os.PathLike):
+    Args:
+        lib_path: Path to the FVS shared library (.so or .dll)
+        config_version: Which parameter set to use:
+            'default'    = original FVS parameters (compiled in)
+            'calibrated' = Bayesian posterior estimates from FIA data
+            None         = do not apply any config overlay (same as 'default')
+        config_dir: Override path to the config directory containing
+            variant JSON files and calibrated/ subdirectory
+    """
+
+    def __init__(
+        self,
+        lib_path: str | os.PathLike,
+        config_version: str | None = None,
+        config_dir: str | os.PathLike | None = None,
+    ):
         super().__init__(lib_path=lib_path)
         self._initialize_attributes()
+        self._config_version = config_version
+        self._config_dir = config_dir
+        self._config_applied = False
         return
 
     def _initialize_attributes(self) -> None:
@@ -475,12 +493,58 @@ class FVS(FvsCore):
         """
         return self._species_attr(attr, FvsAttributeAccessor.SET, arr)
 
+    def apply_calibrated_config(self) -> dict[str, bool]:
+        """Apply calibrated parameters from a JSON config file.
+
+        Uses the config_version and config_dir set at initialization.
+        This is called automatically by run() when config_version='calibrated',
+        but can also be called manually after load_keyfile() for fine grained
+        control.
+
+        Returns:
+            Dictionary indicating which parameter groups were applied
+        """
+        if self._config_version is None or self._config_version == "default":
+            return {}
+
+        try:
+            # Import here to avoid circular dependency
+            from config.config_loader import FvsConfigLoader
+
+            loader = FvsConfigLoader(
+                self.variant.lower(),
+                version=self._config_version,
+                config_dir=self._config_dir,
+            )
+            result = loader.apply_to_fvs(self)
+            self._config_applied = True
+            logging.info(
+                f"Applied {self._config_version} config for variant {self.variant}: {result}"
+            )
+            return result
+
+        except ImportError:
+            logging.warning(
+                "config_loader not found. Install fvs-modern or add config/ to PYTHONPATH."
+            )
+            return {}
+        except FileNotFoundError as e:
+            logging.warning(f"Config file not found: {e}")
+            return {}
+        except Exception as e:
+            logging.warning(f"Could not apply calibrated config: {e}")
+            return {}
+
     def run(
         self,
         stop_point_code: int = 0,
         stop_point_year: int = 0,
     ) -> None:
         """Runs FVS.
+
+        If config_version was set to 'calibrated' at initialization, the
+        calibrated parameters will be applied automatically after reading
+        inventory data (stop point 7) on the first call to run().
 
         Note that stopping after the simulation of each stand in a simulation is
         done even when no stop request has been scheduled (that is, FVS will
@@ -521,7 +585,22 @@ class FVS(FvsCore):
             msg = "No keyfile loaded yet."
             raise AttributeError(msg)
         logging.debug("Found keyfile.")
-        self.set_stop_point_codes(stop_point_code, stop_point_year)
+
+        # Apply calibrated config on first run if requested
+        if self._config_version == "calibrated" and not self._config_applied:
+            # First pass with stop point 7 to let FVS read input,
+            # then apply calibrated parameters before imputation
+            self.set_stop_point_codes(7, 0)
+            while self.itrncd == 0:
+                self._fvs(self._itrncd)
+                if self.restart_code != 0:
+                    break
+            self.apply_calibrated_config()
+            # Now continue with the user's requested stop points
+            self.set_stop_point_codes(stop_point_code, stop_point_year)
+        else:
+            self.set_stop_point_codes(stop_point_code, stop_point_year)
+
         logging.debug(
             f"Set stop point codes, {stop_point_code}:{self.stop_point_code}, {stop_point_year}:{self.stop_point_year}"
         )

@@ -34,6 +34,8 @@ def run_fvs(
     template: str = FvsKeyfileTemplate.DEFAULT,
     template_params: dict = {},
     stand_stock_params=FvsStandStockParams(),
+    config_version: str | None = None,
+    config_dir: str | None = None,
 ) -> FvsResult | list[FvsResult]:
     """Runs a batch of FVS simulations and returns the result(s).
 
@@ -70,6 +72,12 @@ def run_fvs(
             Table in the FVS outputs. Default is to produce the Stand
             and Stock Table, and to do so using DBH classes of 4 inches
             and a large diameter category starting at 48 inches DBH.
+        config_version (str, optional): Which parameter set to use:
+            None or 'default' = original FVS parameters
+            'calibrated' = Bayesian posterior estimates from FIA data
+            When 'calibrated', FVS keywords (SDIMAX, MORTMULT, etc.)
+            are injected into the keyfile before running.
+        config_dir (str, optional): Override path to the config directory.
 
     Returns:
         A single FvsResult (if `limit`=1) or a list of FvsResults if
@@ -117,8 +125,36 @@ def run_fvs(
                 keyfile = FvsKeyfile(template=template, params=params)
 
                 keyfile_path = os.path.join(temp_dir, keyfile.name + ".key")
+                keyfile_content = keyfile.content
+
+                # Inject calibrated parameters if requested
+                if config_version and config_version.lower() == "calibrated":
+                    try:
+                        from config.config_loader import FvsConfigLoader
+
+                        loader = FvsConfigLoader(
+                            fvs_variant.lower(),
+                            version="calibrated",
+                            config_dir=config_dir,
+                        )
+                        cal_keywords = loader.generate_keywords(include_comments=True)
+                        # Insert before the PROCESS keyword
+                        if "PROCESS" in keyfile_content:
+                            keyfile_content = keyfile_content.replace(
+                                "PROCESS",
+                                cal_keywords + "\nPROCESS",
+                            )
+                        else:
+                            keyfile_content += "\n" + cal_keywords
+                    except Exception as e:
+                        import logging
+
+                        logging.warning(
+                            f"Could not inject calibrated parameters: {e}"
+                        )
+
                 with open(keyfile_path, "w") as f:
-                    f.write(keyfile.content)
+                    f.write(keyfile_content)
 
                 cmd = [
                     f"/usr/local/bin/FVS{keyfile.fvs_variant.lower()}",
