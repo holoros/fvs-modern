@@ -52,7 +52,8 @@ if (length(args) > 0) {
 # Configuration
 # =============================================================================
 
-project_root <- "/home/aweiskittel/Documents/Claude/fvs-modern"
+project_root <- Sys.getenv("FVS_PROJECT_ROOT",
+                             "/home/aweiskittel/Documents/Claude/fvs-modern")
 calibration_dir <- file.path(project_root, "calibration")
 processed_dir <- file.path(calibration_dir, "data", "processed", variant)
 output_dir <- file.path(calibration_dir, "output", "variants", variant)
@@ -302,7 +303,6 @@ fit_sdi <- brm(
   cores = parallel::detectCores(),
   backend = "cmdstanr",
   refresh = 0,
-  verbose = FALSE,
   control = list(adapt_delta = 0.95, max_treedepth = 12)
 )
 

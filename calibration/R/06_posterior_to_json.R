@@ -39,7 +39,8 @@ if (length(args) > 0) {
 # Configuration
 # =============================================================================
 
-project_root <- "/home/aweiskittel/Documents/Claude/fvs-modern"
+project_root <- Sys.getenv("FVS_PROJECT_ROOT",
+                             "/home/aweiskittel/Documents/Claude/fvs-modern")
 calibration_dir <- file.path(project_root, "calibration")
 output_dir <- file.path(calibration_dir, "output", "variants", variant)
 config_dir <- file.path(project_root, "config")

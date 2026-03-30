@@ -17,8 +17,6 @@ data {
   int<lower=0> N;                    // Number of observations
   int<lower=0> N_species;            // Number of species
   int<lower=0> N_spgrp;             // Number of species groups (for HG curve shape)
-  int<lower=0> N_plot;               // Number of plots
-
   vector[N] ln_HTG;                  // Log annual height increment (ft/yr or m/yr)
   vector[N] ln_DBH;                  // Log diameter at breast height
   vector[N] ln_HT;                   // Log total height
@@ -31,8 +29,6 @@ data {
 
   array[N] int species_id;           // Species index for each observation
   array[N] int spgrp_id;            // Species group index for each observation
-  array[N] int plot_id;              // Plot index for each observation
-
   // Prior specifications from FVS config
   vector[N_species] prior_hgld;      // Prior for ln(DBH) coefficient by species
   vector[N_spgrp] prior_hghc;       // Prior for height curve shape by species group
@@ -59,10 +55,6 @@ parameters {
   // Species group shape parameters (for height growth curve)
   vector[N_spgrp] gamma_shape;      // Species group shape modifier
 
-  // Random effects
-  vector[N_plot] z_plot;             // Standardized plot effects
-  real<lower=0> sigma_plot;          // SD of plot random effect
-
   // Hyperparameters
   real mu_b0;                        // Mean of species intercepts
   real<lower=0> tau_b0;             // SD of species intercepts
@@ -73,8 +65,6 @@ parameters {
 }
 
 transformed parameters {
-  vector[N_plot] effect_plot = sigma_plot * z_plot;
-
   vector[N] mu;
   for (n in 1:N) {
     mu[n] = b0[species_id[n]]
@@ -86,8 +76,7 @@ transformed parameters {
           + b6 * BA[n]
           + b7 * SLOPE[n]
           + b8 * CASP[n]
-          + gamma_shape[spgrp_id[n]] * ln_HT[n]  // Species group height curve shape
-          + effect_plot[plot_id[n]];
+          + gamma_shape[spgrp_id[n]] * ln_HT[n];  // Species group height curve shape
   }
 }
 
@@ -115,10 +104,6 @@ model {
 
   // Species group shape parameters with FVS priors
   gamma_shape ~ normal(prior_hghc, 0.5);
-
-  // ========== Random effects ==========
-  z_plot ~ std_normal();
-  sigma_plot ~ exponential(2);
 
   // ========== Observation error ==========
   sigma ~ exponential(1);

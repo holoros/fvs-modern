@@ -144,12 +144,55 @@ if (is.null(fia_dir)) {
 
 all_stand_data <- list()
 
+# Detect ENTIRE_FIA flat file format
+entire_tree_file <- file.path(fia_source_dir, "ENTIRE_TREE.csv")
+entire_plot_file <- file.path(fia_source_dir, "ENTIRE_PLOT.csv")
+entire_cond_file <- file.path(fia_source_dir, "ENTIRE_COND.csv")
+use_entire_mode <- !is.null(fia_dir) &&
+                   file.exists(entire_tree_file) &&
+                   file.exists(entire_plot_file) &&
+                   file.exists(entire_cond_file)
+
+# State FIPS lookup
+state_fips <- c(
+  AL=1, AK=2, AZ=4, AR=5, CA=6, CO=8, CT=9, DE=10, FL=12, GA=13,
+  HI=15, ID=16, IL=17, IN=18, IA=19, KS=20, KY=21, LA=22, ME=23,
+  MD=24, MA=25, MI=26, MN=27, MS=28, MO=29, MT=30, NE=31, NV=32,
+  NH=33, NJ=34, NM=35, NY=36, NC=37, ND=38, OH=39, OK=40, OR=41,
+  PA=42, RI=44, SC=45, SD=46, TN=47, TX=48, UT=49, VT=50, VA=51,
+  WA=53, WV=54, WI=55, WY=56
+)
+target_statecds <- unname(state_fips[states])
+target_statecds <- target_statecds[!is.na(target_statecds)]
+
+# Pre load ENTIRE files once if in ENTIRE mode (avoid re reading 13 GB per state)
+entire_tree_dt <- NULL
+entire_cond_dt <- NULL
+entire_plot_dt <- NULL
+
+if (use_entire_mode) {
+  logger::log_info("Detected ENTIRE_FIA flat file format. Reading files once...")
+  entire_tree_dt <- fread(entire_tree_file)[STATECD %in% target_statecds]
+  entire_cond_dt <- fread(entire_cond_file)[STATECD %in% target_statecds]
+  entire_plot_dt <- fread(entire_plot_file)[STATECD %in% target_statecds]
+  logger::log_info("  Loaded {nrow(entire_tree_dt)} trees, {nrow(entire_cond_dt)} conditions, {nrow(entire_plot_dt)} plots")
+}
+
 for (state in states) {
   logger::log_info("Processing state: {state}")
 
   tryCatch({
-    if (!is.null(fia_dir)) {
-      # Local mode: check for state subdirectory, then flat structure
+    if (use_entire_mode) {
+      # ENTIRE_FIA flat file mode (pre loaded above)
+      stcd <- state_fips[state]
+      if (is.na(stcd)) stop(paste("Unknown state:", state))
+      db <- list(
+        TREE = as_tibble(entire_tree_dt[STATECD == stcd]),
+        COND = as_tibble(entire_cond_dt[STATECD == stcd]),
+        PLOT = as_tibble(entire_plot_dt[STATECD == stcd])
+      )
+    } else if (!is.null(fia_dir)) {
+      # State subdirectory mode
       state_subdir <- file.path(fia_source_dir, state)
       if (dir.exists(state_subdir) && length(list.files(state_subdir)) > 0) {
         db <- readFIA(dir = state_subdir, common = TRUE)
@@ -184,12 +227,12 @@ for (state in states) {
     # Get plot/condition info
     cond_dat <- db$COND %>%
       as_tibble() %>%
-      select(
-        PLT_CN, CONDID, INVYR,
-        FORTYPCD, FLDTYPCD, STDAGE, STDSZCD, STDORGCD,
-        SITECLCD, SICOND, SISP, SLOPE, ASPECT, ELEV,
-        BALIVE, LIVE_CANOPY_CVR_PCT
-      )
+      select(any_of(c(
+        "PLT_CN", "CONDID", "INVYR",
+        "FORTYPCD", "FLDTYPCD", "STDAGE", "STDSZCD", "STDORGCD",
+        "SITECLCD", "SICOND", "SISP", "SLOPE", "ASPECT", "ELEV",
+        "BALIVE", "LIVE_CANOPY_CVR_PCT"
+      )))
 
     # Extract PLOT table (grab variant column if it exists)
     plot_raw <- db$PLOT %>% as_tibble()
@@ -230,6 +273,15 @@ for (state in states) {
     # Compute Stand-Level Summaries per Plot/Condition/Inventory
     # =========================================================================
 
+    # Normalize ELEV column name (ELEV.x if from COND join, ELEV if only from PLOT)
+    if ("ELEV.x" %in% names(combined)) {
+      combined$.elev_col <- combined$ELEV.x
+    } else if ("ELEV" %in% names(combined)) {
+      combined$.elev_col <- combined$ELEV
+    } else {
+      combined$.elev_col <- NA_real_
+    }
+
     stand_metrics <- combined %>%
       filter(STATUSCD == 1) %>%  # Live trees only for density
       group_by(PLT_CN, CONDID, INVYR, CYCLE) %>%
@@ -266,15 +318,15 @@ for (state in states) {
         },
 
         # Site information
-        si_cond = first(na.omit(SICOND)),
-        site_class = first(na.omit(SITECLCD)),
-        fortypcd = first(na.omit(FORTYPCD)),
-        slope = first(na.omit(SLOPE)),
-        aspect = first(na.omit(ASPECT)),
-        elev = first(na.omit(ELEV.x)),
-        lat = first(na.omit(LAT)),
-        lon = first(na.omit(LON)),
-        std_age = first(na.omit(STDAGE)),
+        si_cond = first(c(na.omit(SICOND), NA_real_)),
+        site_class = first(c(na.omit(SITECLCD), NA_real_)),
+        fortypcd = first(c(na.omit(FORTYPCD), NA_real_)),
+        slope = first(c(na.omit(SLOPE), NA_real_)),
+        aspect = first(c(na.omit(ASPECT), NA_real_)),
+        elev = first(c(na.omit(.elev_col), NA_real_)),
+        lat = first(c(na.omit(LAT), NA_real_)),
+        lon = first(c(na.omit(LON), NA_real_)),
+        std_age = first(c(na.omit(STDAGE), NA_real_)),
 
         .groups = "drop"
       ) %>%
@@ -369,7 +421,8 @@ for (state in states) {
     logger::log_info("State {state}: {nrow(stand_with_mort)} plot-conditions, {nrow(species_sdi)} species-level records")
 
   }, error = function(e) {
-    logger::log_error("Failed to process state {state}: {e$message}")
+    logger::log_error("Failed to process state {state}: {conditionMessage(e)}")
+    logger::log_error("Traceback: {paste(capture.output(traceback()), collapse = ' | ')}")
   })
 }
 

@@ -1,56 +1,28 @@
-# Build artifacts
-*.o
-*.mod
-*.so
-*.dylib
-*.dll
-*.exe
-bin/FVS*_buildDir/
+# FVS Bayesian Calibration: intermediate and large files
+calibration/data/raw_fia/
+calibration/data/fia_raw/
+calibration/data/nsvb/
+calibration/logs/
+calibration/output/variants/*/*.rds
+calibration/output/variants/*/*.pdf
+calibration/stan/wykoff_dg
+*.rds
 
-# R package build artifacts
-*.Rcheck/
-*.tar.gz
-man/*.Rd
-!deployment/config/*
+# Keep comparison outputs and summary CSVs
+!calibration/output/comparisons/
 
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
+# Generated SLURM helper scripts (one-off resubmission scripts)
+calibration/osc/_*_generated.sh
+calibration/osc/resubmit_*.sh
 
-# OS files
+# Draws JSON configs (too large for git, archive separately)
+config/calibrated/*_draws.json
+
+# Delivery notes (ephemeral)
+CALIBRATION_DELIVERY.txt
+CALIBRATION_README.txt
+
+# OS artifacts
 .DS_Store
-Thumbs.db
-
-# Python
-__pycache__/
-*.pyc
-.venv/
-
-# Credentials and secrets
-.env
-*.env
-.env.*
-credentials.*
-*.pem
-*.key
-!deployment/fvs2py/fvs2py/tests/keyfiles/*.key
-
-# Docker build context
-deployment/docker/.env
-
-# Sync state (user-specific)
-.fvs-modern/
-
-# Test output
-tests/**/run_*/
-*.sum.new
-regression_results/
-
-# Large data files
-*.mdb
-*.accdb
-*.db
-!tests/**/*.db
+*.swp
+*~

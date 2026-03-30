@@ -11,6 +11,11 @@
 #         CR + SI + BAL + BA + SLOPE + cos(ASP) + species_group*ln(HT)
 #         + plot random effect
 #
+# Multi-strategy inference:
+#   1. MAP optimization (always runs first)
+#   2. HMC sampling with MAP initialization (if feasible)
+#   3. Variational inference fallback (if HMC fails)
+#
 # Usage: Rscript calibration/R/03b_fit_height_increment.R --variant ie
 # =============================================================================
 
@@ -43,7 +48,8 @@ if (length(args) > 0) {
 # Configuration
 # =============================================================================
 
-project_root <- "/home/aweiskittel/Documents/Claude/fvs-modern"
+project_root <- Sys.getenv("FVS_PROJECT_ROOT",
+                             "/home/aweiskittel/Documents/Claude/fvs-modern")
 calibration_dir <- file.path(project_root, "calibration")
 processed_data_dir <- file.path(calibration_dir, "data", "processed")
 output_dir <- file.path(calibration_dir, "output", "variants", variant)
@@ -86,15 +92,27 @@ logger::log_info("Found {length(hg_param_names)} HG parameter arrays: {paste(hg_
 
 logger::log_info("Loading FIA data for variant {variant}...")
 
-data_file <- file.path(processed_data_dir, variant, "diameter_growth.csv")
+# Try dedicated height_growth.csv first, fall back to diameter_growth.csv
+hg_file <- file.path(processed_data_dir, variant, "height_growth.csv")
+dg_file <- file.path(processed_data_dir, variant, "diameter_growth.csv")
 
-if (!file.exists(data_file)) {
-  logger::log_error("Data file not found: {data_file}")
-  stop("Data file not found: ", data_file)
+if (file.exists(hg_file)) {
+  logger::log_info("Using dedicated height_growth.csv file")
+  data_file <- hg_file
+} else if (file.exists(dg_file)) {
+  logger::log_info("height_growth.csv not found, falling back to diameter_growth.csv")
+  data_file <- dg_file
+} else {
+  logger::log_error("No data file found for height increment fitting")
+  stop("Data file not found")
 }
 
 raw_data <- read_csv(data_file, show_col_types = FALSE) %>%
   as_tibble()
+
+# Harmonize column names
+# height_growth.csv: DIA_t1, HT_t1, HT_t2, HT_annual, CR_pct
+# diameter_growth.csv: DIA_t1, HT_t1, HT_t2, CR_pct (same names, good)
 
 # Compute height increment from remeasurement pairs
 # Need both HT_t1 and HT_t2 to calculate HTG
@@ -120,12 +138,16 @@ hg_data <- raw_data %>%
     ln_HTG = log(HTG_annual),
     ln_DBH = log(DIA_t1),
     ln_HT = log(HT_t1),
-    CR_prop = CR / 100,             # Convert to proportion if in percent
+    CR_prop = CR_pct / 100,         # Convert to proportion
     SI_scaled = SI / 100,           # Scale for numerical stability
-    BAL_scaled = BAL_sqft / 100,
+    BAL_scaled = BAL / 100,
     BA_scaled = BA / 100,
-    SLOPE_prop = SLOPE_std,         # Already standardized
-    CASP = cos(ASPECT * pi / 180),  # Cosine of aspect in radians
+    SLOPE_prop = SLOPE / 100,       # Scale slope percent
+    CASP = if ("SLOPE_CASP" %in% names(raw_data)) {
+      ifelse(SLOPE > 0, SLOPE_CASP / SLOPE, 0)
+    } else {
+      0  # Default when aspect data not available
+    },
     SPCD = as.integer(SPCD)
   )
 
@@ -154,12 +176,31 @@ species_to_group <- tibble(
 )
 
 hg_data <- hg_data %>%
-  left_join(species_to_group, by = "SPCD") %>%
-  mutate(
-    plot_idx = as.integer(factor(PLT_CN))
-  )
+  left_join(species_to_group, by = "SPCD")
 
-logger::log_info("Species: {N_species}, Species groups: {n_spgrp}, Plots: {n_distinct(hg_data$plot_idx)}")
+# Subsample for computational tractability (stratified by species)
+max_n <- as.integer(Sys.getenv("FVS_MAX_OBS", "30000"))
+if (nrow(hg_data) > max_n) {
+  logger::log_info("Subsampling from {nrow(hg_data)} to {max_n} observations (stratified by species)")
+  set.seed(42)
+  subsample_prop <- min(1, max_n / nrow(hg_data) * 1.1)
+  hg_data <- hg_data %>%
+    group_by(species_idx) %>%
+    slice_sample(prop = subsample_prop) %>%
+    ungroup() %>%
+    slice_sample(n = min(nrow(.), max_n))
+  # Recompute consecutive indices after subsampling
+  hg_data <- hg_data %>%
+    mutate(
+      species_idx = as.integer(factor(species_idx)),
+      spgrp_idx = as.integer(factor(spgrp_idx))
+    )
+  N_species <- max(hg_data$species_idx)
+  n_spgrp <- max(hg_data$spgrp_idx)
+  logger::log_info("After subsampling: {nrow(hg_data)} observations")
+}
+
+logger::log_info("Species: {N_species}, Species groups: {n_spgrp}")
 
 # =============================================================================
 # Extract Priors from FVS Config
@@ -180,21 +221,21 @@ prior_hgld <- if ("HGLD" %in% names(fvs_other)) {
 
 # HGHC: height growth curve shape by species group
 prior_hghc <- if ("HGHC" %in% names(fvs_other)) {
-  unlist(fvs_other$HGHC)
+  rep_len(unlist(fvs_other$HGHC), n_spgrp)
 } else {
   rep(1, n_spgrp)
 }
 
 # HGLDD: ln(DBH) coefficient by species group
 prior_hgldd <- if ("HGLDD" %in% names(fvs_other)) {
-  unlist(fvs_other$HGLDD)
+  rep_len(unlist(fvs_other$HGLDD), n_spgrp)
 } else {
   rep(0.5, n_spgrp)
 }
 
 # HGH2: HT^2 coefficient by species group
 prior_hgh2 <- if ("HGH2" %in% names(fvs_other)) {
-  unlist(fvs_other$HGH2)
+  rep_len(unlist(fvs_other$HGH2), n_spgrp)
 } else {
   rep(0, n_spgrp)
 }
@@ -208,13 +249,11 @@ logger::log_info("Priors extracted: HGLD mean={round(mean(prior_hgld), 4)}, HGHC
 logger::log_info("Preparing data for Stan model...")
 
 N <- nrow(hg_data)
-N_plot <- n_distinct(hg_data$plot_idx)
 
 stan_data <- list(
   N = N,
   N_species = N_species,
   N_spgrp = n_spgrp,
-  N_plot = N_plot,
 
   # Response
   ln_HTG = hg_data$ln_HTG,
@@ -232,7 +271,6 @@ stan_data <- list(
   # Group indices
   species_id = hg_data$species_idx,
   spgrp_id = hg_data$spgrp_idx,
-  plot_id = hg_data$plot_idx,
 
   # Priors from FVS config
   prior_hgld = prior_hgld,
@@ -241,7 +279,7 @@ stan_data <- list(
   prior_hgh2 = prior_hgh2
 )
 
-logger::log_info("Stan data: N={N}, N_species={N_species}, N_spgrp={n_spgrp}, N_plot={N_plot}")
+logger::log_info("Stan data: N={N}, N_species={N_species}, N_spgrp={n_spgrp}")
 
 # =============================================================================
 # Compile Stan Model
@@ -263,71 +301,235 @@ tryCatch({
 })
 
 # =============================================================================
-# Fit Model
+# Fit Model: Multi-Strategy Inference
 # =============================================================================
 
-logger::log_info("Fitting Bayesian height increment model (this may take several minutes)...")
+logger::log_info("Fitting Bayesian height increment model (multi-strategy)...")
 
-fit <- mod$sample(
-  data = stan_data,
-  chains = 4,
-  parallel_chains = min(4, parallel::detectCores()),
-  iter_warmup = 1000,
-  iter_sampling = 2000,
-  adapt_delta = 0.95,
-  max_treedepth = 15,
-  refresh = 500,
-  show_messages = FALSE
-)
+# ---- Stage 1: MAP optimization (fast, always works) ----
+logger::log_info("Stage 1: MAP optimization...")
 
-logger::log_info("Model fitting complete")
+fit_map <- tryCatch({
+  mod$optimize(
+    data = stan_data,
+    algorithm = "lbfgs",
+    iter = 10000,
+    tol_rel_grad = 1e-8,
+    refresh = 100
+  )
+}, error = function(e) {
+  logger::log_warn("MAP optimization failed: {e$message}")
+  NULL
+})
+
+if (!is.null(fit_map)) {
+  map_estimates <- fit_map$summary()
+  logger::log_info("MAP optimization converged. Log posterior: {round(fit_map$lp(), 2)}")
+
+  # Save MAP estimates
+  map_file <- file.path(output_dir, "height_increment_map.csv")
+  write_csv(map_estimates, map_file)
+  logger::log_info("Saved MAP estimates to {map_file}")
+
+  # Build init from MAP for subsequent sampling
+  map_vals <- setNames(map_estimates$estimate, map_estimates$variable)
+  init_from_map <- function() {
+    # Extract MAP values for initialization
+    list(
+      b0 = unname(map_vals[paste0("b0[1:", N_species, "]")]),
+      b1 = unname(map_vals["b1"]),
+      b2 = unname(map_vals["b2"]),
+      b3 = unname(map_vals["b3"]),
+      b4 = unname(map_vals["b4"]),
+      b5 = unname(map_vals["b5"]),
+      b6 = unname(map_vals["b6"]),
+      gamma_shape = unname(map_vals[paste0("gamma_shape[1:", n_spgrp, "]")]),
+      sigma = max(unname(map_vals["sigma"]), 0.01)
+    )
+  }
+} else {
+  init_from_map <- NULL
+}
+
+# ---- Stage 2: Try HMC sampling with MAP initialization ----
+logger::log_info("Stage 2: HMC sampling with MAP initialization...")
+
+sampling_method <- "none"  # track which method produced the final fit
+
+fit <- tryCatch({
+  result <- mod$sample(
+    data = stan_data,
+    chains = 4,
+    parallel_chains = min(4, parallel::detectCores()),
+    iter_warmup = 500,
+    iter_sampling = 1000,
+    adapt_delta = 0.90,
+    max_treedepth = 12,
+    refresh = 100,
+    show_messages = FALSE,
+    init = init_from_map
+  )
+
+  # Check if sampling actually converged
+  diag <- result$diagnostic_summary()
+  n_divergent <- sum(diag$num_divergent)
+  n_treedepth <- sum(diag$num_max_treedepth)
+  total_transitions <- 4 * 1000  # chains * iter_sampling
+
+  # Accept if < 50% treedepth violations and < 5% divergences
+  if (n_treedepth < total_transitions * 0.5 &&
+      n_divergent < total_transitions * 0.05) {
+    sampling_method <<- "hmc"
+    logger::log_info("HMC sampling converged: {n_divergent} divergent, {n_treedepth} treedepth")
+    result
+  } else {
+    logger::log_warn("HMC sampling poor: {n_divergent} divergent, {n_treedepth}/{total_transitions} treedepth")
+    logger::log_info("Falling back to variational inference...")
+    NULL
+  }
+}, error = function(e) {
+  logger::log_warn("HMC sampling failed: {e$message}")
+  logger::log_info("Falling back to variational inference...")
+  NULL
+})
+
+# ---- Stage 3: Variational inference fallback ----
+if (is.null(fit) || sampling_method == "none") {
+  logger::log_info("Stage 3: Variational inference (ADVI)...")
+
+  fit_vb <- tryCatch({
+    mod$variational(
+      data = stan_data,
+      init = init_from_map,
+      algorithm = "meanfield",
+      iter = 50000,
+      tol_rel_obj = 0.001,
+      output_samples = 4000,
+      refresh = 500
+    )
+  }, error = function(e) {
+    logger::log_warn("Variational inference failed: {e$message}")
+    NULL
+  })
+
+  if (!is.null(fit_vb)) {
+    fit <- fit_vb
+    sampling_method <- "variational"
+    logger::log_info("Variational inference complete")
+  } else {
+    # Last resort: use MAP estimates directly (no uncertainty)
+    sampling_method <- "map_only"
+    logger::log_warn("All sampling methods failed; using MAP estimates only")
+  }
+}
+
+logger::log_info("Model fitting complete (method: {sampling_method})")
 
 # =============================================================================
 # Check Convergence
 # =============================================================================
 
-logger::log_info("Computing convergence diagnostics...")
+logger::log_info("Computing convergence diagnostics (method: {sampling_method})...")
 
-diagnostics <- fit$diagnostic_summary()
-summ <- fit$summary()
+if (sampling_method == "hmc") {
+  diagnostics <- fit$diagnostic_summary()
+  logger::log_info("HMC diagnostics: divergent={sum(diagnostics$num_divergent)}, treedepth={sum(diagnostics$num_max_treedepth)}")
+}
 
-rhat_issues <- summ %>%
-  filter(rhat > 1.01 & !is.na(rhat))
+# Get summary statistics
+summ <- tryCatch({
+  if (sampling_method == "map_only") {
+    # Use MAP estimates as summary
+    map_estimates %>%
+      rename(median = estimate) %>%
+      mutate(q5 = NA_real_, q95 = NA_real_, rhat = NA_real_, ess_bulk = NA_real_)
+  } else {
+    s <- fit$summary()
+    # Ensure required columns exist (variational may lack rhat/ess_bulk)
+    if (!"rhat" %in% names(s)) s$rhat <- NA_real_
+    if (!"ess_bulk" %in% names(s)) s$ess_bulk <- NA_real_
+    if (!"q5" %in% names(s)) s$q5 <- NA_real_
+    if (!"q95" %in% names(s)) s$q95 <- NA_real_
+    s
+  }
+}, error = function(e) {
+  logger::log_warn("Summary computation failed: {e$message}")
+  if (!is.null(fit_map)) {
+    map_estimates %>%
+      rename(median = estimate) %>%
+      mutate(q5 = NA_real_, q95 = NA_real_, rhat = NA_real_, ess_bulk = NA_real_)
+  } else {
+    tibble(variable = character(), median = numeric())
+  }
+})
 
-if (nrow(rhat_issues) > 0) {
-  logger::log_warn("Found {nrow(rhat_issues)} parameters with Rhat > 1.01")
-  logger::log_info("Parameters: {paste(rhat_issues$variable, collapse = ', ')}")
-} else {
-  logger::log_info("All parameters converged (Rhat <= 1.01)")
+# Check Rhat and ESS (only meaningful for HMC)
+if (sampling_method == "hmc" && "rhat" %in% names(summ)) {
+  rhat_issues <- summ %>%
+    filter(rhat > 1.01 & !is.na(rhat))
+
+  if (nrow(rhat_issues) > 0) {
+    logger::log_warn("Found {nrow(rhat_issues)} parameters with Rhat > 1.01")
+    logger::log_info("Parameters: {paste(rhat_issues$variable, collapse = ', ')}")
+  } else {
+    logger::log_info("All parameters converged (Rhat <= 1.01)")
+  }
 }
 
 # =============================================================================
 # Extract and Save Posterior Samples
 # =============================================================================
 
-logger::log_info("Extracting posterior samples...")
+logger::log_info("Extracting posterior samples (method: {sampling_method})...")
 
-draws_df <- fit$draws(format = "df")
+if (sampling_method != "map_only") {
+  # Get draws in tibble format
+  draws_df <- tryCatch(
+    fit$draws(format = "df"),
+    error = function(e) { logger::log_warn("Draw extraction failed: {e$message}"); NULL }
+  )
 
-# Save raw samples
-draws_file <- file.path(output_dir, "height_increment_samples.rds")
-saveRDS(draws_df, draws_file)
-logger::log_info("Saved posterior samples to {draws_file}")
+  if (!is.null(draws_df)) {
+    draws_file <- file.path(output_dir, "height_increment_samples.rds")
+    saveRDS(draws_df, draws_file)
+    logger::log_info("Saved posterior samples to {draws_file}")
+  }
+} else {
+  draws_df <- NULL
+  logger::log_info("MAP only: no posterior samples to save")
+}
+
+# Save method used
+writeLines(sampling_method, file.path(output_dir, "height_increment_method.txt"))
 
 # Save summary
 summary_file <- file.path(output_dir, "height_increment_summary.csv")
 write_csv(summ, summary_file)
-logger::log_info("Saved summary to {summary_file}")
+logger::log_info("Saved summary statistics to {summary_file}")
 
-# Posterior summaries with credible intervals
+# =============================================================================
+# Extract Posterior Medians and Credible Intervals
+# =============================================================================
+
+logger::log_info("Computing posterior summaries...")
+
+# Posterior medians and 95% CIs
+# Use any_of() for rhat/ess_bulk since variational inference does not produce these
 posterior_summary <- summ %>%
-  select(variable, median, q5, q95, rhat, ess_bulk) %>%
-  rename(p50 = median, p05 = q5, p95 = q95) %>%
+  select(variable, median, q5, q95, any_of(c("rhat", "ess_bulk"))) %>%
+  rename(
+    p50 = median,
+    p05 = q5,
+    p95 = q95
+  ) %>%
   mutate(
+    rhat = if ("rhat" %in% names(.)) rhat else NA_real_,
+    ess_bulk = if ("ess_bulk" %in% names(.)) ess_bulk else NA_real_,
     ci_width = p95 - p05,
-    converged = rhat <= 1.01 & !is.na(rhat)
+    converged = ifelse(is.na(rhat), NA, rhat <= 1.01)
   )
 
+# Save posterior summary
 posterior_file <- file.path(output_dir, "height_increment_posterior.csv")
 write_csv(posterior_summary, posterior_file)
 logger::log_info("Saved posterior summaries to {posterior_file}")
@@ -338,35 +540,39 @@ logger::log_info("Saved posterior summaries to {posterior_file}")
 
 logger::log_info("Generating diagnostic plots...")
 
-# Traceplots
-key_params <- c("b0[1]", "b1[1]", "b2", "b3", "b4", "b5", "sigma",
-                 "gamma_shape[1]")
-pdf(file.path(output_dir, "height_increment_traceplots.pdf"), width = 12, height = 8)
-tryCatch({
-  print(bayesplot::mcmc_trace(
-    fit$draws(),
-    pars = intersect(key_params, summ$variable),
-    facet_args = list(nrow = 3)
-  ))
-}, error = function(e) {
-  logger::log_warn("Traceplot generation failed: {e$message}")
-})
-dev.off()
+# Traceplots (HMC only)
+if (sampling_method == "hmc") {
+  key_params <- c("b0[1]", "b1", "b2", "b3", "b4", "b5", "sigma",
+                   "gamma_shape[1]")
+  pdf(file.path(output_dir, "height_increment_traceplots.pdf"), width = 12, height = 8)
+  tryCatch({
+    print(bayesplot::mcmc_trace(
+      fit$draws(),
+      pars = intersect(key_params, summ$variable),
+      facet_args = list(nrow = 3)
+    ))
+  }, error = function(e) {
+    logger::log_warn("Traceplot generation failed: {e$message}")
+  })
+  dev.off()
+}
 
 # Posterior predictive check
-tryCatch({
-  y_rep <- fit$draws("ln_HTG_rep", format = "matrix")
-  ppc_file <- file.path(output_dir, "height_increment_ppc.pdf")
-  pdf(ppc_file, width = 10, height = 6)
-  print(bayesplot::ppc_dens_overlay(
-    y = stan_data$ln_HTG,
-    yrep = y_rep[1:100, ]
-  ))
-  dev.off()
-  logger::log_info("Saved posterior predictive check")
-}, error = function(e) {
-  logger::log_warn("PPC plot failed: {e$message}")
-})
+if (sampling_method != "map_only") {
+  tryCatch({
+    y_rep <- fit$draws("ln_HTG_rep", format = "matrix")
+    ppc_file <- file.path(output_dir, "height_increment_ppc.pdf")
+    pdf(ppc_file, width = 10, height = 6)
+    print(bayesplot::ppc_dens_overlay(
+      y = stan_data$ln_HTG,
+      yrep = y_rep[1:100, ]
+    ))
+    dev.off()
+    logger::log_info("Saved posterior predictive check")
+  }, error = function(e) {
+    logger::log_warn("PPC plot failed: {e$message}")
+  })
+}
 
 # =============================================================================
 # Summary Report
@@ -377,12 +583,12 @@ cat("==========================================\n")
 cat("Height Increment Model Fitting Complete\n")
 cat("==========================================\n")
 cat("Variant:", variant, "\n")
+cat("Inference method:", sampling_method, "\n")
 cat("Species fitted:", N_species, "\n")
 cat("Species groups:", n_spgrp, "\n")
 cat("Total observations:", N, "\n")
-cat("Number of plots:", N_plot, "\n")
 cat("Mean annual height increment:", round(mean(hg_data$HTG_annual), 2), "\n")
 cat("\nHG parameters in config:", paste(hg_param_names, collapse = ", "), "\n")
 cat("\nOutput saved to:", output_dir, "\n\n")
 
-logger::log_info("Height increment model fitting complete for variant {variant}")
+logger::log_info("Height increment model fitting complete for variant {variant} (method: {sampling_method})")

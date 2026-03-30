@@ -75,7 +75,9 @@ module load ${GEOS_MODULE}
 # Set Environment
 # ============================================================================
 
-export R_LIBS_USER="\${HOME}/R/libs/\$(R --version | head -1 | grep -oP '\d+\.\d+')"
+# OSC uses per cluster R library paths: ~/R/<cluster>/<R_version>
+# Detect dynamically from R itself to handle any cluster/version combo
+export R_LIBS_USER="\$(Rscript -e 'cat(.libPaths()[1])' 2>/dev/null)"
 export OMP_NUM_THREADS=\${SLURM_CPUS_PER_TASK}
 export CMDSTAN_NUM_THREADS=\${SLURM_CPUS_PER_TASK}
 
