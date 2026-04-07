@@ -100,8 +100,8 @@ variant_states <- list(
   op  = c("OR"),
   ak  = c("AK"),
   acd = c("ME", "NH", "VT"),
-  bc  = c("ME"),   # Placeholder: BC uses Canadian NFI data
-  on  = c("ME")    # Placeholder: ON uses Canadian NFI data
+  bc  = c("WA", "OR", "ID", "MT"),   # Proxy: Pacific Northwest US states for British Columbia
+  on  = c("MN", "WI", "MI")    # Proxy: Great Lakes US states for Ontario
 )
 
 # FVS variant codes as they appear in FIA (uppercase two letter)

@@ -98,8 +98,8 @@ variant_states <- list(
   op = c("OR"),
   ak = c("AK"),
   acd = c("ME", "NH", "VT"),
-  bc = c("ME"),  # Placeholder, BC uses Canadian data
-  on = c("ME")   # Placeholder, ON uses Canadian data
+  bc = c("WA", "OR", "ID", "MT"),  # Placeholder, BC uses Canadian data
+  on = c("MN", "WI", "MI")   # Placeholder, ON uses Canadian data
 )
 
 variant_upper <- toupper(variant)
