@@ -3,14 +3,15 @@
 # Author: A. Weiskittel
 # Date: 2026-04-08
 # Description: Multi-attribute benchmark assessment using %RMSE (RMSE as percent
-#   of observed mean) across BA, TPA, QMD, and VOL_CFGRS, weighted by
+#   of observed mean) across BA, SDI, QMD, and VOL_CFGRS, weighted by
 #   CONDPROP_UNADJ (proportion of plot area in each condition class, proxy for
 #   forestland acres). This normalizes for:
 #     (1) Regional differences in absolute stand metrics (PNW vs SE vs NE)
 #     (2) Unequal representation of partial vs full conditions on FIA plots
 #
 #   The composite %RMSE = weighted mean of individual attribute %RMSEs,
-#   with equal weights across BA, TPA, QMD, VOL unless otherwise specified.
+#   with equal weights across BA, SDI, QMD, VOL unless otherwise specified.
+#   SDI = additive Stand Density Index = sum((DBH/10)^1.605 * EXPF) per condition.
 #
 #   OUTPUT FIGURES:
 #     Fig A: Composite %RMSE by variant (paired bar, calibrated vs default)
@@ -50,12 +51,13 @@ dir.create(fig_dir, showWarnings = FALSE, recursive = TRUE)
 dir.create(table_dir, showWarnings = FALSE, recursive = TRUE)
 
 # Attribute weights for composite %RMSE (equal by default)
-ATTR_WEIGHTS <- c(BA = 1, TPA = 1, QMD = 1, VOL = 1)
+# Using SDI (additive Reineke) instead of TPA to avoid raw count noise
+ATTR_WEIGHTS <- c(BA = 1, SDI = 1, QMD = 1, VOL = 1)
 ATTR_WEIGHTS <- ATTR_WEIGHTS / sum(ATTR_WEIGHTS)  # normalize
 
 cat("Composite %RMSE attribute weights:\n")
-cat(sprintf("  BA=%.2f  TPA=%.2f  QMD=%.2f  VOL=%.2f\n",
-  ATTR_WEIGHTS["BA"], ATTR_WEIGHTS["TPA"],
+cat(sprintf("  BA=%.2f  SDI=%.2f  QMD=%.2f  VOL=%.2f\n",
+  ATTR_WEIGHTS["BA"], ATTR_WEIGHTS["SDI"],
   ATTR_WEIGHTS["QMD"], ATTR_WEIGHTS["VOL"]))
 
 # --- Publication theme -------------------------------------------------------
@@ -190,7 +192,7 @@ if (file.exists(raster_file) && !"LAT" %in% names(val)) {
 # STEP 1: Compute per-condition %errors for all attributes
 # =============================================================================
 
-cat("\n--- Computing per-condition errors for BA, TPA, QMD, VOL ---\n")
+cat("\n--- Computing per-condition errors for BA, SDI, QMD, VOL ---\n")
 
 # BA
 val[, BA_pctErr_calib   := fifelse(BA_t2 > 5, 100 * (BA_pred_calib - BA_t2) / BA_t2, NA_real_)]
@@ -198,11 +200,11 @@ val[, BA_pctErr_default := fifelse(BA_t2 > 5, 100 * (BA_pred_default - BA_t2) / 
 val[, BA_absPctErr_calib   := abs(BA_pctErr_calib)]
 val[, BA_absPctErr_default := abs(BA_pctErr_default)]
 
-# TPA
-val[, TPA_pctErr_calib   := fifelse(TPA_t2 > 5, 100 * (TPA_pred_calib - TPA_t2) / TPA_t2, NA_real_)]
-val[, TPA_pctErr_default := fifelse(TPA_t2 > 5, 100 * (TPA_pred_default - TPA_t2) / TPA_t2, NA_real_)]
-val[, TPA_absPctErr_calib   := abs(TPA_pctErr_calib)]
-val[, TPA_absPctErr_default := abs(TPA_pctErr_default)]
+# SDI (additive Stand Density Index)
+val[, SDI_pctErr_calib   := fifelse(SDI_t2 > 10, 100 * (SDI_pred_calib - SDI_t2) / SDI_t2, NA_real_)]
+val[, SDI_pctErr_default := fifelse(SDI_t2 > 10, 100 * (SDI_pred_default - SDI_t2) / SDI_t2, NA_real_)]
+val[, SDI_absPctErr_calib   := abs(SDI_pctErr_calib)]
+val[, SDI_absPctErr_default := abs(SDI_pctErr_default)]
 
 # QMD
 val[, QMD_pctErr_calib   := fifelse(QMD_t2 > 1, 100 * (QMD_pred_calib - QMD_t2) / QMD_t2, NA_real_)]
@@ -220,7 +222,7 @@ val[, VOL_absPctErr_default := abs(VOL_pctErr_default)]
 val[, composite_absPctErr_calib := {
   w <- numeric(0); e <- numeric(0)
   if (!is.na(BA_absPctErr_calib))  { w <- c(w, ATTR_WEIGHTS["BA"]);  e <- c(e, BA_absPctErr_calib) }
-  if (!is.na(TPA_absPctErr_calib)) { w <- c(w, ATTR_WEIGHTS["TPA"]); e <- c(e, TPA_absPctErr_calib) }
+  if (!is.na(SDI_absPctErr_calib)) { w <- c(w, ATTR_WEIGHTS["SDI"]); e <- c(e, SDI_absPctErr_calib) }
   if (!is.na(QMD_absPctErr_calib)) { w <- c(w, ATTR_WEIGHTS["QMD"]); e <- c(e, QMD_absPctErr_calib) }
   if (!is.na(VOL_absPctErr_calib)) { w <- c(w, ATTR_WEIGHTS["VOL"]); e <- c(e, VOL_absPctErr_calib) }
   if (length(w) > 0) sum(w * e) / sum(w) else NA_real_
@@ -229,7 +231,7 @@ val[, composite_absPctErr_calib := {
 val[, composite_absPctErr_default := {
   w <- numeric(0); e <- numeric(0)
   if (!is.na(BA_absPctErr_default))  { w <- c(w, ATTR_WEIGHTS["BA"]);  e <- c(e, BA_absPctErr_default) }
-  if (!is.na(TPA_absPctErr_default)) { w <- c(w, ATTR_WEIGHTS["TPA"]); e <- c(e, TPA_absPctErr_default) }
+  if (!is.na(SDI_absPctErr_default)) { w <- c(w, ATTR_WEIGHTS["SDI"]); e <- c(e, SDI_absPctErr_default) }
   if (!is.na(QMD_absPctErr_default)) { w <- c(w, ATTR_WEIGHTS["QMD"]); e <- c(e, QMD_absPctErr_default) }
   if (!is.na(VOL_absPctErr_default)) { w <- c(w, ATTR_WEIGHTS["VOL"]); e <- c(e, VOL_absPctErr_default) }
   if (length(w) > 0) sum(w * e) / sum(w) else NA_real_
@@ -267,8 +269,8 @@ pctrmse_variant <- val[, .(
   # Individual attribute %RMSE (CONDPROP-weighted)
   BA_pctRMSE_calib    = wpctrmse(BA_pctErr_calib, WEIGHT_ACRES),
   BA_pctRMSE_default  = wpctrmse(BA_pctErr_default, WEIGHT_ACRES),
-  TPA_pctRMSE_calib   = wpctrmse(TPA_pctErr_calib, WEIGHT_ACRES),
-  TPA_pctRMSE_default = wpctrmse(TPA_pctErr_default, WEIGHT_ACRES),
+  SDI_pctRMSE_calib   = wpctrmse(SDI_pctErr_calib, WEIGHT_ACRES),
+  SDI_pctRMSE_default = wpctrmse(SDI_pctErr_default, WEIGHT_ACRES),
   QMD_pctRMSE_calib   = wpctrmse(QMD_pctErr_calib, WEIGHT_ACRES),
   QMD_pctRMSE_default = wpctrmse(QMD_pctErr_default, WEIGHT_ACRES),
   VOL_pctRMSE_calib   = wpctrmse(VOL_pctErr_calib, WEIGHT_ACRES),
@@ -277,8 +279,8 @@ pctrmse_variant <- val[, .(
   # Individual attribute %Bias (CONDPROP-weighted)
   BA_pctBias_calib    = wmean(BA_pctErr_calib, WEIGHT_ACRES),
   BA_pctBias_default  = wmean(BA_pctErr_default, WEIGHT_ACRES),
-  TPA_pctBias_calib   = wmean(TPA_pctErr_calib, WEIGHT_ACRES),
-  TPA_pctBias_default = wmean(TPA_pctErr_default, WEIGHT_ACRES),
+  SDI_pctBias_calib   = wmean(SDI_pctErr_calib, WEIGHT_ACRES),
+  SDI_pctBias_default = wmean(SDI_pctErr_default, WEIGHT_ACRES),
   QMD_pctBias_calib   = wmean(QMD_pctErr_calib, WEIGHT_ACRES),
   QMD_pctBias_default = wmean(QMD_pctErr_default, WEIGHT_ACRES),
   VOL_pctBias_calib   = wmean(VOL_pctErr_calib, WEIGHT_ACRES),
@@ -286,22 +288,22 @@ pctrmse_variant <- val[, .(
 
   # Mean observed values (CONDPROP-weighted) for context
   mean_obs_BA  = wmean(BA_t2, WEIGHT_ACRES),
-  mean_obs_TPA = wmean(TPA_t2, WEIGHT_ACRES),
+  mean_obs_SDI = wmean(SDI_t2, WEIGHT_ACRES),
   mean_obs_QMD = wmean(QMD_t2, WEIGHT_ACRES),
   mean_obs_VOL = wmean(VOL_CFGRS_t2, WEIGHT_ACRES)
 ), by = VARIANT]
 
 # Composite %RMSE = weighted mean of the four attribute %RMSEs
 pctrmse_variant[, composite_pctRMSE_calib := {
-  vals <- c(BA_pctRMSE_calib, TPA_pctRMSE_calib, QMD_pctRMSE_calib, VOL_pctRMSE_calib)
-  wts  <- ATTR_WEIGHTS[c("BA", "TPA", "QMD", "VOL")]
+  vals <- c(BA_pctRMSE_calib, SDI_pctRMSE_calib, QMD_pctRMSE_calib, VOL_pctRMSE_calib)
+  wts  <- ATTR_WEIGHTS[c("BA", "SDI", "QMD", "VOL")]
   ok <- !is.na(vals)
   if (sum(ok) > 0) sum(vals[ok] * wts[ok]) / sum(wts[ok]) else NA_real_
 }, by = VARIANT]
 
 pctrmse_variant[, composite_pctRMSE_default := {
-  vals <- c(BA_pctRMSE_default, TPA_pctRMSE_default, QMD_pctRMSE_default, VOL_pctRMSE_default)
-  wts  <- ATTR_WEIGHTS[c("BA", "TPA", "QMD", "VOL")]
+  vals <- c(BA_pctRMSE_default, SDI_pctRMSE_default, QMD_pctRMSE_default, VOL_pctRMSE_default)
+  wts  <- ATTR_WEIGHTS[c("BA", "SDI", "QMD", "VOL")]
   ok <- !is.na(vals)
   if (sum(ok) > 0) sum(vals[ok] * wts[ok]) / sum(wts[ok]) else NA_real_
 }, by = VARIANT]
@@ -317,37 +319,37 @@ overall <- val[, .(
   VARIANT = "OVERALL", n = .N, sum_acres = sum(WEIGHT_ACRES, na.rm = TRUE),
   BA_pctRMSE_calib    = wpctrmse(BA_pctErr_calib, WEIGHT_ACRES),
   BA_pctRMSE_default  = wpctrmse(BA_pctErr_default, WEIGHT_ACRES),
-  TPA_pctRMSE_calib   = wpctrmse(TPA_pctErr_calib, WEIGHT_ACRES),
-  TPA_pctRMSE_default = wpctrmse(TPA_pctErr_default, WEIGHT_ACRES),
+  SDI_pctRMSE_calib   = wpctrmse(SDI_pctErr_calib, WEIGHT_ACRES),
+  SDI_pctRMSE_default = wpctrmse(SDI_pctErr_default, WEIGHT_ACRES),
   QMD_pctRMSE_calib   = wpctrmse(QMD_pctErr_calib, WEIGHT_ACRES),
   QMD_pctRMSE_default = wpctrmse(QMD_pctErr_default, WEIGHT_ACRES),
   VOL_pctRMSE_calib   = wpctrmse(VOL_pctErr_calib, WEIGHT_ACRES),
   VOL_pctRMSE_default = wpctrmse(VOL_pctErr_default, WEIGHT_ACRES),
   BA_pctBias_calib = wmean(BA_pctErr_calib, WEIGHT_ACRES),
   BA_pctBias_default = wmean(BA_pctErr_default, WEIGHT_ACRES),
-  TPA_pctBias_calib = wmean(TPA_pctErr_calib, WEIGHT_ACRES),
-  TPA_pctBias_default = wmean(TPA_pctErr_default, WEIGHT_ACRES),
+  SDI_pctBias_calib = wmean(SDI_pctErr_calib, WEIGHT_ACRES),
+  SDI_pctBias_default = wmean(SDI_pctErr_default, WEIGHT_ACRES),
   QMD_pctBias_calib = wmean(QMD_pctErr_calib, WEIGHT_ACRES),
   QMD_pctBias_default = wmean(QMD_pctErr_default, WEIGHT_ACRES),
   VOL_pctBias_calib = wmean(VOL_pctErr_calib, WEIGHT_ACRES),
   VOL_pctBias_default = wmean(VOL_pctErr_default, WEIGHT_ACRES),
   mean_obs_BA = wmean(BA_t2, WEIGHT_ACRES),
-  mean_obs_TPA = wmean(TPA_t2, WEIGHT_ACRES),
+  mean_obs_SDI = wmean(SDI_t2, WEIGHT_ACRES),
   mean_obs_QMD = wmean(QMD_t2, WEIGHT_ACRES),
   mean_obs_VOL = wmean(VOL_CFGRS_t2, WEIGHT_ACRES)
 )]
-overall[, composite_pctRMSE_calib := mean(c(BA_pctRMSE_calib, TPA_pctRMSE_calib,
+overall[, composite_pctRMSE_calib := mean(c(BA_pctRMSE_calib, SDI_pctRMSE_calib,
   QMD_pctRMSE_calib, VOL_pctRMSE_calib), na.rm = TRUE)]
-overall[, composite_pctRMSE_default := mean(c(BA_pctRMSE_default, TPA_pctRMSE_default,
+overall[, composite_pctRMSE_default := mean(c(BA_pctRMSE_default, SDI_pctRMSE_default,
   QMD_pctRMSE_default, VOL_pctRMSE_default), na.rm = TRUE)]
 overall[, composite_pctRMSE_reduction := 100 * (1 - composite_pctRMSE_calib / composite_pctRMSE_default)]
 overall[, region := "All"]
 
-cat("\nComposite %RMSE Summary (CONDPROP-weighted, 4 attributes):\n")
+cat("\nComposite %RMSE Summary (CONDPROP-weighted, 4 attributes: BA+SDI+QMD+VOL):\n")
 print(pctrmse_variant[order(composite_pctRMSE_calib), .(
   VARIANT, n,
   BA = round(BA_pctRMSE_calib, 1),
-  TPA = round(TPA_pctRMSE_calib, 1),
+  SDI = round(SDI_pctRMSE_calib, 1),
   QMD = round(QMD_pctRMSE_calib, 1),
   VOL = round(VOL_pctRMSE_calib, 1),
   Composite_Calib = round(composite_pctRMSE_calib, 1),
@@ -385,7 +387,7 @@ fig_a <- ggplot(comp_long,
     x = "FVS Variant",
     y = "Composite %RMSE",
     title = "Composite %RMSE: Calibrated vs Default (CONDPROP weighted)",
-    subtitle = "Mean of BA, TPA, QMD, and VOL %RMSE; weighted by represented forestland acres (CONDPROP x ~6000 ac/plot)",
+    subtitle = "Mean of BA, SDI, QMD, and VOL %RMSE; weighted by represented forestland acres (CONDPROP x ~6000 ac/plot)",
     fill = "Approach"
   ) +
   coord_flip() +
@@ -407,13 +409,13 @@ cat("Figure B: Per-attribute %RMSE faceted...\n")
 attr_long <- melt(pctrmse_variant,
   id.vars = c("VARIANT", "region"),
   measure.vars = c("BA_pctRMSE_calib", "BA_pctRMSE_default",
-                    "TPA_pctRMSE_calib", "TPA_pctRMSE_default",
+                    "SDI_pctRMSE_calib", "SDI_pctRMSE_default",
                     "QMD_pctRMSE_calib", "QMD_pctRMSE_default",
                     "VOL_pctRMSE_calib", "VOL_pctRMSE_default"))
 
 attr_long[, attribute := fcase(
   grepl("^BA_",  variable), "Basal Area",
-  grepl("^TPA_", variable), "Trees per Acre",
+  grepl("^SDI_", variable), "Stand Density Index",
   grepl("^QMD_", variable), "Quadratic Mean Diameter",
   grepl("^VOL_", variable), "Gross Cubic Foot Volume"
 )]
@@ -458,7 +460,7 @@ fig_c <- ggplot(dumb, aes(y = VARIANT)) +
     x = "Composite %RMSE",
     y = NULL,
     title = "Calibration Effect on Composite %RMSE",
-    subtitle = "Mean of BA, TPA, QMD, VOL; CONDPROP weighted; leftward = improvement"
+    subtitle = "Mean of BA, SDI, QMD, VOL; CONDPROP weighted; leftward = improvement"
   ) +
   theme_pub +
   theme(legend.position = "bottom")
@@ -510,7 +512,7 @@ if ("LAT" %in% names(val) && sum(!is.na(val$LAT)) > 1000) {
       limits = c(0, 60), oob = squish
     ) +
     labs(
-      title = "Calibrated FVS: Composite |%Error| (BA + TPA + QMD + VOL)",
+      title = "Calibrated FVS: Composite |%Error| (BA + SDI + QMD + VOL)",
       subtitle = "Median per hex, weighted equally across attributes; lower = better",
       x = "Longitude", y = "Latitude"
     ) +
@@ -558,7 +560,7 @@ if ("LAT" %in% names(val) && sum(!is.na(val$LAT)) > 1000) {
   conus[, composite_pctBias_calib := {
     w <- numeric(0); e <- numeric(0)
     if (!is.na(BA_pctErr_calib))  { w <- c(w, ATTR_WEIGHTS["BA"]);  e <- c(e, BA_pctErr_calib) }
-    if (!is.na(TPA_pctErr_calib)) { w <- c(w, ATTR_WEIGHTS["TPA"]); e <- c(e, TPA_pctErr_calib) }
+    if (!is.na(SDI_pctErr_calib)) { w <- c(w, ATTR_WEIGHTS["SDI"]); e <- c(e, SDI_pctErr_calib) }
     if (!is.na(QMD_pctErr_calib)) { w <- c(w, ATTR_WEIGHTS["QMD"]); e <- c(e, QMD_pctErr_calib) }
     if (!is.na(VOL_pctErr_calib)) { w <- c(w, ATTR_WEIGHTS["VOL"]); e <- c(e, VOL_pctErr_calib) }
     if (length(w) > 0) sum(w * e) / sum(w) else NA_real_
@@ -577,7 +579,7 @@ if ("LAT" %in% names(val) && sum(!is.na(val$LAT)) > 1000) {
     ) +
     labs(
       title = "Spatial pattern of calibrated residuals (composite %Bias)",
-      subtitle = "Blue = underprediction, Red = overprediction; mean of BA, TPA, QMD, VOL %errors",
+      subtitle = "Blue = underprediction, Red = overprediction; mean of BA, SDI, QMD, VOL %errors",
       x = "Longitude", y = "Latitude"
     ) +
     theme_pub +
@@ -601,7 +603,7 @@ if ("LAT" %in% names(val) && sum(!is.na(val$LAT)) > 1000) {
       {  # inline composite %error
         w <- numeric(0); e <- numeric(0)
         if (sum(!is.na(BA_pctErr_calib)) > 10)  { e <- c(e, wpctrmse(BA_pctErr_calib, WEIGHT_ACRES)) }
-        if (sum(!is.na(TPA_pctErr_calib)) > 10) { e <- c(e, wpctrmse(TPA_pctErr_calib, WEIGHT_ACRES)) }
+        if (sum(!is.na(SDI_pctErr_calib)) > 10) { e <- c(e, wpctrmse(SDI_pctErr_calib, WEIGHT_ACRES)) }
         if (sum(!is.na(QMD_pctErr_calib)) > 10) { e <- c(e, wpctrmse(QMD_pctErr_calib, WEIGHT_ACRES)) }
         if (sum(!is.na(VOL_pctErr_calib)) > 10) { e <- c(e, wpctrmse(VOL_pctErr_calib, WEIGHT_ACRES)) }
         mean(e, na.rm = TRUE)
@@ -635,7 +637,7 @@ if ("LAT" %in% names(val) && sum(!is.na(val$LAT)) > 1000) {
                           breaks = c(1000, 10000, 50000, 100000, 200000)) +
     labs(
       title = "FVS Variant: Composite %RMSE Reduction from Calibration",
-      subtitle = "Mean of BA + TPA + QMD + VOL; CONDPROP-weighted; positive = calibration improved",
+      subtitle = "Mean of BA + SDI + QMD + VOL; CONDPROP-weighted; positive = calibration improved",
       x = "Longitude", y = "Latitude"
     ) +
     theme_pub +
@@ -676,7 +678,7 @@ if ("LAT" %in% names(val) && sum(!is.na(val$LAT)) > 1000) {
 
   fig_h <- (p_d_s + p_e_s) / (p_f_s + p_g_s) +
     plot_annotation(
-      title = "Spatial Benchmark: Composite Normalized Performance (BA + TPA + QMD + VOL)",
+      title = "Spatial Benchmark: Composite Normalized Performance (BA + SDI + QMD + VOL)",
       subtitle = "All metrics as %RMSE; weighted by represented forestland acres (CONDPROP x expansion); equal weight across attributes",
       theme = theme(
         plot.title = element_text(size = 14, face = "bold"),
@@ -705,7 +707,7 @@ cat("\nFigures saved to:", fig_dir, "\n")
 cat("Tables saved to:", table_dir, "\n")
 cat("\nKey outputs:\n")
 cat("  1. pctrmse_composite_by_variant.png   -- Composite %RMSE bar chart\n")
-cat("  2. pctrmse_per_attribute.png          -- Per-attribute %RMSE (BA, TPA, QMD, VOL)\n")
+cat("  2. pctrmse_per_attribute.png          -- Per-attribute %RMSE (BA, SDI, QMD, VOL)\n")
 cat("  3. pctrmse_composite_dumbbell.png     -- Composite %RMSE reduction dumbbell\n")
 cat("  4. pctrmse_composite_spatial_calibrated.png -- Hex map composite |%Error|\n")
 cat("  5. pctrmse_composite_reduction_spatial.png  -- Hex map composite reduction\n")
