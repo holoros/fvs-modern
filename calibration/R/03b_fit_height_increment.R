@@ -65,26 +65,27 @@ logger::log_appender(logger::appender_file(log_file), index = 1)
 logger::log_info("Starting height increment model for variant {variant}")
 
 # =============================================================================
-# Check if Variant Has Explicit HG Parameters
+# Load FVS Config (for priors if available)
 # =============================================================================
 
 config_file <- file.path(project_root, "config", paste0(variant, ".json"))
-config <- fromJSON(config_file)
+has_config <- file.exists(config_file)
+config <- if (has_config) fromJSON(config_file) else NULL
 
-# Look for HG parameter keys in the config
-hg_param_names <- grep("^HG", names(config$categories$other), value = TRUE)
-
-if (length(hg_param_names) == 0) {
-  logger::log_info(
-    "Variant {variant} has no explicit HG parameters. ",
-    "Height growth is derived from the H-D model (script 03). Skipping."
-  )
-  cat("Variant", variant, "does not have explicit height growth parameters.\n")
-  cat("Height increment calibration handled by the H-D model (script 03).\n")
-  quit(save = "no", status = 0)
+# Check for explicit HG parameter keys in the config (used as priors)
+hg_param_names <- if (has_config && !is.null(config$categories$other)) {
+  grep("^HG", names(config$categories$other), value = TRUE)
+} else {
+  character(0)
 }
 
-logger::log_info("Found {length(hg_param_names)} HG parameter arrays: {paste(hg_param_names, collapse = ', ')}")
+if (length(hg_param_names) > 0) {
+  logger::log_info("Found {length(hg_param_names)} HG parameter arrays: {paste(hg_param_names, collapse = ', ')}")
+  logger::log_info("Using FVS HG parameters as informative priors")
+} else {
+  logger::log_info("No explicit HG parameters in config; using weakly informative priors")
+  logger::log_info("Height increment model will be fit from FIA remeasurement data directly")
+}
 
 # =============================================================================
 # Load Data
@@ -121,7 +122,12 @@ hg_data <- raw_data %>%
     !is.na(HT_t1), !is.na(HT_t2),
     HT_t1 > 4.5, HT_t2 > 4.5,        # Above breast height
     !is.na(DIA_t1), DIA_t1 > 0,
-    !is.na(years_interval), years_interval > 0
+    !is.na(years_interval), years_interval > 0,
+    !is.na(CR_pct), CR_pct > 0, CR_pct <= 100,  # Filter NA/invalid crown ratio
+    !is.na(SI), SI > 0,                           # Site index present
+    !is.na(BAL),                                   # BAL present
+    !is.na(BA), BA > 0,                            # Stand basal area present
+    !is.na(SLOPE)                                  # Slope present
   ) %>%
   mutate(
     # Annual height increment
@@ -160,8 +166,9 @@ logger::log_info("Height increment range: {round(min(hg_data$HTG_annual), 2)} to
 # =============================================================================
 
 # FVS uses species groups for the height growth curve shape parameters
-# The number of groups matches the HGHC array length
-n_spgrp <- length(config$categories$other$HGHC)
+# The number of groups matches the HGHC array length (or default to ~5 groups)
+fvs_other <- if (has_config && !is.null(config$categories$other)) config$categories$other else list()
+n_spgrp <- if (!is.null(fvs_other$HGHC)) length(fvs_other$HGHC) else min(5, length(unique(hg_data$SPCD)))
 
 # Map species to species groups
 # FVS typically uses ISPSPE or similar mapping; we approximate with ordinal groups
@@ -208,7 +215,7 @@ logger::log_info("Species: {N_species}, Species groups: {n_spgrp}")
 
 logger::log_info("Extracting priors from FVS config...")
 
-fvs_other <- config$categories$other
+# fvs_other was already set above when determining n_spgrp
 
 # HGLD: ln(DBH) coefficient by species (N_species length in FVS)
 prior_hgld <- if ("HGLD" %in% names(fvs_other)) {
@@ -323,7 +330,22 @@ fit_map <- tryCatch({
 })
 
 if (!is.null(fit_map)) {
-  map_estimates <- fit_map$summary()
+  # Wrap summary() in tryCatch: optimization may return an object that
+
+  # cannot produce draws (e.g., line search failure)
+  map_estimates <- tryCatch({
+    fit_map$summary()
+  }, error = function(e) {
+    logger::log_warn("MAP summary extraction failed: {e$message}")
+    NULL
+  })
+
+  if (is.null(map_estimates)) {
+    fit_map <- NULL  # Mark as failed so downstream uses fallback
+  }
+}
+
+if (!is.null(fit_map) && !is.null(map_estimates)) {
   logger::log_info("MAP optimization converged. Log posterior: {round(fit_map$lp(), 2)}")
 
   # Save MAP estimates
@@ -335,15 +357,25 @@ if (!is.null(fit_map)) {
   map_vals <- setNames(map_estimates$estimate, map_estimates$variable)
   init_from_map <- function() {
     # Extract MAP values for initialization
+    # b0 and b1 are vectors[N_species], gamma_shape is vector[N_spgrp]
+    b0_names <- paste0("b0[", seq_len(N_species), "]")
+    b1_names <- paste0("b1[", seq_len(N_species), "]")
+    gs_names <- paste0("gamma_shape[", seq_len(n_spgrp), "]")
     list(
-      b0 = unname(map_vals[paste0("b0[1:", N_species, "]")]),
-      b1 = unname(map_vals["b1"]),
+      b0 = unname(map_vals[b0_names]),
+      b1 = unname(map_vals[b1_names]),
       b2 = unname(map_vals["b2"]),
       b3 = unname(map_vals["b3"]),
       b4 = unname(map_vals["b4"]),
       b5 = unname(map_vals["b5"]),
       b6 = unname(map_vals["b6"]),
-      gamma_shape = unname(map_vals[paste0("gamma_shape[1:", n_spgrp, "]")]),
+      b7 = unname(map_vals["b7"]),
+      b8 = unname(map_vals["b8"]),
+      gamma_shape = unname(map_vals[gs_names]),
+      mu_b0 = unname(map_vals["mu_b0"]),
+      tau_b0 = max(unname(map_vals["tau_b0"]), 0.01),
+      mu_b1 = unname(map_vals["mu_b1"]),
+      tau_b1 = max(unname(map_vals["tau_b1"]), 0.01),
       sigma = max(unname(map_vals["sigma"]), 0.01)
     )
   }
@@ -440,9 +472,15 @@ if (sampling_method == "hmc") {
 summ <- tryCatch({
   if (sampling_method == "map_only") {
     # Use MAP estimates as summary
-    map_estimates %>%
-      rename(median = estimate) %>%
-      mutate(q5 = NA_real_, q95 = NA_real_, rhat = NA_real_, ess_bulk = NA_real_)
+    if (!is.null(map_estimates) && nrow(map_estimates) > 0) {
+      map_estimates %>%
+        rename(median = estimate) %>%
+        mutate(q5 = NA_real_, q95 = NA_real_, rhat = NA_real_, ess_bulk = NA_real_)
+    } else {
+      logger::log_warn("No MAP estimates available; writing empty summary")
+      tibble(variable = character(), median = numeric(),
+             q5 = numeric(), q95 = numeric(), rhat = numeric(), ess_bulk = numeric())
+    }
   } else {
     s <- fit$summary()
     # Ensure required columns exist (variational may lack rhat/ess_bulk)
@@ -454,12 +492,13 @@ summ <- tryCatch({
   }
 }, error = function(e) {
   logger::log_warn("Summary computation failed: {e$message}")
-  if (!is.null(fit_map)) {
+  if (!is.null(map_estimates) && nrow(map_estimates) > 0) {
     map_estimates %>%
       rename(median = estimate) %>%
       mutate(q5 = NA_real_, q95 = NA_real_, rhat = NA_real_, ess_bulk = NA_real_)
   } else {
-    tibble(variable = character(), median = numeric())
+    tibble(variable = character(), median = numeric(),
+           q5 = numeric(), q95 = numeric(), rhat = numeric(), ess_bulk = numeric())
   }
 })
 

@@ -1,6 +1,6 @@
 {
   "variant": "acd",
-  "variant_name": "Alaska Coastal",
+  "variant_name": "Acadian",
   "maxsp": 108,
   "files_parsed": [
     "blkdat.f90",

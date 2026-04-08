@@ -54,16 +54,32 @@ ALL_VARIANTS <- c("acd", "ak", "bc", "bm", "ca", "ci", "cr", "cs", "ec",
 MORT_STRATEGY <- "no_si"
 cat("Mortality strategy:", MORT_STRATEGY, "\n")
 
+# Environment variable overrides for ablation study
+env_bool <- function(nm, default) {
+  v <- Sys.getenv(nm)
+  if (v == "") return(default)
+  toupper(v) %in% c("TRUE", "1", "YES")
+}
+OUTPUT_TAG <- Sys.getenv("FVS_OUTPUT_TAG")  # "" = default run, otherwise ablation tag
+
 # Ingrowth toggle
-INGROWTH_ENABLED <- TRUE
+INGROWTH_ENABLED <- env_bool("FVS_INGROWTH", TRUE)
 cat("Ingrowth model:", ifelse(INGROWTH_ENABLED, "ENABLED", "DISABLED"), "\n")
 
 # ClimateSI + Emmerson SDIMAX raster lookup
-CLIMATE_SI_ENABLED <- TRUE
-SDIMAX_RASTER_ENABLED <- TRUE
+CLIMATE_SI_ENABLED <- env_bool("FVS_CLIMATE_SI", TRUE)
+SDIMAX_RASTER_ENABLED <- env_bool("FVS_SDIMAX", TRUE)
 RASTER_LOOKUP_CSV <- file.path(project_root, "calibration/data/plot_raster_lookup.csv")
 cat("ClimateSI raster:", ifelse(CLIMATE_SI_ENABLED, "ENABLED", "DISABLED"), "\n")
 cat("SDIMAX raster:", ifelse(SDIMAX_RASTER_ENABLED, "ENABLED", "DISABLED"), "\n")
+
+# Uncertainty estimation
+CI_BRACKETS_ENABLED <- env_bool("FVS_CI_BRACKETS", TRUE)
+BOOTSTRAP_CI_ENABLED <- env_bool("FVS_BOOTSTRAP", TRUE)
+BOOTSTRAP_N <- 1000
+cat("CI bracket projections:", ifelse(CI_BRACKETS_ENABLED, "ENABLED (80% CI)", "DISABLED"), "\n")
+cat("Bootstrap CI on stats:", ifelse(BOOTSTRAP_CI_ENABLED, paste0("ENABLED (", BOOTSTRAP_N, " reps)"), "DISABLED"), "\n")
+if (OUTPUT_TAG != "") cat("OUTPUT TAG:", OUTPUT_TAG, "\n")
 
 # ==============================================================================
 # Helper Functions
@@ -102,6 +118,10 @@ load_variant_params <- function(v) {
   params <- list(variant = v)
   vdir <- file.path(calib_root, v)
 
+  # Quantile extraction helpers (for CI bracket projections)
+  CI_LO <- 0.025  # 95% CI on parameters -> ~80% CI on predictions (joint shrinkage)
+  CI_HI <- 0.975
+
   # --- Measurement interval ---
   dg_data_file <- file.path(data_root, v, "diameter_growth.csv")
   if (file.exists(dg_data_file)) {
@@ -119,11 +139,15 @@ load_variant_params <- function(v) {
     if (!is.null(draws)) {
       d <- as.data.frame(draws)
       get_med <- function(nm) if (nm %in% names(d)) median(d[[nm]], na.rm = TRUE) else NA_real_
+      get_lo  <- function(nm) if (nm %in% names(d)) quantile(d[[nm]], CI_LO, na.rm = TRUE) else NA_real_
+      get_hi  <- function(nm) if (nm %in% names(d)) quantile(d[[nm]], CI_HI, na.rm = TRUE) else NA_real_
       params$hd <- list(
         a = get_med("b_a_Intercept"),
         b = get_med("b_b_Intercept"),
         c = get_med("b_c_Intercept")
       )
+      params$hd_lo <- list(a = get_lo("b_a_Intercept"), b = get_lo("b_b_Intercept"), c = get_lo("b_c_Intercept"))
+      params$hd_hi <- list(a = get_hi("b_a_Intercept"), b = get_hi("b_b_Intercept"), c = get_hi("b_c_Intercept"))
       # Species random effects on a (asymptote) keyed by SPCD
       a_cols <- names(d)[grepl("^r_SPCD__a\\[", names(d))]
       if (length(a_cols) > 0) {
@@ -132,6 +156,9 @@ load_variant_params <- function(v) {
           sapply(a_cols, function(x) median(d[[x]], na.rm = TRUE)),
           as.character(spcd_a)
         )
+        # CI bounds for species RE: use median (RE uncertainty is secondary)
+        params$hd_lo$sp_a <- params$hd$sp_a
+        params$hd_hi$sp_a <- params$hd$sp_a
       }
     }
   }
@@ -144,17 +171,38 @@ load_variant_params <- function(v) {
     if (!is.null(draws)) {
       d <- as.data.frame(draws)
       get_med <- function(nm) if (nm %in% names(d)) median(d[[nm]], na.rm = TRUE) else 0
+      get_lo  <- function(nm) if (nm %in% names(d)) quantile(d[[nm]], CI_LO, na.rm = TRUE) else 0
+      get_hi  <- function(nm) if (nm %in% names(d)) quantile(d[[nm]], CI_HI, na.rm = TRUE) else 0
       params$dg <- list(
         mu_b0 = get_med("mu_b0"),
         sigma_b0 = get_med("sigma_b0"),
         betas = sapply(paste0("b", 1:13), get_med),
         sigma = get_med("sigma")
       )
+      # CI bracket parameters for DG
+      # For CI brackets: use Q2.5/Q97.5 on parameters for systematic uncertainty
+      # Also store sigma_shift: a stand-level residual term scaled by 1/sqrt(N_trees)
+      # This additive shift on ln(DDS) propagates residual variance through the nonlinear model
+      dg_sigma_med <- get_med("sigma")
+      params$dg_lo <- list(
+        mu_b0 = get_lo("mu_b0"), sigma_b0 = get_med("sigma_b0"),
+        betas = sapply(paste0("b", 1:13), get_lo), sigma = dg_sigma_med,
+        sigma_shift = -1.28 * dg_sigma_med  # 80% CI lower tail on residuals
+      )
+      params$dg_hi <- list(
+        mu_b0 = get_hi("mu_b0"), sigma_b0 = get_med("sigma_b0"),
+        betas = sapply(paste0("b", 1:13), get_hi), sigma = dg_sigma_med,
+        sigma_shift = +1.28 * dg_sigma_med  # 80% CI upper tail on residuals
+      )
       # Reconstructed species intercepts: b0[i] already in posterior
       b0_cols <- names(d)[grepl("^b0\\[\\d+\\]$", names(d))]
       if (length(b0_cols) > 0) {
         b0_medians <- sapply(b0_cols, function(x) median(d[[x]], na.rm = TRUE))
-        params$dg$sp_b0_vals <- b0_medians  # indexed 1..N_species
+        b0_lo <- sapply(b0_cols, function(x) quantile(d[[x]], CI_LO, na.rm = TRUE))
+        b0_hi <- sapply(b0_cols, function(x) quantile(d[[x]], CI_HI, na.rm = TRUE))
+        params$dg$sp_b0_vals <- b0_medians
+        params$dg_lo$sp_b0_vals <- b0_lo
+        params$dg_hi$sp_b0_vals <- b0_hi
       }
 
       # Build SPCD -> species_index mapping from training data
@@ -164,16 +212,21 @@ load_variant_params <- function(v) {
         }, error = function(e) NULL)
         if (!is.null(spcd_map_data) && "fvs_sp_idx" %in% names(spcd_map_data)) {
           sp_map <- unique(spcd_map_data[, .(SPCD, fvs_sp_idx)])
-          params$dg$spcd_to_idx <- setNames(sp_map$fvs_sp_idx, as.character(sp_map$SPCD))
+          spcd_idx <- setNames(sp_map$fvs_sp_idx, as.character(sp_map$SPCD))
+          params$dg$spcd_to_idx <- spcd_idx
+          params$dg_lo$spcd_to_idx <- spcd_idx
+          params$dg_hi$spcd_to_idx <- spcd_idx
           cat(sprintf("[%d spp mapped] ", nrow(sp_map)))
         } else {
-          # Fallback: assume unique SPCDs in sorted order correspond to b0 indices
           spcd_fallback <- tryCatch({
             sdat <- fread(dg_data_file, select = "SPCD", nrows = 500000)
             sort(unique(sdat$SPCD))
           }, error = function(e) NULL)
           if (!is.null(spcd_fallback)) {
-            params$dg$spcd_to_idx <- setNames(seq_along(spcd_fallback), as.character(spcd_fallback))
+            spcd_idx <- setNames(seq_along(spcd_fallback), as.character(spcd_fallback))
+            params$dg$spcd_to_idx <- spcd_idx
+            params$dg_lo$spcd_to_idx <- spcd_idx
+            params$dg_hi$spcd_to_idx <- spcd_idx
             cat(sprintf("[%d spp fallback] ", length(spcd_fallback)))
           }
         }
@@ -194,23 +247,30 @@ load_variant_params <- function(v) {
         col <- paste0("b_", nm)
         if (col %in% names(d)) median(d[[col]], na.rm = TRUE) else 0
       }
-      params$mort <- list(
-        b0 = get_fe("Intercept"),
-        b1 = get_fe("DBH_std"),
-        b2 = get_fe("IDBH_stdE2"),
-        b3 = get_fe("BAL_std"),
-        b4 = get_fe("CR_std"),
-        b5 = get_fe("SI_std"),
-        b6 = get_fe("BA_std")
-      )
+      get_fe_lo <- function(nm) {
+        col <- paste0("b_", nm)
+        if (col %in% names(d)) quantile(d[[col]], CI_LO, na.rm = TRUE) else 0
+      }
+      get_fe_hi <- function(nm) {
+        col <- paste0("b_", nm)
+        if (col %in% names(d)) quantile(d[[col]], CI_HI, na.rm = TRUE) else 0
+      }
+      fe_names <- c("Intercept", "DBH_std", "IDBH_stdE2", "BAL_std", "CR_std", "SI_std", "BA_std")
+      params$mort <- setNames(lapply(fe_names, get_fe), paste0("b", 0:6))
+      params$mort_lo <- setNames(lapply(fe_names, get_fe_lo), paste0("b", 0:6))
+      params$mort_hi <- setNames(lapply(fe_names, get_fe_hi), paste0("b", 0:6))
       # Species random intercepts keyed by SPCD
       sp_cols <- names(d)[grepl("^r_SPCD\\[", names(d))]
       if (length(sp_cols) > 0) {
         spcd_vals <- as.integer(gsub("r_SPCD\\[(\\d+),Intercept\\]", "\\1", sp_cols))
-        params$mort$sp_re <- setNames(
+        sp_re_med <- setNames(
           sapply(sp_cols, function(x) median(d[[x]], na.rm = TRUE)),
           as.character(spcd_vals)
         )
+        params$mort$sp_re <- sp_re_med
+        # Use median RE for brackets (RE uncertainty is secondary to fixed effects)
+        params$mort_lo$sp_re <- sp_re_med
+        params$mort_hi$sp_re <- sp_re_med
       }
     }
   }
@@ -256,6 +316,89 @@ load_variant_params <- function(v) {
     params$sdimax <- sdimax_data
   }
 
+  # --- Height Increment (HTG) model ---
+  # ln(HTG) = b0[sp] + b1[sp]*ln(DBH) + (b2 + gamma_shape[spgrp])*ln(HT)
+  #           + b3*CR + b4*SI + b5*BAL + b6*BA + b7*SLOPE + b8*cos(ASP)
+  htg_file <- file.path(vdir, "height_increment_summary.csv")
+  htg_method_file <- file.path(vdir, "height_increment_method.txt")
+  htg_samples_file <- file.path(vdir, "height_increment_samples.rds")
+  if (file.exists(htg_samples_file)) {
+    htg_draws <- tryCatch(readRDS(htg_samples_file), error = function(e) NULL)
+    if (!is.null(htg_draws)) {
+      hd_d <- as.data.frame(htg_draws)
+      get_med <- function(nm) if (nm %in% names(hd_d)) median(hd_d[[nm]], na.rm = TRUE) else 0
+      get_lo  <- function(nm) if (nm %in% names(hd_d)) quantile(hd_d[[nm]], CI_LO, na.rm = TRUE) else 0
+      get_hi  <- function(nm) if (nm %in% names(hd_d)) quantile(hd_d[[nm]], CI_HI, na.rm = TRUE) else 0
+
+      # Fixed effects
+      htg_betas <- c(b2 = get_med("b2"), b3 = get_med("b3"), b4 = get_med("b4"),
+                     b5 = get_med("b5"), b6 = get_med("b6"), b7 = get_med("b7"),
+                     b8 = get_med("b8"))
+      htg_sigma <- get_med("sigma")
+
+      # Species intercepts and ln(DBH) coefficients
+      b0_cols <- names(hd_d)[grepl("^b0\\[\\d+\\]$", names(hd_d))]
+      b1_cols <- names(hd_d)[grepl("^b1\\[\\d+\\]$", names(hd_d))]
+      gs_cols <- names(hd_d)[grepl("^gamma_shape\\[\\d+\\]$", names(hd_d))]
+
+      htg_b0 <- sapply(b0_cols, function(x) median(hd_d[[x]], na.rm = TRUE))
+      htg_b1 <- sapply(b1_cols, function(x) median(hd_d[[x]], na.rm = TRUE))
+      htg_gs <- sapply(gs_cols, function(x) median(hd_d[[x]], na.rm = TRUE))
+
+      params$htg <- list(
+        b0 = htg_b0, b1 = htg_b1, betas = htg_betas,
+        gamma_shape = htg_gs, sigma = htg_sigma
+      )
+
+      # Build SPCD -> species_index mapping from training data
+      htg_data_file <- file.path(data_root, v, "height_growth.csv")
+      if (file.exists(htg_data_file)) {
+        spcd_map_htg <- tryCatch({
+          hd_raw <- fread(htg_data_file, select = "SPCD", nrows = 500000)
+          sp_list <- sort(unique(hd_raw$SPCD))
+          setNames(seq_along(sp_list), as.character(sp_list))
+        }, error = function(e) NULL)
+        if (!is.null(spcd_map_htg)) {
+          params$htg$spcd_to_idx <- spcd_map_htg
+          # Species group mapping: cycle through groups
+          n_spgrp_htg <- length(htg_gs)
+          if (n_spgrp_htg > 0) {
+            params$htg$spcd_to_spgrp <- setNames(
+              ((seq_along(spcd_map_htg) - 1) %% n_spgrp_htg) + 1,
+              names(spcd_map_htg)
+            )
+          }
+        }
+      }
+      cat("[HTG] ")
+    }
+  } else if (file.exists(htg_file) && file.info(htg_file)$size > 20) {
+    # Try loading from summary CSV (MAP estimates)
+    htg_summ <- tryCatch(fread(htg_file), error = function(e) NULL)
+    if (!is.null(htg_summ) && nrow(htg_summ) > 0 && "median" %in% names(htg_summ)) {
+      get_val <- function(nm) {
+        row <- htg_summ[variable == nm]
+        if (nrow(row) > 0) row$median[1] else 0
+      }
+      htg_betas <- c(b2 = get_val("b2"), b3 = get_val("b3"), b4 = get_val("b4"),
+                     b5 = get_val("b5"), b6 = get_val("b6"), b7 = get_val("b7"),
+                     b8 = get_val("b8"))
+
+      b0_rows <- htg_summ[grepl("^b0\\[", variable)]
+      b1_rows <- htg_summ[grepl("^b1\\[", variable)]
+      gs_rows <- htg_summ[grepl("^gamma_shape\\[", variable)]
+
+      params$htg <- list(
+        b0 = setNames(b0_rows$median, b0_rows$variable),
+        b1 = setNames(b1_rows$median, b1_rows$variable),
+        betas = htg_betas,
+        gamma_shape = setNames(gs_rows$median, gs_rows$variable),
+        sigma = get_val("sigma")
+      )
+      cat("[HTG-MAP] ")
+    }
+  }
+
   params
 }
 
@@ -267,7 +410,8 @@ for (v in ALL_VARIANTS) {
   has_components <- c(
     DG = !is.null(p$dg),
     Mort = !is.null(p$mort),
-    HD = !is.null(p$hd)
+    HD = !is.null(p$hd),
+    HTG = !is.null(p$htg)
   )
   cat(paste(names(has_components)[has_components], collapse = "+"), "\n")
   variant_params[[toupper(v)]] <- p
@@ -285,7 +429,8 @@ cat("Loaded parameters for", length(variant_params), "variants\n\n")
 #' @param si Site index
 #' @return list(TPA_pred, BA_pred, QMD_pred, SDI_pred, VOL_CFGRS_pred)
 project_condition_calibrated <- function(trees, params, interval_years, si = 65,
-                                        slope_cond = NA, aspect_cond = NA, elev_cond = NA) {
+                                        slope_cond = NA, aspect_cond = NA, elev_cond = NA,
+                                        sdimax_raster_val = NA) {
   null_result <- list(TPA_pred = NA_real_, BA_pred = NA_real_,
                       QMD_pred = NA_real_, SDI_pred = NA_real_,
                       VOL_CFGRS_pred = NA_real_,
@@ -430,6 +575,42 @@ project_condition_calibrated <- function(trees, params, interval_years, si = 65,
     }
 
     logit_surv_period[!is.finite(logit_surv_period)] <- 2
+
+    # ---- SDIMAX RELATIVE DENSITY ADJUSTMENT ----
+    # If Emmerson SDIMAX is available, apply a carrying capacity modifier:
+    # When SDI/SDIMAX > 0.55 (Reineke's zone of imminent mortality), increase mort
+    # When SDI/SDIMAX < 0.35 (understocked), decrease mort
+    # This is a post-hoc density dependent modifier, not a regression covariate
+    if (SDIMAX_RASTER_ENABLED && !is.null(params$sdimax)) {
+      # Compute current SDI: Reineke's SDI = sum(TPA * (DIA/10)^1.605)
+      sdi_current <- sum(dt$TPA_UNADJ * (dt$DIA / 10)^1.605, na.rm = TRUE)
+
+      # Get species-weighted SDIMAX from Emmerson raster or calibrated values
+      sdimax_val <- NA_real_
+      # Prefer plot-level Emmerson raster value if available
+      if (!is.null(sdimax_raster_val) && !is.na(sdimax_raster_val) && sdimax_raster_val > 0) {
+        sdimax_val <- sdimax_raster_val
+      } else {
+        # Fall back to species-specific calibrated SDIMAX (TPA-weighted mean)
+        spcd_char <- as.character(dt$SPCD)
+        sp_sdi <- params$sdimax[spcd_char]
+        sp_sdi <- sp_sdi[!is.na(sp_sdi) & sp_sdi > 0]
+        if (length(sp_sdi) > 0) sdimax_val <- mean(sp_sdi)
+      }
+
+      if (!is.na(sdimax_val) && sdimax_val > 50) {
+        rdi <- sdi_current / sdimax_val
+        rdi <- pmin(rdi, 1.5)  # cap at 150% to avoid extreme adjustments
+
+        # Logistic modifier centered at RDI=0.55 (onset of competition mortality)
+        # At RDI=0.55: modifier=0 (neutral)
+        # At RDI=0.80: modifier increases mortality
+        # At RDI=0.30: modifier decreases mortality
+        rdi_modifier <- -2.0 * (rdi - 0.55)  # subtract from logit: higher RDI -> lower survival
+        logit_surv_period <- logit_surv_period + rdi_modifier
+      }
+    }
+
     p_surv_period <- plogis(logit_surv_period)
     p_surv_period <- pmin(pmax(p_surv_period, 0.01), 0.999)
 
@@ -520,6 +701,14 @@ project_condition_calibrated <- function(trees, params, interval_years, si = 65,
 
     pred_ln_dds[!is.finite(pred_ln_dds)] <- log(0.5)
 
+    # Apply residual sigma shift for CI bracket projections
+    # sigma_shift is ±1.28*sigma (80% CI), scaled by 1/sqrt(N) at tree level
+    # This captures within-model prediction uncertainty that parameter swaps miss
+    if (!is.null(dg$sigma_shift) && is.finite(dg$sigma_shift)) {
+      n_eff <- max(sqrt(n), 1)  # effective sample size for stand-level averaging
+      pred_ln_dds <- pred_ln_dds + dg$sigma_shift / n_eff
+    }
+
     # Back-transform with bias correction
     sigma_sq <- ifelse(is.finite(dg$sigma), dg$sigma^2, 0)
     dds_period <- exp(pred_ln_dds + sigma_sq / 2)
@@ -536,35 +725,124 @@ project_condition_calibrated <- function(trees, params, interval_years, si = 65,
     dt[, DIA_pred := DIA + 0.10 * interval_years]
   }
 
-  # ---- HEIGHT PREDICTION using H-D model (Chapman-Richards) ----
-  # Predict HT at t1 and t2 diameters to get volume scaling factor
+  # ---- HEIGHT PREDICTION ----
+  # Strategy (following FVS workflow):
+  #   1. Impute missing heights at t1 using calibrated H-D equation
+  #   2. Predict height increment using calibrated HTG model (if available)
+  #      OR use H-D ratio approach as fallback
+  #   3. HT_pred = HT_t1 + HTG (increment model) or HT_t1 * ratio (H-D fallback)
+  # The H-D model is always needed for imputation and volume scaling
+
+  has_obs_ht <- !is.na(dt$HT) & dt$HT > 4.5
+
+  # Step 1: Compute H-D predictions at t1 and t2 diameters (needed for imputation + volume)
   if (!is.null(params$hd)) {
     hd <- params$hd
-    # Chapman-Richards: HT = 4.5 + a * (1 - exp(-b * DIA))^c
-    # With species random effects on asymptote (a)
-    a_base <- hd$a
-    b_val  <- hd$b
-    c_val  <- hd$c
-
-    # Species-specific asymptote
+    a_base <- hd$a; b_val <- hd$b; c_val <- hd$c
     a_vec <- rep(a_base, n)
     if (!is.null(hd$sp_a)) {
       spcd_char <- as.character(dt$SPCD)
       sp_match <- spcd_char %in% names(hd$sp_a)
-      if (any(sp_match)) {
-        a_vec[sp_match] <- a_base + hd$sp_a[spcd_char[sp_match]]
+      if (any(sp_match)) a_vec[sp_match] <- a_base + hd$sp_a[spcd_char[sp_match]]
+    }
+    ht_pred_t1 <- pmax(4.5 + a_vec * (1 - exp(-b_val * pmax(dt$DIA, 0.1)))^c_val, 5)
+    ht_pred_t2 <- pmax(4.5 + a_vec * (1 - exp(-b_val * pmax(dt$DIA_pred, 0.1)))^c_val, 5)
+  } else {
+    # No H-D model: use observed HT or NA
+    ht_pred_t1 <- dt$HT
+    ht_pred_t2 <- fifelse(has_obs_ht, dt$HT * (dt$DIA_pred / pmax(dt$DIA, 0.1))^0.5, NA_real_)
+  }
+
+  # Step 1b: Establish initial height (impute missing with calibrated H-D)
+  ht_t1 <- fifelse(has_obs_ht, dt$HT, ht_pred_t1)
+
+  # Step 2: Predict height at t2
+  # Primary method: Calibrated H-D ratio anchored to observed/imputed height
+  # This approach leverages the calibrated H-D equation while preserving the
+  # observed height anchor. The H-D model captures species-specific allometry,
+  # and the ratio HD(DIA_pred)/HD(DIA_t1) transfers that growth signal.
+  #
+  # The standalone HTG increment model (b0+b1*ln(DBH)+(b2+gamma)*ln(HT)+...)
+  # is available but currently has unconstrained gamma_shape parameters that
+  # make the effective ln(HT) coefficient positive for many variants, causing
+  # biologically unreasonable predictions (taller trees grow faster -> runaway).
+  # HTG can be enabled for testing via FVS_USE_HTG=true environment variable.
+  use_htg <- tolower(Sys.getenv("FVS_USE_HTG", "false")) == "true"
+
+  if (use_htg && !is.null(params$htg)) {
+    # --- Experimental: Calibrated Height Increment Model ---
+    htg <- params$htg
+    betas <- htg$betas
+
+    spcd_char <- as.character(dt$SPCD)
+    htg_intercept <- rep(0, n)
+    htg_b1_val    <- rep(0, n)
+    htg_gamma_val <- rep(0, n)
+
+    if (!is.null(htg$spcd_to_idx)) {
+      sp_matched <- spcd_char %in% names(htg$spcd_to_idx)
+      if (any(sp_matched)) {
+        sp_idx <- htg$spcd_to_idx[spcd_char[sp_matched]]
+        b0_keys <- paste0("b0[", sp_idx, "]")
+        b1_keys <- paste0("b1[", sp_idx, "]")
+        valid_b0 <- b0_keys %in% names(htg$b0)
+        valid_b1 <- b1_keys %in% names(htg$b1)
+        if (any(valid_b0)) htg_intercept[sp_matched][valid_b0] <- htg$b0[b0_keys[valid_b0]]
+        if (any(valid_b1)) htg_b1_val[sp_matched][valid_b1] <- htg$b1[b1_keys[valid_b1]]
+      }
+      if (!is.null(htg$spcd_to_spgrp)) {
+        spgrp_matched <- spcd_char %in% names(htg$spcd_to_spgrp)
+        if (any(spgrp_matched)) {
+          grp_idx <- htg$spcd_to_spgrp[spcd_char[spgrp_matched]]
+          gs_keys <- paste0("gamma_shape[", grp_idx, "]")
+          valid_gs <- gs_keys %in% names(htg$gamma_shape)
+          if (any(valid_gs)) htg_gamma_val[spgrp_matched][valid_gs] <- htg$gamma_shape[gs_keys[valid_gs]]
+        }
       }
     }
 
-    ht_pred_t1 <- 4.5 + a_vec * (1 - exp(-b_val * pmax(dt$DIA, 0.1)))^c_val
-    ht_pred_t2 <- 4.5 + a_vec * (1 - exp(-b_val * pmax(dt$DIA_pred, 0.1)))^c_val
-    ht_pred_t1 <- pmax(ht_pred_t1, 5)
-    ht_pred_t2 <- pmax(ht_pred_t2, 5)
-    dt[, HT_pred := ht_pred_t2]
+    # Constrain effective ln(HT) coefficient to be non-positive
+    # Positive values create runaway: taller trees -> more height growth -> taller
+    eff_lnht_coef <- pmin(betas["b2"] + htg_gamma_val, 0)
+
+    ln_dbh_htg <- log(pmax(dt$DIA, 0.1))
+    ln_ht_htg  <- log(pmax(ht_t1, 5))
+    cr_htg     <- pmin(pmax(fifelse(!is.na(dt$CR_prop), dt$CR_prop, 0.40), 0.01), 1.0)
+    si_htg     <- si / 100
+    bal_htg    <- dt$BAL / 100
+    ba_htg     <- ba_total / 100
+    slope_htg  <- fifelse(!is.na(slope_cond), slope_cond, 15) / 100
+    casp_htg   <- fifelse(!is.na(aspect_cond) & aspect_cond >= 0,
+                           cos(aspect_cond * pi / 180), 0)
+
+    pred_ln_htg <- htg_intercept +
+      htg_b1_val * ln_dbh_htg +
+      eff_lnht_coef * ln_ht_htg +
+      betas["b3"] * cr_htg +
+      betas["b4"] * si_htg +
+      betas["b5"] * bal_htg +
+      betas["b6"] * ba_htg +
+      betas["b7"] * slope_htg +
+      betas["b8"] * casp_htg
+
+    pred_ln_htg[!is.finite(pred_ln_htg)] <- log(0.5)
+    htg_annual <- exp(pred_ln_htg)
+    htg_annual <- pmin(pmax(htg_annual, 0.01), 5)
+    htg_total  <- htg_annual * interval_years
+    dt[, HT_pred := pmax(ht_t1 + htg_total, 5)]
+
+  } else if (!is.null(params$hd)) {
+    # --- Primary: Calibrated H-D ratio anchored to initial height ---
+    # HT_pred = HT_t1 * [HD(DIA_pred) / HD(DIA_t1)]
+    # This preserves the observed height anchor while using the calibrated
+    # H-D equation to predict the proportional change in height.
+    ht_ratio_hd <- ht_pred_t2 / pmax(ht_pred_t1, 5)
+    ht_ratio_hd <- pmin(pmax(ht_ratio_hd, 0.95), 2.0)
+    dt[, HT_pred := pmax(ht_t1 * ht_ratio_hd, 5)]
+
   } else {
-    # Fallback: simple height growth proportional to DIA growth
-    ht_avail <- !is.na(dt$HT) & dt$HT > 0
-    dt[, HT_pred := fifelse(ht_avail, HT * (DIA_pred / pmax(DIA, 0.1))^0.5, NA_real_)]
+    # --- Last resort: simple allometric scaling ---
+    dt[, HT_pred := fifelse(has_obs_ht, HT * (DIA_pred / pmax(DIA, 0.1))^0.5, NA_real_)]
     ht_pred_t1 <- dt$HT
     ht_pred_t2 <- dt$HT_pred
   }
@@ -1186,6 +1464,9 @@ for (var in variants_in_data) {
         VOL_BFNET_pred_calib = NA_real_,
         VOL_CFGRS_gross_calib = NA_real_,
         HT_top_calib = NA_real_,
+        BA_pred_calib_lo = NA_real_, BA_pred_calib_hi = NA_real_,
+        VOL_CFGRS_pred_calib_lo = NA_real_, VOL_CFGRS_pred_calib_hi = NA_real_,
+        HT_top_calib_lo = NA_real_, HT_top_calib_hi = NA_real_,
         TPA_pred_default = NA_real_, BA_pred_default = NA_real_,
         QMD_pred_default = NA_real_, SDI_pred_default = NA_real_,
         VOL_CFGRS_pred_default = NA_real_,
@@ -1208,32 +1489,83 @@ for (var in variants_in_data) {
     }
     if (is.na(si) | si <= 0 | si > 200) si <- 65
 
-    # Calibrated projection
-    calib <- tryCatch(
-      project_condition_calibrated(t1_trees, params, row$interval_years, si,
-                                   slope_cond = row$SLOPE_cond,
-                                   aspect_cond = row$ASPECT_cond,
-                                   elev_cond = row$ELEV_t2),
-      error = function(e) list(TPA_pred = NA_real_, BA_pred = NA_real_,
-                                QMD_pred = NA_real_, SDI_pred = NA_real_,
-                                VOL_CFGRS_pred = NA_real_,
-                                VOL_CFNET_pred = NA_real_,
-                                VOL_BFNET_pred = NA_real_,
-                                VOL_CFGRS_gross = NA_real_,
-                                HT_top = NA_real_)
-    )
+    # SDIMAX: prefer Emmerson raster, fall back to NA
+    sdimax_val <- NA_real_
+    if (SDIMAX_RASTER_ENABLED && "SDIMAX_imperial" %in% names(row) &&
+        !is.na(row$SDIMAX_imperial) && row$SDIMAX_imperial > 0) {
+      sdimax_val <- row$SDIMAX_imperial
+    }
+
+    # Calibrated projection (median posterior)
+    proj_args <- list(trees = t1_trees, params = params,
+                      interval_years = row$interval_years, si = si,
+                      slope_cond = row$SLOPE_cond,
+                      aspect_cond = row$ASPECT_cond,
+                      elev_cond = row$ELEV_t2,
+                      sdimax_raster_val = sdimax_val)
+    null_err <- list(TPA_pred = NA_real_, BA_pred = NA_real_,
+                      QMD_pred = NA_real_, SDI_pred = NA_real_,
+                      VOL_CFGRS_pred = NA_real_, VOL_CFNET_pred = NA_real_,
+                      VOL_BFNET_pred = NA_real_,
+                      VOL_CFGRS_gross = NA_real_, HT_top = NA_real_)
+    calib <- tryCatch(do.call(project_condition_calibrated, proj_args),
+                       error = function(e) null_err)
 
     # Default projection
     default <- tryCatch(
       project_condition_default(t1_trees, row$interval_years, variant_code = var),
-      error = function(e) list(TPA_pred = NA_real_, BA_pred = NA_real_,
-                                QMD_pred = NA_real_, SDI_pred = NA_real_,
-                                VOL_CFGRS_pred = NA_real_,
-                                VOL_CFNET_pred = NA_real_,
-                                VOL_BFNET_pred = NA_real_,
-                                VOL_CFGRS_gross = NA_real_,
-                                HT_top = NA_real_)
-    )
+      error = function(e) null_err)
+
+    # CI bracket projections (Q10/Q90 parameter swap)
+    ba_lo <- NA_real_; ba_hi <- NA_real_
+    vol_lo <- NA_real_; vol_hi <- NA_real_
+    ht_lo <- NA_real_; ht_hi <- NA_real_
+    if (CI_BRACKETS_ENABLED && !is.null(params$dg_lo)) {
+      # Build "low growth" params: Q10 DG betas, Q90 mortality intercept (more death)
+      params_lo <- params
+      params_lo$dg <- params$dg_lo
+      params_lo$hd <- params$hd_lo
+      if (!is.null(params$mort_lo)) {
+        params_lo$mort <- params$mort_hi  # higher mort intercept = more mortality = lower stand
+      }
+      calib_lo <- tryCatch(do.call(project_condition_calibrated,
+                                    c(list(trees = t1_trees, params = params_lo,
+                                           interval_years = row$interval_years, si = si,
+                                           slope_cond = row$SLOPE_cond,
+                                           aspect_cond = row$ASPECT_cond,
+                                           elev_cond = row$ELEV_t2,
+                                           sdimax_raster_val = sdimax_val))),
+                            error = function(e) null_err)
+      # Build "high growth" params: Q90 DG betas, Q10 mortality intercept (less death)
+      params_hi <- params
+      params_hi$dg <- params$dg_hi
+      params_hi$hd <- params$hd_hi
+      if (!is.null(params$mort_hi)) {
+        params_hi$mort <- params$mort_lo  # lower mort intercept = less mortality = higher stand
+      }
+      calib_hi <- tryCatch(do.call(project_condition_calibrated,
+                                    c(list(trees = t1_trees, params = params_hi,
+                                           interval_years = row$interval_years, si = si,
+                                           slope_cond = row$SLOPE_cond,
+                                           aspect_cond = row$ASPECT_cond,
+                                           elev_cond = row$ELEV_t2,
+                                           sdimax_raster_val = sdimax_val))),
+                            error = function(e) null_err)
+      # Ensure lo < hi by taking min/max
+      ba_lo  <- min(calib_lo$BA_pred, calib_hi$BA_pred, na.rm = TRUE)
+      ba_hi  <- max(calib_lo$BA_pred, calib_hi$BA_pred, na.rm = TRUE)
+      vol_lo <- min(calib_lo$VOL_CFGRS_pred, calib_hi$VOL_CFGRS_pred, na.rm = TRUE)
+      vol_hi <- max(calib_lo$VOL_CFGRS_pred, calib_hi$VOL_CFGRS_pred, na.rm = TRUE)
+      ht_lo  <- min(calib_lo$HT_top, calib_hi$HT_top, na.rm = TRUE)
+      ht_hi  <- max(calib_lo$HT_top, calib_hi$HT_top, na.rm = TRUE)
+      # Guard against Inf from all-NA inputs
+      if (!is.finite(ba_lo))  ba_lo  <- NA_real_
+      if (!is.finite(ba_hi))  ba_hi  <- NA_real_
+      if (!is.finite(vol_lo)) vol_lo <- NA_real_
+      if (!is.finite(vol_hi)) vol_hi <- NA_real_
+      if (!is.finite(ht_lo))  ht_lo  <- NA_real_
+      if (!is.finite(ht_hi))  ht_hi  <- NA_real_
+    }
 
     projection_results[[idx]] <- data.table(
       PLT_CN_t1 = row$PLT_CN_t1, PLT_CN_t2 = row$PLT_CN_t2,
@@ -1246,6 +1578,9 @@ for (var in variants_in_data) {
       VOL_BFNET_pred_calib = calib$VOL_BFNET_pred,
       VOL_CFGRS_gross_calib = calib$VOL_CFGRS_gross,
       HT_top_calib = calib$HT_top,
+      BA_pred_calib_lo = ba_lo, BA_pred_calib_hi = ba_hi,
+      VOL_CFGRS_pred_calib_lo = vol_lo, VOL_CFGRS_pred_calib_hi = vol_hi,
+      HT_top_calib_lo = ht_lo, HT_top_calib_hi = ht_hi,
       TPA_pred_default = default$TPA_pred, BA_pred_default = default$BA_pred,
       QMD_pred_default = default$QMD_pred, SDI_pred_default = default$SDI_pred,
       VOL_CFGRS_pred_default = default$VOL_CFGRS_pred,
@@ -1330,7 +1665,8 @@ validation_data <- validation_data[!is.na(BA_pred_calib) & !is.na(BA_pred_defaul
 cat("Validation pairs:", nrow(validation_data), "\n")
 
 # Save intermediate
-fwrite(validation_data, file.path(output_root, "intermediate/validation_data.csv"))
+tag_suffix <- if (OUTPUT_TAG != "") paste0("_", OUTPUT_TAG) else ""
+fwrite(validation_data, file.path(output_root, paste0("intermediate/validation_data", tag_suffix, ".csv")))
 
 # --- Validation metrics ---
 calc_rmse <- function(pred, obs) sqrt(mean((pred - obs)^2, na.rm = TRUE))
@@ -1395,6 +1731,50 @@ compute_metrics <- function(pred, obs, prefix, suffix) {
   )
 }
 
+# --- Bootstrap CI for validation statistics ---
+# Returns 95% CI on RMSE, R2, bias, MAE via nonparametric bootstrap
+bootstrap_stat_ci <- function(pred, obs, n_boot = BOOTSTRAP_N, seed = 42) {
+  n <- length(pred)
+  if (n < 20) return(NULL)
+  set.seed(seed)
+
+  boot_rmse <- boot_r2 <- boot_bias <- boot_mae <- numeric(n_boot)
+  for (b in seq_len(n_boot)) {
+    idx <- sample.int(n, n, replace = TRUE)
+    p <- pred[idx]; o <- obs[idx]
+    resid <- p - o
+    boot_rmse[b] <- sqrt(mean(resid^2))
+    boot_bias[b] <- mean(resid)
+    boot_mae[b]  <- mean(abs(resid))
+    ss_res <- sum((o - p)^2)
+    ss_tot <- sum((o - mean(o))^2)
+    boot_r2[b] <- if (ss_tot > 0) max(1 - ss_res / ss_tot, 0) else NA_real_
+  }
+  list(
+    RMSE_lo = quantile(boot_rmse, 0.025, na.rm = TRUE),
+    RMSE_hi = quantile(boot_rmse, 0.975, na.rm = TRUE),
+    r2_lo   = quantile(boot_r2,   0.025, na.rm = TRUE),
+    r2_hi   = quantile(boot_r2,   0.975, na.rm = TRUE),
+    bias_lo = quantile(boot_bias, 0.025, na.rm = TRUE),
+    bias_hi = quantile(boot_bias, 0.975, na.rm = TRUE),
+    MAE_lo  = quantile(boot_mae,  0.025, na.rm = TRUE),
+    MAE_hi  = quantile(boot_mae,  0.975, na.rm = TRUE)
+  )
+}
+
+# Wrapper: compute bootstrap CI and return named list with prefix/suffix
+compute_boot_ci <- function(pred, obs, prefix, suffix) {
+  if (!BOOTSTRAP_CI_ENABLED) return(list())
+  ci <- bootstrap_stat_ci(pred, obs)
+  if (is.null(ci)) return(list())
+  setNames(
+    list(ci$RMSE_lo, ci$RMSE_hi, ci$r2_lo, ci$r2_hi,
+         ci$bias_lo, ci$bias_hi, ci$MAE_lo, ci$MAE_hi),
+    paste0(prefix, c("_RMSE_lo_", "_RMSE_hi_", "_r2_lo_", "_r2_hi_",
+                      "_bias_lo_", "_bias_hi_", "_MAE_lo_", "_MAE_hi_"), suffix)
+  )
+}
+
 # --- Helper: compute all metrics for a given data subset ---
 compute_variant_stats <- function(vd, label) {
   stats <- list(VARIANT = label, n_conditions = nrow(vd))
@@ -1410,6 +1790,8 @@ compute_variant_stats <- function(vd, label) {
     a <- core_attrs[[attr_nm]]
     stats <- c(stats, compute_metrics(vd[[a$pred_c]], vd[[a$obs]], attr_nm, "calib"))
     stats <- c(stats, compute_metrics(vd[[a$pred_d]], vd[[a$obs]], attr_nm, "default"))
+    # Bootstrap CI on calibrated stats
+    stats <- c(stats, compute_boot_ci(vd[[a$pred_c]], vd[[a$obs]], attr_nm, "calib"))
   }
 
   # Volume attributes: CFGRS, CFNET, BFNET (subset to positive observed volume)
@@ -1429,6 +1811,7 @@ compute_variant_stats <- function(vd, label) {
         stats[[paste0("n_", vol_nm, "_conditions")]] <- nrow(vd_v)
         stats <- c(stats, compute_metrics(vd_v[[va$pred_c]], vd_v[[va$obs]], vol_nm, "calib"))
         stats <- c(stats, compute_metrics(vd_v[[va$pred_d]], vd_v[[va$obs]], vol_nm, "default"))
+        stats <- c(stats, compute_boot_ci(vd_v[[va$pred_c]], vd_v[[va$obs]], vol_nm, "calib"))
       }
     }
   }
@@ -1488,6 +1871,7 @@ compute_variant_stats <- function(vd, label) {
       stats[["n_HT_top_conditions"]] <- nrow(vd_ht)
       stats <- c(stats, compute_metrics(vd_ht$HT_top_calib, vd_ht$HT_top_t2, "HT_top", "calib"))
       stats <- c(stats, compute_metrics(vd_ht$HT_top_default, vd_ht$HT_top_t2, "HT_top", "default"))
+      stats <- c(stats, compute_boot_ci(vd_ht$HT_top_calib, vd_ht$HT_top_t2, "HT_top", "calib"))
     }
   }
 
@@ -1525,7 +1909,7 @@ validation_stats[["OVERALL"]] <- overall
 
 # Save results
 validation_stats_dt <- rbindlist(validation_stats, fill = TRUE)
-fwrite(validation_stats_dt, file.path(output_root, "manuscript_tables/fia_benchmark_results.csv"))
+fwrite(validation_stats_dt, file.path(output_root, paste0("manuscript_tables/fia_benchmark_results", tag_suffix, ".csv")))
 
 cat("\n")
 cat(sprintf("OVERALL: BA RMSE calib=%.1f default=%.1f | R2 calib=%.3f default=%.3f\n",
@@ -1591,13 +1975,21 @@ fig_dir <- file.path(output_root, "manuscript_figures")
 plot_data <- validation_data[!is.na(BA_pred_calib) & !is.na(BA_pred_default) &
                               !is.na(BA_t2) & BA_t2 > 0]
 
-# --- Figure 1: Predicted vs Observed BA (Calibrated) ---
-cat("Figure 1: BA predicted vs observed (calibrated)...\n")
-p1 <- ggplot(plot_data, aes(x = BA_t2, y = BA_pred_calib)) +
+# --- Figure 1: Predicted vs Observed BA (Calibrated) with 80% CI ribbons ---
+cat("Figure 1: BA predicted vs observed (calibrated) with CI ribbons...\n")
+has_ba_ci <- all(c("BA_pred_calib_lo", "BA_pred_calib_hi") %in% names(plot_data))
+p1 <- ggplot(plot_data, aes(x = BA_t2, y = BA_pred_calib))
+if (has_ba_ci && CI_BRACKETS_ENABLED) {
+  p1 <- p1 + geom_linerange(
+    aes(ymin = BA_pred_calib_lo, ymax = BA_pred_calib_hi),
+    alpha = 0.05, color = "steelblue", linewidth = 0.3,
+    data = plot_data[!is.na(BA_pred_calib_lo) & !is.na(BA_pred_calib_hi)])
+}
+p1 <- p1 +
   geom_point(alpha = 0.15, size = 0.5, color = "steelblue") +
   geom_abline(intercept = 0, slope = 1, linetype = "dashed", color = "red") +
   facet_wrap(~VARIANT, scales = "free") +
-  labs(title = "Basal Area: Observed vs Calibrated Prediction",
+  labs(title = "Basal Area: Observed vs Calibrated Prediction (80% CI brackets)",
        x = expression("Observed BA (ft"^2~"ac"^{-1}*")"),
        y = expression("Predicted BA (ft"^2~"ac"^{-1}*")")) +
   theme_minimal(base_size = 9) +
@@ -1706,15 +2098,23 @@ p7 <- ggplot(plot_data[!is.na(QMD_t2) & !is.na(QMD_pred_calib)],
 ggsave(file.path(fig_dir, "07_qmd_pred_vs_obs_calibrated.png"), p7,
        width = 14, height = 10, dpi = 300)
 
-# --- Figure 8: Volume predicted vs observed (calibrated) ---
-cat("Figure 8: Volume CFGRS predicted vs observed...\n")
+# --- Figure 8: Volume predicted vs observed (calibrated) with 80% CI ---
+cat("Figure 8: Volume CFGRS predicted vs observed with CI...\n")
 vol_plot <- plot_data[VOL_CFGRS_t2 > 0 & !is.na(VOL_CFGRS_pred_calib)]
 if (nrow(vol_plot) > 0) {
-  p8 <- ggplot(vol_plot, aes(x = VOL_CFGRS_t2, y = VOL_CFGRS_pred_calib)) +
+  has_vol_ci <- all(c("VOL_CFGRS_pred_calib_lo", "VOL_CFGRS_pred_calib_hi") %in% names(vol_plot))
+  p8 <- ggplot(vol_plot, aes(x = VOL_CFGRS_t2, y = VOL_CFGRS_pred_calib))
+  if (has_vol_ci && CI_BRACKETS_ENABLED) {
+    p8 <- p8 + geom_linerange(
+      aes(ymin = VOL_CFGRS_pred_calib_lo, ymax = VOL_CFGRS_pred_calib_hi),
+      alpha = 0.05, color = "steelblue", linewidth = 0.3,
+      data = vol_plot[!is.na(VOL_CFGRS_pred_calib_lo) & !is.na(VOL_CFGRS_pred_calib_hi)])
+  }
+  p8 <- p8 +
     geom_point(alpha = 0.15, size = 0.5, color = "steelblue") +
     geom_abline(intercept = 0, slope = 1, linetype = "dashed", color = "red") +
     facet_wrap(~VARIANT, scales = "free") +
-    labs(title = "Gross Cubic Foot Volume: Observed vs Calibrated",
+    labs(title = "Gross Cubic Foot Volume: Observed vs Calibrated (80% CI brackets)",
          x = expression("Observed Volume (ft"^3~"ac"^{-1}*")"),
          y = expression("Predicted Volume (ft"^3~"ac"^{-1}*")")) +
     theme_minimal(base_size = 9) +
@@ -1767,23 +2167,31 @@ if (nrow(pai_plot) > 0) {
          width = 14, height = 10, dpi = 300)
 }
 
-# --- Figure 11: Top height predicted vs observed ---
-cat("Figure 11: Top height predicted vs observed...\n")
+# --- Figure 11: Top height predicted vs observed with CI ---
+cat("Figure 11: Top height predicted vs observed with CI...\n")
 ht_plot <- plot_data[!is.na(HT_top_t2) & HT_top_t2 > 0 &
                       !is.na(HT_top_calib) & !is.na(HT_top_default)]
 if (nrow(ht_plot) > 0) {
+  has_ht_ci <- all(c("HT_top_calib_lo", "HT_top_calib_hi") %in% names(ht_plot))
   ht_long <- rbindlist(list(
     ht_plot[, .(VARIANT, HT_obs = HT_top_t2, HT_pred = HT_top_calib,
                  approach = "Calibrated")],
     ht_plot[, .(VARIANT, HT_obs = HT_top_t2, HT_pred = HT_top_default,
                  approach = "Default")]
   ))
-  p11_ht <- ggplot(ht_long, aes(x = HT_obs, y = HT_pred, color = approach)) +
+  p11_ht <- ggplot(ht_long, aes(x = HT_obs, y = HT_pred, color = approach))
+  if (has_ht_ci && CI_BRACKETS_ENABLED) {
+    p11_ht <- p11_ht + geom_linerange(
+      aes(x = HT_top_t2, ymin = HT_top_calib_lo, ymax = HT_top_calib_hi),
+      alpha = 0.05, color = "steelblue", linewidth = 0.3, inherit.aes = FALSE,
+      data = ht_plot[!is.na(HT_top_calib_lo) & !is.na(HT_top_calib_hi)])
+  }
+  p11_ht <- p11_ht +
     geom_point(alpha = 0.10, size = 0.5) +
     geom_abline(intercept = 0, slope = 1, linetype = "dashed", color = "gray30") +
     scale_color_manual(values = c(Calibrated = "steelblue", Default = "darkorange")) +
     facet_wrap(~VARIANT, scales = "free") +
-    labs(title = "Top Height (Lord, 40 TPA): Observed vs Predicted",
+    labs(title = "Top Height (Lord, 40 TPA): Observed vs Predicted (80% CI brackets)",
          x = "Observed Top Height (ft)", y = "Predicted Top Height (ft)",
          color = "Approach") +
     theme_minimal(base_size = 9) +
@@ -1851,6 +2259,77 @@ if (length(r2_present) > 0) {
          width = 12, height = 10, dpi = 300)
 }
 
+# --- Figure 14: Bootstrap CI on BA and VOL RMSE by variant ---
+if (BOOTSTRAP_CI_ENABLED &&
+    all(c("BA_RMSE_lo_calib", "BA_RMSE_hi_calib") %in% names(validation_stats_dt))) {
+  cat("Figure 14: Bootstrap CI on calibrated RMSE...\n")
+  ci_plot <- validation_stats_dt[VARIANT != "OVERALL" & !is.na(BA_RMSE_lo_calib)]
+
+  if (nrow(ci_plot) > 0) {
+    p14 <- ggplot(ci_plot, aes(x = reorder(VARIANT, -BA_RMSE_calib), y = BA_RMSE_calib)) +
+      geom_col(fill = "steelblue", alpha = 0.7, width = 0.6) +
+      geom_errorbar(aes(ymin = BA_RMSE_lo_calib, ymax = BA_RMSE_hi_calib),
+                    width = 0.25, color = "gray30", linewidth = 0.5) +
+      geom_point(aes(y = BA_RMSE_default), shape = 4, size = 2.5, color = "darkorange",
+                 stroke = 1) +
+      labs(title = "Calibrated BA RMSE with 95% Bootstrap CI (x = default)",
+           x = "Variant",
+           y = expression("RMSE (ft"^2~"ac"^{-1}*")")) +
+      theme_minimal(base_size = 11) +
+      theme(axis.text.x = element_text(angle = 45, hjust = 1))
+    ggsave(file.path(fig_dir, "14_ba_rmse_bootstrap_ci.png"), p14,
+           width = 12, height = 6, dpi = 300)
+  }
+
+  # Figure 14b: Bootstrap CI on R2
+  if ("BA_r2_lo_calib" %in% names(validation_stats_dt)) {
+    ci_r2 <- validation_stats_dt[VARIANT != "OVERALL" & !is.na(BA_r2_lo_calib)]
+    if (nrow(ci_r2) > 0) {
+      p14b <- ggplot(ci_r2, aes(x = reorder(VARIANT, BA_r2_calib), y = BA_r2_calib)) +
+        geom_point(size = 3, color = "steelblue") +
+        geom_errorbar(aes(ymin = BA_r2_lo_calib, ymax = BA_r2_hi_calib),
+                      width = 0.25, color = "steelblue", linewidth = 0.5) +
+        geom_point(aes(y = BA_r2_default), shape = 4, size = 2.5, color = "darkorange",
+                   stroke = 1) +
+        geom_hline(yintercept = 0.5, linetype = "dotted", color = "gray50") +
+        coord_flip() +
+        labs(title = expression("Calibrated BA R"^2~"with 95% Bootstrap CI (x = default)"),
+             x = "Variant", y = expression("R"^2)) +
+        theme_minimal(base_size = 11)
+      ggsave(file.path(fig_dir, "14b_ba_r2_bootstrap_ci.png"), p14b,
+             width = 10, height = 8, dpi = 300)
+    }
+  }
+}
+
+# --- Figure 15: CI bracket coverage analysis ---
+if (CI_BRACKETS_ENABLED &&
+    all(c("BA_pred_calib_lo", "BA_pred_calib_hi") %in% names(validation_data))) {
+  cat("Figure 15: CI bracket coverage...\n")
+  cov_data <- validation_data[!is.na(BA_pred_calib_lo) & !is.na(BA_pred_calib_hi)]
+  if (nrow(cov_data) > 0) {
+    cov_data[, BA_covered := BA_t2 >= BA_pred_calib_lo & BA_t2 <= BA_pred_calib_hi]
+    cov_by_var <- cov_data[, .(coverage = 100 * mean(BA_covered, na.rm = TRUE),
+                                 n = .N), by = VARIANT]
+    p15 <- ggplot(cov_by_var, aes(x = reorder(VARIANT, -coverage), y = coverage)) +
+      geom_col(fill = "steelblue", alpha = 0.7, width = 0.6) +
+      geom_hline(yintercept = 80, linetype = "dashed", color = "red") +
+      geom_text(aes(label = sprintf("%.0f%%", coverage)), vjust = -0.3, size = 3) +
+      labs(title = "80% CI Bracket Coverage: Observed BA within Predicted Interval",
+           x = "Variant", y = "Coverage (%)") +
+      ylim(0, 105) +
+      theme_minimal(base_size = 11) +
+      theme(axis.text.x = element_text(angle = 45, hjust = 1))
+    ggsave(file.path(fig_dir, "15_ci_bracket_coverage.png"), p15,
+           width = 12, height = 6, dpi = 300)
+
+    # Print coverage summary
+    overall_cov <- cov_data[, 100 * mean(BA_covered, na.rm = TRUE)]
+    cat(sprintf("  Overall BA 80%% CI coverage: %.1f%% (n=%d)\n",
+                overall_cov, nrow(cov_data)))
+  }
+}
+
 cat("All figures saved to:", fig_dir, "\n\n")
 
 # ==============================================================================
@@ -1872,6 +2351,24 @@ cat(sprintf("Overall BA R2 improvement: %.3f -> %.3f\n",
             overall$BA_r2_default, overall$BA_r2_calib))
 cat(sprintf("Overall BA equivalence: %.1f%% -> %.1f%%\n",
             overall$BA_equiv_default, overall$BA_equiv_calib))
+# Bootstrap CI summary
+if (BOOTSTRAP_CI_ENABLED && !is.null(overall$BA_RMSE_lo_calib)) {
+  cat(sprintf("  BA RMSE 95%% CI: [%.1f, %.1f] | R2 95%% CI: [%.3f, %.3f]\n",
+              overall$BA_RMSE_lo_calib, overall$BA_RMSE_hi_calib,
+              overall$BA_r2_lo_calib, overall$BA_r2_hi_calib))
+  cat(sprintf("  BA bias 95%% CI: [%.1f, %.1f]\n",
+              overall$BA_bias_lo_calib, overall$BA_bias_hi_calib))
+}
+if (!is.null(overall$VOL_CFGRS_RMSE_lo_calib)) {
+  cat(sprintf("  VOL_CFGRS RMSE 95%% CI: [%.1f, %.1f] | R2 95%% CI: [%.3f, %.3f]\n",
+              overall$VOL_CFGRS_RMSE_lo_calib, overall$VOL_CFGRS_RMSE_hi_calib,
+              overall$VOL_CFGRS_r2_lo_calib, overall$VOL_CFGRS_r2_hi_calib))
+}
+if (!is.null(overall$HT_top_RMSE_lo_calib)) {
+  cat(sprintf("  HT_top RMSE 95%% CI: [%.1f, %.1f] | R2 95%% CI: [%.3f, %.3f]\n",
+              overall$HT_top_RMSE_lo_calib, overall$HT_top_RMSE_hi_calib,
+              overall$HT_top_r2_lo_calib, overall$HT_top_r2_hi_calib))
+}
 
 # Volume summary (all types)
 for (vol_type in c("VOL_CFGRS", "VOL_CFNET", "VOL_BFNET")) {

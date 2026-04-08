@@ -14,8 +14,8 @@
         687,
         762,
         423,
-        374,
-        334,
+        342,
+        310,
         386,
         313,
         338,
@@ -30,17 +30,17 @@
         "NA",
         458,
         339,
-        247,
+        243,
         423,
-        502,
+        422,
         466,
         395,
         411,
         408,
         354,
         "NA",
-        165,
-        212,
+        176,
+        182,
         "NA",
         348,
         452
@@ -170,21 +170,21 @@
     }
   },
   "calibration": {
-    "date": "2026-03-29",
+    "date": "2026-03-31",
     "method": "Bayesian MCMC (CmdStanR + brms) and quantile regression",
     "fia_data_source": "rFIA package",
     "r_version": "4.4.0",
     "prior_type": "Informative (from original FVS parameters)",
     "components_updated": [
+      "diameter_growth",
       "height_diameter",
       "mortality",
       "crown_ratio",
       "sdimax"
     ],
     "components_skipped": [
-      "diameter_growth",
       "height_increment"
     ],
-    "notes": "Calibration based on FIA data. 4 of 7 component models integrated (tree: DG, H-D, HG, mortality, CR; stand: SDIMAX, BAMAX)."
+    "notes": "Calibration based on FIA data. 5 of 7 component models integrated (tree: DG, H-D, HG, mortality, CR; stand: SDIMAX, BAMAX)."
   }
 }

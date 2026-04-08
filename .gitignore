@@ -2,14 +2,20 @@
 calibration/data/raw_fia/
 calibration/data/fia_raw/
 calibration/data/nsvb/
+calibration/data/processed/
+calibration/data/fvs_variant_boundaries.geojson
+calibration/data/plot_raster_lookup.csv
 calibration/logs/
 calibration/output/variants/*/*.rds
 calibration/output/variants/*/*.pdf
+calibration/output/comparisons/intermediate/
 calibration/stan/wykoff_dg
 *.rds
 
 # Keep comparison outputs and summary CSVs
 !calibration/output/comparisons/
+!calibration/output/comparisons/manuscript_tables/
+!calibration/output/comparisons/manuscript_figures/
 
 # Generated SLURM helper scripts (one-off resubmission scripts)
 calibration/osc/_*_generated.sh
@@ -21,6 +27,7 @@ config/calibrated/*_draws.json
 # Delivery notes (ephemeral)
 CALIBRATION_DELIVERY.txt
 CALIBRATION_README.txt
+COPY_TO_CARDINAL.txt
 
 # OS artifacts
 .DS_Store
