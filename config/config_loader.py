@@ -225,7 +225,9 @@ class FvsConfigLoader:
         sdi_param = self._find_sdi_param(cats)
         if sdi_param is not None:
             try:
-                arr = np.array(sdi_param, dtype=np.float64)
+                # Replace 'NA' strings with 0 before conversion
+                cleaned = [0.0 if isinstance(v, str) else v for v in sdi_param]
+                arr = np.array(cleaned, dtype=np.float64)
                 # Pad or trim to match variant's maxspecies
                 dims = fvs_instance.dims
                 maxsp = dims.get("maxspecies", len(arr))
@@ -347,6 +349,8 @@ class FvsConfigLoader:
         if comments:
             lines.append("!! Species specific SDI maximums")
         for i, val in enumerate(values):
+            if isinstance(val, str) or val is None:
+                continue
             if val > 0:
                 # SDIMAX keyword: species_index  sdi_value
                 lines.append(f"SDIMAX          {i + 1:10d}{val:10.1f}")
@@ -362,6 +366,8 @@ class FvsConfigLoader:
             lines.append(f"BAMAX           {values:10.1f}")
         else:
             for i, val in enumerate(values):
+                if isinstance(val, str) or val is None:
+                    continue
                 if val > 0:
                     lines.append(f"BAMAX           {i + 1:10d}{val:10.1f}")
         return "\n".join(lines)

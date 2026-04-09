@@ -288,11 +288,11 @@ compute_nsbe_volume <- function(trees, variant = NULL, ecodiv = NULL) {
                                            spcd, jenkins_spgrpcd, spcd_div)
     if (nrow(coef_total_bio) > 0) {
       form_bio <- coef_total_bio$equation[1]
-      # Biomass equations typically output in kg
-      biomass_kg <- apply_equation(dbh, ht, form_bio, coef_total_bio)
-      if (!is.na(biomass_kg)) {
-        # Convert kg to short tons (1 ton = 907.185 kg)
-        trees_dt$biomass_total[i] <- biomass_kg / 907.185
+      # NSBE biomass equations output in POUNDS (calibrated against FIA DRYBIO_AG)
+      biomass_lbs <- apply_equation(dbh, ht, form_bio, coef_total_bio)
+      if (!is.na(biomass_lbs)) {
+        # Convert pounds to short tons (1 ton = 2000 lbs)
+        trees_dt$biomass_total[i] <- biomass_lbs / 2000
       }
     }
 
@@ -301,9 +301,9 @@ compute_nsbe_volume <- function(trees, variant = NULL, ecodiv = NULL) {
                                       spcd, jenkins_spgrpcd, spcd_div)
     if (nrow(coef_bark) > 0) {
       form_bark <- coef_bark$equation[1]
-      biomass_bark_kg <- apply_equation(dbh, ht, form_bark, coef_bark)
-      if (!is.na(biomass_bark_kg)) {
-        trees_dt$biomass_bark[i] <- biomass_bark_kg / 907.185
+      biomass_bark_lbs <- apply_equation(dbh, ht, form_bark, coef_bark)
+      if (!is.na(biomass_bark_lbs)) {
+        trees_dt$biomass_bark[i] <- biomass_bark_lbs / 2000
       }
     }
 
@@ -312,9 +312,9 @@ compute_nsbe_volume <- function(trees, variant = NULL, ecodiv = NULL) {
                                         spcd, jenkins_spgrpcd, spcd_div)
     if (nrow(coef_branch) > 0) {
       form_branch <- coef_branch$equation[1]
-      biomass_branch_kg <- apply_equation(dbh, ht, form_branch, coef_branch)
-      if (!is.na(biomass_branch_kg)) {
-        trees_dt$biomass_branch[i] <- biomass_branch_kg / 907.185
+      biomass_branch_lbs <- apply_equation(dbh, ht, form_branch, coef_branch)
+      if (!is.na(biomass_branch_lbs)) {
+        trees_dt$biomass_branch[i] <- biomass_branch_lbs / 2000
       }
     }
   }
