@@ -5,8 +5,8 @@
 #SBATCH --mem=48G
 #SBATCH --cpus-per-task=4
 #SBATCH --array=0-24
-#SBATCH --output=/users/PUOM0008/crsfaaron/fvs-modern/calibration/logs/cr_v2_%a_%j.out
-#SBATCH --error=/users/PUOM0008/crsfaaron/fvs-modern/calibration/logs/cr_v2_%a_%j.err
+#SBATCH --output=${FVS_PROJECT_ROOT:-/path/to/fvs-modern}/calibration/logs/cr_v2_%a_%j.out
+#SBATCH --error=${FVS_PROJECT_ROOT:-/path/to/fvs-modern}/calibration/logs/cr_v2_%a_%j.err
 
 # ============================================================================
 # Crown Ratio v2: beta regression on CR level for ALL 25 variants
@@ -25,8 +25,8 @@ echo "=== Crown Ratio v2 for variant: $VARIANT ==="
 echo "Start: $(date)"
 echo "Node: $(hostname)"
 
-export FVS_PROJECT_ROOT="/users/PUOM0008/crsfaaron/fvs-modern"
-export FVS_FIA_DATA_DIR="/users/PUOM0008/crsfaaron/FIA"
+export FVS_PROJECT_ROOT="${FVS_PROJECT_ROOT:-/path/to/fvs-modern}"
+export FVS_FIA_DATA_DIR="/path/to/user/path"
 
 module purge
 module load gcc/12.3.0

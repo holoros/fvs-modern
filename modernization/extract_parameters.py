@@ -440,8 +440,8 @@ def extract_all_variants(src_dir: str, output_dir: str):
 
 def main():
     """Main entry point."""
-    src_dir = '/home/aweiskittel/Documents/Claude/fvs-modern/src-converted'
-    output_dir = '/home/aweiskittel/Documents/Claude/fvs-modern/config'
+    src_dir = 'os.environ.get("HOME", "/home") + "/path/to/Documents/Claude/fvs-modern/src-converted'
+    output_dir = 'os.environ.get("HOME", "/home") + "/path/to/Documents/Claude/fvs-modern/config'
 
     logger.info(f"Starting FVS parameter extraction")
     logger.info(f"Source directory: {src_dir}")

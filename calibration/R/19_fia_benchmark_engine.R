@@ -29,7 +29,8 @@ cat(strrep("=", 80), "\n\n")
 project_root <- Sys.getenv("FVS_PROJECT_ROOT")
 if (project_root == "") project_root <- getwd()
 
-fia_root    <- "/users/PUOM0008/crsfaaron/FIA"
+fia_root    <- Sys.getenv("FVS_FIA_DATA_DIR",
+                          unset = file.path(dirname(project_root), "FIA"))
 calib_root  <- file.path(project_root, "calibration/output/variants")
 data_root   <- file.path(project_root, "calibration/data/processed")
 output_root <- file.path(project_root, "calibration/output/comparisons")
@@ -69,9 +70,25 @@ cat("Ingrowth model:", ifelse(INGROWTH_ENABLED, "ENABLED", "DISABLED"), "\n")
 # ClimateSI + Emmerson SDIMAX raster lookup
 CLIMATE_SI_ENABLED <- env_bool("FVS_CLIMATE_SI", TRUE)
 SDIMAX_RASTER_ENABLED <- env_bool("FVS_SDIMAX", TRUE)
-RASTER_LOOKUP_CSV <- file.path(project_root, "calibration/data/plot_raster_lookup.csv")
+# Search multiple candidate paths for raster lookup
+RASTER_LOOKUP_CSV <- ""
+raster_candidates <- c(
+  file.path(project_root, "calibration/data/plot_raster_lookup.csv"),
+  file.path(fia_root, "../fvs-modern/calibration/data/plot_raster_lookup.csv"),
+  Sys.getenv("FVS_RASTER_LOOKUP", unset = "")
+)
+raster_candidates <- raster_candidates[nzchar(raster_candidates)]
+for (rc in raster_candidates) {
+  if (file.exists(rc)) { RASTER_LOOKUP_CSV <- rc; break }
+}
+if (RASTER_LOOKUP_CSV == "") RASTER_LOOKUP_CSV <- raster_candidates[1]  # for error messages
 cat("ClimateSI raster:", ifelse(CLIMATE_SI_ENABLED, "ENABLED", "DISABLED"), "\n")
 cat("SDIMAX raster:", ifelse(SDIMAX_RASTER_ENABLED, "ENABLED", "DISABLED"), "\n")
+
+# DG back-transformation: "median" (no correction, recommended for benchmarking)
+# or "mean" (Baskerville 1972 exp(mu + sigma^2/2), inflates predictions)
+DG_BACKTRANSFORM <- tolower(Sys.getenv("FVS_DG_BACKTRANSFORM", "median"))
+cat("DG back-transform:", DG_BACKTRANSFORM, "\n")
 
 # Uncertainty estimation
 CI_BRACKETS_ENABLED <- env_bool("FVS_CI_BRACKETS", TRUE)
@@ -80,6 +97,25 @@ BOOTSTRAP_N <- 1000
 cat("CI bracket projections:", ifelse(CI_BRACKETS_ENABLED, "ENABLED (80% CI)", "DISABLED"), "\n")
 cat("Bootstrap CI on stats:", ifelse(BOOTSTRAP_CI_ENABLED, paste0("ENABLED (", BOOTSTRAP_N, " reps)"), "DISABLED"), "\n")
 if (OUTPUT_TAG != "") cat("OUTPUT TAG:", OUTPUT_TAG, "\n")
+
+# Variant-level DG multiplier: empirical correction derived from prior benchmark.
+# This is a band-aid. Values < 1 reduce DG to correct positive bias.
+# IMPORTANT: These multipliers were derived from the v2 benchmark which used the
+# Baskerville mean correction (exp(mu + sigma^2/2)). That correction inflated
+# DDS by 25-85% depending on variant. If DG_BACKTRANSFORM = "median", the
+# base predictions are already much lower, so these multipliers will OVERCORRECT.
+# After running configs 1-5 with median DG, recompute multipliers from the new
+# BA %Bias values and update these before running config 7.
+# Placeholder values below are from the v2 (Baskerville) benchmark:
+DG_VARIANT_MULT_ENABLED <- env_bool("FVS_DG_VARIANT_MULT", FALSE)
+DG_VARIANT_MULT <- c(
+  AK = 0.96, BM = 0.92, CA = 0.82, CI = 0.79, CR = 0.79,
+  CS = 0.92, EC = 0.80, EM = 0.89, IE = 0.84, KT = 0.90,
+  LS = 0.88, NC = 0.83, NE = 0.92, OC = 0.90, ON = 0.90,
+  OP = 0.90, PN = 0.71, SN = 0.78, SO = 0.86, TT = 0.86,
+  UT = 0.83, WC = 0.91, WS = 0.81
+)
+cat("DG variant multiplier:", ifelse(DG_VARIANT_MULT_ENABLED, "ENABLED", "DISABLED"), "\n")
 
 # ==============================================================================
 # Helper Functions
@@ -577,21 +613,19 @@ project_condition_calibrated <- function(trees, params, interval_years, si = 65,
     logit_surv_period[!is.finite(logit_surv_period)] <- 2
 
     # ---- SDIMAX RELATIVE DENSITY ADJUSTMENT ----
-    # If Emmerson SDIMAX is available, apply a carrying capacity modifier:
-    # When SDI/SDIMAX > 0.55 (Reineke's zone of imminent mortality), increase mort
-    # When SDI/SDIMAX < 0.35 (understocked), decrease mort
-    # This is a post-hoc density dependent modifier, not a regression covariate
+    # Softer density dependent modifier that only increases mortality
+    # above RDI = 0.70 (onset of Reineke's zone of imminent mortality).
+    # No adjustment below 0.70: the Bayesian mortality model already
+    # captures competition effects via BAL, BA, and CR covariates.
+    # Slope of 0.5 (reduced from 2.0) avoids overcorrecting on short
+    # FIA remeasurement intervals where density regulation is modest.
     if (SDIMAX_RASTER_ENABLED && !is.null(params$sdimax)) {
-      # Compute current SDI: Reineke's SDI = sum(TPA * (DIA/10)^1.605)
       sdi_current <- sum(dt$TPA_UNADJ * (dt$DIA / 10)^1.605, na.rm = TRUE)
 
-      # Get species-weighted SDIMAX from Emmerson raster or calibrated values
       sdimax_val <- NA_real_
-      # Prefer plot-level Emmerson raster value if available
       if (!is.null(sdimax_raster_val) && !is.na(sdimax_raster_val) && sdimax_raster_val > 0) {
         sdimax_val <- sdimax_raster_val
       } else {
-        # Fall back to species-specific calibrated SDIMAX (TPA-weighted mean)
         spcd_char <- as.character(dt$SPCD)
         sp_sdi <- params$sdimax[spcd_char]
         sp_sdi <- sp_sdi[!is.na(sp_sdi) & sp_sdi > 0]
@@ -599,15 +633,16 @@ project_condition_calibrated <- function(trees, params, interval_years, si = 65,
       }
 
       if (!is.na(sdimax_val) && sdimax_val > 50) {
-        rdi <- sdi_current / sdimax_val
-        rdi <- pmin(rdi, 1.5)  # cap at 150% to avoid extreme adjustments
+        rdi <- pmin(sdi_current / sdimax_val, 1.5)
 
-        # Logistic modifier centered at RDI=0.55 (onset of competition mortality)
-        # At RDI=0.55: modifier=0 (neutral)
-        # At RDI=0.80: modifier increases mortality
-        # At RDI=0.30: modifier decreases mortality
-        rdi_modifier <- -2.0 * (rdi - 0.55)  # subtract from logit: higher RDI -> lower survival
-        logit_surv_period <- logit_surv_period + rdi_modifier
+        # Asymmetric: only penalize survival above RDI = 0.70
+        # At RDI <= 0.70: no adjustment (modifier = 0)
+        # At RDI = 0.90: modifier = -0.5 * 0.20 = -0.10 on logit scale
+        # At RDI = 1.20: modifier = -0.5 * 0.50 = -0.25 on logit scale
+        if (rdi > 0.70) {
+          rdi_modifier <- -0.5 * (rdi - 0.70)
+          logit_surv_period <- logit_surv_period + rdi_modifier
+        }
       }
     }
 
@@ -709,9 +744,26 @@ project_condition_calibrated <- function(trees, params, interval_years, si = 65,
       pred_ln_dds <- pred_ln_dds + dg$sigma_shift / n_eff
     }
 
-    # Back-transform with bias correction
-    sigma_sq <- ifelse(is.finite(dg$sigma), dg$sigma^2, 0)
-    dds_period <- exp(pred_ln_dds + sigma_sq / 2)
+    # Back-transform: median (no correction) or mean (Baskerville 1972)
+    # The Baskerville correction exp(mu + sigma^2/2) produces the expected
+    # value of the lognormal, but sigma from the Bayesian model includes
+    # residual variance that inflates stand-level predictions because the
+    # positive skew does not cancel when aggregating across trees.
+    # Using median (exp(mu)) avoids systematic overprediction.
+    if (DG_BACKTRANSFORM == "mean") {
+      sigma_sq <- ifelse(is.finite(dg$sigma), dg$sigma^2, 0)
+      dds_period <- exp(pred_ln_dds + sigma_sq / 2)
+    } else {
+      dds_period <- exp(pred_ln_dds)
+    }
+
+    # Apply variant-level DG multiplier (empirical bias correction)
+    if (DG_VARIANT_MULT_ENABLED && !is.null(params$variant)) {
+      var_key <- toupper(params$variant)
+      if (var_key %in% names(DG_VARIANT_MULT)) {
+        dds_period <- dds_period * DG_VARIANT_MULT[var_key]
+      }
+    }
 
     # Scale DDS to actual interval
     dds_actual <- dds_period * (interval_years / meas_int)
@@ -1301,7 +1353,11 @@ if ((CLIMATE_SI_ENABLED || SDIMAX_RASTER_ENABLED) && file.exists(RASTER_LOOKUP_C
   cat("\n")
 } else {
   if (CLIMATE_SI_ENABLED || SDIMAX_RASTER_ENABLED) {
-    cat("  Raster lookup not found:", RASTER_LOOKUP_CSV, "\n")
+    cat("\n  WARNING: Raster lookup not found at:\n")
+    cat("    ", RASTER_LOOKUP_CSV, "\n")
+    cat("  To generate this file, run:\n")
+    cat("    python3 calibration/R/extract_raster_values.py\n")
+    cat("  or submit: sbatch calibration/slurm/run_extract_raster.sh\n")
     cat("  Falling back to FIA SICOND and calibrated SDIMAX\n\n")
   }
   CLIMATE_SI_ENABLED <- FALSE

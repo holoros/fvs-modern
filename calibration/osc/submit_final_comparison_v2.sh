@@ -4,8 +4,8 @@
 #SBATCH --time=01:00:00
 #SBATCH --mem=32G
 #SBATCH --cpus-per-task=4
-#SBATCH --output=/users/PUOM0008/crsfaaron/fvs-modern/calibration/logs/final_v2_%j.out
-#SBATCH --error=/users/PUOM0008/crsfaaron/fvs-modern/calibration/logs/final_v2_%j.err
+#SBATCH --output=${FVS_PROJECT_ROOT:-/path/to/fvs-modern}/calibration/logs/final_v2_%j.out
+#SBATCH --error=${FVS_PROJECT_ROOT:-/path/to/fvs-modern}/calibration/logs/final_v2_%j.err
 #SBATCH --dependency=afterany:7762882_15
 
 # ============================================================================
@@ -18,7 +18,7 @@ echo "=== Final Comparison v2 ==="
 echo "Start: $(date)"
 echo "Node: $(hostname)"
 
-export FVS_PROJECT_ROOT="/users/PUOM0008/crsfaaron/fvs-modern"
+export FVS_PROJECT_ROOT="${FVS_PROJECT_ROOT:-/path/to/fvs-modern}"
 
 module purge
 module load gcc/12.3.0

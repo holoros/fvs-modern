@@ -181,7 +181,7 @@ class CommonBlockInventory:
 
 
 def main():
-    root_dir = '/home/aweiskittel/ForestVegetationSimulator-main'
+    root_dir = 'os.environ.get("HOME", "/home") + "/path/to/ForestVegetationSimulator-main'
     inventory = CommonBlockInventory(root_dir)
 
     print("Scanning FVS codebase for INCLUDE statements...")

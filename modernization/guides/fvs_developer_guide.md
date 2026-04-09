@@ -532,7 +532,7 @@ A variant directory (e.g., `pn/`) must contain:
 
 ### Example: blkdat.f Structure
 
-From `/home/aweiskittel/ForestVegetationSimulator-main/ak/blkdat.f`:
+From `/path/to/ForestVegetationSimulator-main/ak/blkdat.f`:
 
 ```fortran
 BLOCK DATA BLKDAT
@@ -1335,46 +1335,46 @@ jobs:
 ## Appendix A: File Cross-Reference
 
 ### Main Execution Flow Files
-* `/home/aweiskittel/ForestVegetationSimulator-main/base/main.f` - Entry point
-* `/home/aweiskittel/ForestVegetationSimulator-main/base/cmdline.f` - Command-line processing
-* `/home/aweiskittel/ForestVegetationSimulator-main/base/fvs.f` - Main simulation loop
-* `/home/aweiskittel/ForestVegetationSimulator-main/base/algkey.f` - Keyword processing
+* `/path/to/ForestVegetationSimulator-main/base/main.f` - Entry point
+* `/path/to/ForestVegetationSimulator-main/base/cmdline.f` - Command-line processing
+* `/path/to/ForestVegetationSimulator-main/base/fvs.f` - Main simulation loop
+* `/path/to/ForestVegetationSimulator-main/base/algkey.f` - Keyword processing
 
 ### Growth Calculation Files
-* `/home/aweiskittel/ForestVegetationSimulator-main/base/algcmp.f` - Compression (dead tree removal)
-* `/home/aweiskittel/ForestVegetationSimulator-main/base/algevl.f` - Evaluation/growth cycling
-* `/home/aweiskittel/ForestVegetationSimulator-main/base/algexp.f` - Expansion
-* `/home/aweiskittel/ForestVegetationSimulator-main/base/algspp.f` - Species processing
+* `/path/to/ForestVegetationSimulator-main/base/algcmp.f` - Compression (dead tree removal)
+* `/path/to/ForestVegetationSimulator-main/base/algevl.f` - Evaluation/growth cycling
+* `/path/to/ForestVegetationSimulator-main/base/algexp.f` - Expansion
+* `/path/to/ForestVegetationSimulator-main/base/algspp.f` - Species processing
 
 ### Common Block Definitions
-* `/home/aweiskittel/ForestVegetationSimulator-main/common/PRGPRM.F77` - Global parameters (MAXTRE, MAXSP, MAXCYC)
-* `/home/aweiskittel/ForestVegetationSimulator-main/common/ARRAYS.F77` - Tree attribute arrays
-* `/home/aweiskittel/ForestVegetationSimulator-main/common/CONTRL.F77` - Control state and parameters
-* `/home/aweiskittel/ForestVegetationSimulator-main/common/PLOT.F77` - Stand-level data
-* `/home/aweiskittel/ForestVegetationSimulator-main/common/OUTCOM.F77` - Output control
-* `/home/aweiskittel/ForestVegetationSimulator-main/common/PDEN.F77` - Population density
+* `/path/to/ForestVegetationSimulator-main/common/PRGPRM.F77` - Global parameters (MAXTRE, MAXSP, MAXCYC)
+* `/path/to/ForestVegetationSimulator-main/common/ARRAYS.F77` - Tree attribute arrays
+* `/path/to/ForestVegetationSimulator-main/common/CONTRL.F77` - Control state and parameters
+* `/path/to/ForestVegetationSimulator-main/common/PLOT.F77` - Stand-level data
+* `/path/to/ForestVegetationSimulator-main/common/OUTCOM.F77` - Output control
+* `/path/to/ForestVegetationSimulator-main/common/PDEN.F77` - Population density
 
 ### Variant Structure (Example: Alaska - ak/)
-* `/home/aweiskittel/ForestVegetationSimulator-main/ak/blkdat.f` - Initialization and coefficients
-* `/home/aweiskittel/ForestVegetationSimulator-main/ak/dgf.f` - Diameter growth (variant-specific)
-* `/home/aweiskittel/ForestVegetationSimulator-main/ak/morts.f` - Mortality (variant-specific)
-* `/home/aweiskittel/ForestVegetationSimulator-main/ak/htdbh.f` - Height-DBH relationship
-* `/home/aweiskittel/ForestVegetationSimulator-main/ak/crown.f` - Crown dimensions
-* `/home/aweiskittel/ForestVegetationSimulator-main/ak/grinit.f` - Growth initialization
+* `/path/to/ForestVegetationSimulator-main/ak/blkdat.f` - Initialization and coefficients
+* `/path/to/ForestVegetationSimulator-main/ak/dgf.f` - Diameter growth (variant-specific)
+* `/path/to/ForestVegetationSimulator-main/ak/morts.f` - Mortality (variant-specific)
+* `/path/to/ForestVegetationSimulator-main/ak/htdbh.f` - Height-DBH relationship
+* `/path/to/ForestVegetationSimulator-main/ak/crown.f` - Crown dimensions
+* `/path/to/ForestVegetationSimulator-main/ak/grinit.f` - Growth initialization
 
 ### Build System Files
-* `/home/aweiskittel/ForestVegetationSimulator-main/bin/CMakeLists.txt` - Master CMake configuration
-* `/home/aweiskittel/ForestVegetationSimulator-main/bin/FVS*_sourceList.txt` - Per-variant source lists
+* `/path/to/ForestVegetationSimulator-main/bin/CMakeLists.txt` - Master CMake configuration
+* `/path/to/ForestVegetationSimulator-main/bin/FVS*_sourceList.txt` - Per-variant source lists
 
 ### Testing Files
-* `/home/aweiskittel/ForestVegetationSimulator-main/tests/test.py` - File comparison test script
-* `/home/aweiskittel/ForestVegetationSimulator-main/tests/makefile` - Test orchestration
-* `/home/aweiskittel/ForestVegetationSimulator-main/tests/FVS*/ ` - Variant-specific test directories
+* `/path/to/ForestVegetationSimulator-main/tests/test.py` - File comparison test script
+* `/path/to/ForestVegetationSimulator-main/tests/makefile` - Test orchestration
+* `/path/to/ForestVegetationSimulator-main/tests/FVS*/ ` - Variant-specific test directories
 
 ### Documentation
-* `/home/aweiskittel/ForestVegetationSimulator-main/README.md` - Project overview
-* `/home/aweiskittel/ForestVegetationSimulator-main/Contributing.md` - Contribution guidelines
-* `/home/aweiskittel/ForestVegetationSimulator-main/.github/CODEOWNERS` - Maintainer list
+* `/path/to/ForestVegetationSimulator-main/README.md` - Project overview
+* `/path/to/ForestVegetationSimulator-main/Contributing.md` - Contribution guidelines
+* `/path/to/ForestVegetationSimulator-main/.github/CODEOWNERS` - Maintainer list
 
 ---
 

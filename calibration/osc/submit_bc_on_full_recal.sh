@@ -5,8 +5,8 @@
 #SBATCH --mem=64G
 #SBATCH --cpus-per-task=4
 #SBATCH --array=0-1
-#SBATCH --output=/users/PUOM0008/crsfaaron/fvs-modern/calibration/logs/full_recal_%a_%j.out
-#SBATCH --error=/users/PUOM0008/crsfaaron/fvs-modern/calibration/logs/full_recal_%a_%j.err
+#SBATCH --output=${FVS_PROJECT_ROOT:-/path/to/fvs-modern}/calibration/logs/full_recal_%a_%j.out
+#SBATCH --error=${FVS_PROJECT_ROOT:-/path/to/fvs-modern}/calibration/logs/full_recal_%a_%j.err
 
 # ============================================================================
 # Full recalibration of ALL components for BC and ON
@@ -29,8 +29,8 @@ echo "=== Full component recalibration for variant: $VARIANT ==="
 echo "Start: $(date)"
 echo "Node: $(hostname)"
 
-export FVS_PROJECT_ROOT="/users/PUOM0008/crsfaaron/fvs-modern"
-export FVS_FIA_DATA_DIR="/users/PUOM0008/crsfaaron/FIA"
+export FVS_PROJECT_ROOT="${FVS_PROJECT_ROOT:-/path/to/fvs-modern}"
+export FVS_FIA_DATA_DIR="/path/to/user/path"
 export FVS_MAX_OBS="15000"
 
 module purge

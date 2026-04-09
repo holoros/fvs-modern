@@ -7,8 +7,8 @@ echo "Timestamp: $(date)"
 echo ""
 
 # Count completed vs running
-COMPLETED=$(ssh crsfaaron@cardinal.osc.edu "ls /users/PUOM0008/crsfaaron/fvs-modern/calibration/output/variants/*/diameter_growth_summary.csv 2>/dev/null | wc -l" 2>/dev/null)
-MAP_DONE=$(ssh crsfaaron@cardinal.osc.edu "ls /users/PUOM0008/crsfaaron/fvs-modern/calibration/output/variants/*/diameter_growth_map.csv 2>/dev/null | wc -l" 2>/dev/null)
+COMPLETED=$(ssh crsfaaron@cardinal.osc.edu "ls ${FVS_PROJECT_ROOT:-/path/to/fvs-modern}/calibration/output/variants/*/diameter_growth_summary.csv 2>/dev/null | wc -l" 2>/dev/null)
+MAP_DONE=$(ssh crsfaaron@cardinal.osc.edu "ls ${FVS_PROJECT_ROOT:-/path/to/fvs-modern}/calibration/output/variants/*/diameter_growth_map.csv 2>/dev/null | wc -l" 2>/dev/null)
 
 echo "MAP optimization: ${MAP_DONE}/25 variants"
 echo "HMC sampling:     ${COMPLETED}/25 variants"
@@ -26,4 +26,4 @@ echo ""
 
 # List newly completed variants
 echo "=== Recently Completed HMC ==="
-ssh crsfaaron@cardinal.osc.edu "ls -lt /users/PUOM0008/crsfaaron/fvs-modern/calibration/output/variants/*/diameter_growth_summary.csv 2>/dev/null | head -10"
+ssh crsfaaron@cardinal.osc.edu "ls -lt ${FVS_PROJECT_ROOT:-/path/to/fvs-modern}/calibration/output/variants/*/diameter_growth_summary.csv 2>/dev/null | head -10"

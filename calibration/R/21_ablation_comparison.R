@@ -21,12 +21,14 @@ cat("==========================================\n\n")
 # --- Configuration labels ---------------------------------------------------
 configs <- data.table(
   tag   = c("ablation_full", "ablation_no_csi", "ablation_no_sdi",
-            "ablation_no_ig", "ablation_baseline"),
+            "ablation_no_ig", "ablation_baseline",
+            "ablation_baskerville", "ablation_dgmult"),
   label = c("Full Model", "No ClimateSI", "No SDIMAX",
-            "No Ingrowth", "Baseline (Bayes only)"),
-  csi   = c("ON", "OFF", "ON", "ON", "OFF"),
-  sdi   = c("ON", "ON", "OFF", "ON", "OFF"),
-  ig    = c("ON", "ON", "ON", "OFF", "OFF")
+            "No Ingrowth", "Baseline (Bayes only)",
+            "Baskerville Mean DG", "Full + DG Multiplier"),
+  csi   = c("ON", "OFF", "ON", "ON", "OFF", "ON", "ON"),
+  sdi   = c("ON", "ON", "OFF", "ON", "OFF", "ON", "ON"),
+  ig    = c("ON", "ON", "ON", "OFF", "OFF", "ON", "ON")
 )
 
 # --- Metrics of interest -----------------------------------------------------

@@ -38,7 +38,7 @@ library(scales)
 
 # --- Paths -------------------------------------------------------------------
 base_dir  <- file.path(Sys.getenv("FVS_PROJECT_ROOT",
-                       "/home/aweiskittel/Documents/Claude/fvs-modern"),
+                       normalizePath(file.path(dirname(sys.frame(1)$ofile), "../.."), mustWork = FALSE)),
                        "calibration")
 output_dir <- file.path(base_dir, "output", "comparisons")
 assess_dir <- file.path(base_dir, "output", "assessment")

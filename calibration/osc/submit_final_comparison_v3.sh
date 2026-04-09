@@ -6,13 +6,13 @@
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=48G
-#SBATCH --output=/users/PUOM0008/crsfaaron/fvs-modern/calibration/logs/final_v3_%j.out
-#SBATCH --error=/users/PUOM0008/crsfaaron/fvs-modern/calibration/logs/final_v3_%j.err
+#SBATCH --output=${FVS_PROJECT_ROOT:-/path/to/fvs-modern}/calibration/logs/final_v3_%j.out
+#SBATCH --error=${FVS_PROJECT_ROOT:-/path/to/fvs-modern}/calibration/logs/final_v3_%j.err
 
 # Final comparison v3: CR/UT restored to 5K, comprehensive assessment with BAL_s fix
 
-export FVS_PROJECT_ROOT="/users/PUOM0008/crsfaaron/fvs-modern"
-export FVS_FIA_DATA_DIR="/users/PUOM0008/crsfaaron/FIA"
+export FVS_PROJECT_ROOT="${FVS_PROJECT_ROOT:-/path/to/fvs-modern}"
+export FVS_FIA_DATA_DIR="/path/to/user/path"
 
 module purge
 module load gcc/12.3.0

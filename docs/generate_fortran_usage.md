@@ -7,7 +7,7 @@
 ## Quick Start
 
 ```bash
-cd /home/aweiskittel/Documents/Claude/fvs-modern
+cd /path/to/Documents/Claude/fvs-modern
 python3 modernization/generate_fortran.py
 ```
 

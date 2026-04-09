@@ -10,8 +10,30 @@
 # Configuration
 # ============================================================================
 
-project_root <- Sys.getenv("FVS_PROJECT_ROOT",
-                             "/home/aweiskittel/Documents/Claude/fvs-modern")
+# Auto-detect project root: environment variable > script location > working dir
+project_root <- Sys.getenv("FVS_PROJECT_ROOT", unset = "")
+if (project_root == "") {
+  # Try to infer from script location (works in Rscript and source())
+  script_dir <- tryCatch(
+    normalizePath(file.path(dirname(sys.frame(1)$ofile), "../.."), mustWork = TRUE),
+    error = function(e) ""
+  )
+  if (nzchar(script_dir) && file.exists(file.path(script_dir, "calibration/R/00_setup.R"))) {
+    project_root <- script_dir
+  } else {
+    # Fallback: walk up from working directory looking for calibration/R/
+    wd <- getwd()
+    for (depth in 0:3) {
+      candidate <- normalizePath(file.path(wd, paste(rep("..", depth), collapse = "/")),
+                                 mustWork = FALSE)
+      if (file.exists(file.path(candidate, "calibration/R/00_setup.R"))) {
+        project_root <- candidate
+        break
+      }
+    }
+  }
+  if (project_root == "") stop("Cannot detect FVS_PROJECT_ROOT. Set the environment variable.")
+}
 calibration_dir <- file.path(project_root, "calibration")
 
 # Create necessary directories

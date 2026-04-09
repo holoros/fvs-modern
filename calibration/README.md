@@ -102,7 +102,7 @@ calibration/
 Run the setup script to install all required packages and configure the environment:
 
 ```bash
-cd /home/aweiskittel/Documents/Claude/fvs-modern
+cd /path/to/Documents/Claude/fvs-modern
 Rscript calibration/R/00_setup.R
 ```
 
@@ -131,7 +131,7 @@ Core packages:
 Submit as a SLURM array job (one job per FVS variant):
 
 ```bash
-cd /home/aweiskittel/Documents/Claude/fvs-modern
+cd /path/to/Documents/Claude/fvs-modern
 sbatch calibration/slurm/submit_calibration.sh
 ```
 

@@ -6,16 +6,16 @@
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=32G
 #SBATCH --time=24:00:00
-#SBATCH --output=/users/PUOM0008/crsfaaron/fvs-modern/calibration/logs/htinc_refit_%j.out
-#SBATCH --error=/users/PUOM0008/crsfaaron/fvs-modern/calibration/logs/htinc_refit_%j.err
+#SBATCH --output=${FVS_PROJECT_ROOT:-/path/to/fvs-modern}/calibration/logs/htinc_refit_%j.out
+#SBATCH --error=${FVS_PROJECT_ROOT:-/path/to/fvs-modern}/calibration/logs/htinc_refit_%j.err
 
 module purge
 module load gcc/12.3.0 R/4.4.0
 
-export FVS_PROJECT_ROOT="/users/PUOM0008/crsfaaron/fvs-modern"
+export FVS_PROJECT_ROOT="${FVS_PROJECT_ROOT:-/path/to/fvs-modern}"
 export FVS_MAX_OBS=30000
 
-cd /users/PUOM0008/crsfaaron/fvs-modern/calibration
+cd ${FVS_PROJECT_ROOT:-/path/to/fvs-modern}/calibration
 
 # Refit height increment model for ALL 25 FVS variants
 # Variants with HG config priors get informative priors; others use weakly informative

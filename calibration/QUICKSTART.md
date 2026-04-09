@@ -5,7 +5,7 @@
 ### 1. One-time Setup
 
 ```bash
-cd /home/aweiskittel/Documents/Claude/fvs-modern
+cd /path/to/Documents/Claude/fvs-modern
 Rscript calibration/R/00_setup.R
 ```
 

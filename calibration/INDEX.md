@@ -2,7 +2,7 @@
 
 ## Project Summary
 
-**Location**: `/home/aweiskittel/Documents/Claude/fvs-modern/calibration/`
+**Location**: `/path/to/Documents/Claude/fvs-modern/calibration/`
 
 **Purpose**: Bayesian calibration of FVS variant parameters using FIA data with MCMC sampling on OSC HPC
 

@@ -3,10 +3,10 @@
 ## Quick Links
 
 ### Main Script
-- **Extract Parameters**: `/home/aweiskittel/Documents/Claude/fvs-modern/modernization/extract_parameters.py` (467 lines)
+- **Extract Parameters**: `/path/to/Documents/Claude/fvs-modern/modernization/extract_parameters.py` (467 lines)
 
 ### Generated JSON Output
-- **Config Directory**: `/home/aweiskittel/Documents/Claude/fvs-modern/config/` (25 JSON files, 900 KB)
+- **Config Directory**: `/path/to/Documents/Claude/fvs-modern/config/` (25 JSON files, 900 KB)
 - **Individual Variants**: `{ne,ak,sn,ca,ws,...}.json`
 
 ### Documentation
@@ -84,7 +84,7 @@ Each variant JSON file contains:
 
 ### Run Full Extraction
 ```bash
-cd /home/aweiskittel/Documents/Claude/fvs-modern/modernization
+cd /path/to/Documents/Claude/fvs-modern/modernization
 python3 extract_parameters.py
 ```
 
@@ -95,7 +95,7 @@ import json
 
 # Extract a single variant
 extractor = FortranDataExtractor(
-    '/home/aweiskittel/Documents/Claude/fvs-modern/src-converted/ne',
+    '/path/to/Documents/Claude/fvs-modern/src-converted/ne',
     'ne'
 )
 result = extractor.process_variant()
@@ -109,7 +109,7 @@ print(f"Categories: {list(result['categories'].keys())}")
 ```python
 import json
 
-with open('/home/aweiskittel/Documents/Claude/fvs-modern/config/ne.json') as f:
+with open('/path/to/Documents/Claude/fvs-modern/config/ne.json') as f:
     ne = json.load(f)
     
 print(f"{ne['variant_name']}: {ne['maxsp']} species")
@@ -192,11 +192,11 @@ The JSON output can be used for:
 
 | Purpose | Path |
 |---------|------|
-| Extraction | `/home/aweiskittel/Documents/Claude/fvs-modern/modernization/extract_parameters.py` |
-| NE Output | `/home/aweiskittel/Documents/Claude/fvs-modern/config/ne.json` |
-| All Outputs | `/home/aweiskittel/Documents/Claude/fvs-modern/config/` |
-| Usage Guide | `/home/aweiskittel/Documents/Claude/fvs-modern/README_EXTRACTION.md` |
-| Technical | `/home/aweiskittel/Documents/Claude/fvs-modern/EXTRACTION_SUMMARY.md` |
+| Extraction | `/path/to/Documents/Claude/fvs-modern/modernization/extract_parameters.py` |
+| NE Output | `/path/to/Documents/Claude/fvs-modern/config/ne.json` |
+| All Outputs | `/path/to/Documents/Claude/fvs-modern/config/` |
+| Usage Guide | `/path/to/Documents/Claude/fvs-modern/README_EXTRACTION.md` |
+| Technical | `/path/to/Documents/Claude/fvs-modern/EXTRACTION_SUMMARY.md` |
 
 ## Contact & Support
 

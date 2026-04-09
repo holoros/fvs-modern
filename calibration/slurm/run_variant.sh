@@ -32,7 +32,7 @@ VARIANT="$1"
 # Configuration
 # ============================================================================
 
-PROJECT_ROOT="/home/aweiskittel/Documents/Claude/fvs-modern"
+PROJECT_ROOT="${FVS_PROJECT_ROOT:-/path/to/fvs-modern}"
 CALIBRATION_DIR="${PROJECT_ROOT}/calibration"
 SCRIPTS_DIR="${CALIBRATION_DIR}/R"
 LOG_DIR="${CALIBRATION_DIR}/logs"

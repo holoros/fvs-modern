@@ -20,9 +20,9 @@ module load gnu/12.3.0
 VARIANTS=(cr ut)
 VARIANT=${VARIANTS[$SLURM_ARRAY_TASK_ID]}
 
-export FVS_PROJECT_ROOT=/users/PUOM0008/crsfaaron/fvs-modern
+export FVS_PROJECT_ROOT=${FVS_PROJECT_ROOT:-/path/to/fvs-modern}
 export FVS_MAX_OBS=5000
-export CMDSTAN=/users/PUOM0008/crsfaaron/.cmdstan/cmdstan-2.34.1
+export CMDSTAN=/path/to/user/path
 
 cd $FVS_PROJECT_ROOT
 

@@ -25,7 +25,7 @@
 # Configuration
 # ============================================================================
 
-PROJECT_ROOT="/home/aweiskittel/Documents/Claude/fvs-modern"
+PROJECT_ROOT="${FVS_PROJECT_ROOT:-/path/to/fvs-modern}"
 CALIBRATION_DIR="${PROJECT_ROOT}/calibration"
 
 # Array of all FVS variants (must match number of --array tasks)

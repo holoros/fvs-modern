@@ -6,8 +6,8 @@
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=48G
-#SBATCH --output=/users/PUOM0008/crsfaaron/fvs-modern/calibration/slurm/final_fixes_%j.out
-#SBATCH --error=/users/PUOM0008/crsfaaron/fvs-modern/calibration/slurm/final_fixes_%j.err
+#SBATCH --output=${FVS_PROJECT_ROOT:-/path/to/fvs-modern}/calibration/slurm/final_fixes_%j.out
+#SBATCH --error=${FVS_PROJECT_ROOT:-/path/to/fvs-modern}/calibration/slurm/final_fixes_%j.err
 
 # Final fixes batch: CR/UT DG revert, mortality v2 AUC, and assessment rerun
 
@@ -17,8 +17,8 @@ module load gdal/3.7.3
 module load proj/9.2.1
 module load geos/3.12.0
 
-export FVS_PROJECT_ROOT=/users/PUOM0008/crsfaaron/fvs-modern
-export CMDSTAN=/users/PUOM0008/crsfaaron/.cmdstan/cmdstan-2.34.1
+export FVS_PROJECT_ROOT=${FVS_PROJECT_ROOT:-/path/to/fvs-modern}
+export CMDSTAN=/path/to/user/path
 
 cd $FVS_PROJECT_ROOT
 

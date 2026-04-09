@@ -25,10 +25,10 @@ except ImportError:
     sys.exit(1)
 
 # Paths
-FIA_PLOT_CSV = "/users/PUOM0008/crsfaaron/FIA/ENTIRE_PLOT.csv"
-CLIMATE_SI_TIF = "/users/PUOM0008/crsfaaron/SiteIndex/ClimateNA_SI_m.tif"
-SDIMAX_TIF = "/users/PUOM0008/crsfaaron/SiteIndex/TREEMAP_SDImax.tif"
-OUTPUT_CSV = "/users/PUOM0008/crsfaaron/fvs-modern/calibration/data/plot_raster_lookup.csv"
+FIA_PLOT_CSV = "os.environ.get("FVS_REMOTE", "/path/to/FIA/ENTIRE_PLOT.csv"
+CLIMATE_SI_TIF = "os.environ.get("FVS_REMOTE", "/path/to/SiteIndex/ClimateNA_SI_m.tif"
+SDIMAX_TIF = "os.environ.get("FVS_REMOTE", "/path/to/SiteIndex/TREEMAP_SDImax.tif"
+OUTPUT_CSV = "os.environ.get("FVS_REMOTE", "/path/to/fvs-modern/calibration/data/plot_raster_lookup.csv"
 
 M_TO_FT = 3.28084
 SDI_MET_TO_IMP = 0.3945  # (1/2.47105) * (25/25.4)^1.605

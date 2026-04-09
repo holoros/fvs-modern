@@ -6,14 +6,17 @@
 # This file is sourced by all SLURM scripts.
 # =============================================================================
 
-# --- Your OSC allocation (run `sacctmgr show assoc user=$USER`) ---
-export OSC_ACCOUNT="PUOM0008"
+# --- Your HPC allocation (run `sacctmgr show assoc user=$USER`) ---
+# Override with FVS_HPC_ACCOUNT environment variable
+export OSC_ACCOUNT="${FVS_HPC_ACCOUNT:-PUOM0008}"
 
 # --- Where you cloned fvs-modern ---
-export PROJECT_ROOT="/users/PUOM0008/crsfaaron/fvs-modern"
+# Override with FVS_PROJECT_ROOT or FVS_HPC_REMOTE_ROOT environment variable
+export PROJECT_ROOT="${FVS_HPC_REMOTE_ROOT:-${FVS_PROJECT_ROOT:-/users/${OSC_ACCOUNT}/${USER}/fvs-modern}}"
 
 # --- Where the FIA data lives (state subdirectory CSVs) ---
-export FIA_DATA_DIR="/users/PUOM0008/crsfaaron/FIA"
+# Override with FVS_FIA_DATA_DIR environment variable
+export FIA_DATA_DIR="${FVS_FIA_DATA_DIR:-/users/${OSC_ACCOUNT}/${USER}/FIA}"
 
 # --- Cluster selection ---
 export OSC_CLUSTER="cardinal"             # cardinal, pitzer, or owens

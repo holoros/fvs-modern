@@ -152,7 +152,7 @@ The script searches for NSBE data in this order:
 
 1. `$NSBE_ROOT` environment variable (if set)
 2. `{FVS_PROJECT_ROOT}/data/NSBE` (local project copy)
-3. `/home/aweiskittel/Documents/MAINE/DATA/Analysis/NSBE/VTECO_modified` (source)
+3. `/path/to/Documents/MAINE/DATA/Analysis/NSBE/VTECO_modified` (source)
 
 ### Environment Variables
 
@@ -265,7 +265,7 @@ missing <- coverage[has_volib == FALSE]
 
 Original coefficients maintained at:
 ```
-/home/aweiskittel/Documents/MAINE/DATA/Analysis/NSBE/VTECO_modified
+/path/to/Documents/MAINE/DATA/Analysis/NSBE/VTECO_modified
 ```
 
 ### Update Procedure

@@ -29,7 +29,52 @@ CALIBRATION_DELIVERY.txt
 CALIBRATION_README.txt
 COPY_TO_CARDINAL.txt
 
+# User-specific environment config (keep .example version)
+config/fvs-modern.env
+.env
+.env.*
+!.env.example
+
+# HPC deployment scripts with embedded credentials
+deploy_cardinal*.py
+check_cardinal_job.py
+deploy_ablation_v3.sh
+slurm-*.out
+calibration/logs/
+
+# SSH keys
+*.pem
+id_*
+cardinal_key*
+
+# Compiled Fortran modules and Stan binaries
+*.mod
+*.o
+calibration/stan/wykoff_dg_v2
+calibration/output/variants/*/wykoff_dg*
+
+# Backup files from calibration iterations
+*_bak
+*.v1_bak
+*.5k_bak
+*.advi_bak
+*.02b_bak
+*.me_bak
+
+# LaTeX build artifacts
+*.aux
+*.nav
+*.snm
+*.toc
+*.synctex.gz
+
+# Python cache
+__pycache__/
+*.pyc
+
 # OS artifacts
 .DS_Store
 *.swp
 *~
+.Rhistory
+.RData

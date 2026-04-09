@@ -5,8 +5,8 @@
 #SBATCH --mem=48G
 #SBATCH --cpus-per-task=4
 #SBATCH --array=0-6
-#SBATCH --output=/users/PUOM0008/crsfaaron/fvs-modern/calibration/logs/dg_mbias_%a_%j.out
-#SBATCH --error=/users/PUOM0008/crsfaaron/fvs-modern/calibration/logs/dg_mbias_%a_%j.err
+#SBATCH --output=${FVS_PROJECT_ROOT:-/path/to/fvs-modern}/calibration/logs/dg_mbias_%a_%j.out
+#SBATCH --error=${FVS_PROJECT_ROOT:-/path/to/fvs-modern}/calibration/logs/dg_mbias_%a_%j.err
 
 # ============================================================================
 # DG refit for MARGINAL variants with notable prediction bias (10K obs)
@@ -32,8 +32,8 @@ echo "=== DG refit (marginal bias, 10K obs) for variant: $VARIANT ==="
 echo "Start: $(date)"
 echo "Node: $(hostname)"
 
-export FVS_PROJECT_ROOT="/users/PUOM0008/crsfaaron/fvs-modern"
-export FVS_FIA_DATA_DIR="/users/PUOM0008/crsfaaron/FIA"
+export FVS_PROJECT_ROOT="${FVS_PROJECT_ROOT:-/path/to/fvs-modern}"
+export FVS_FIA_DATA_DIR="/path/to/user/path"
 export FVS_MAX_OBS="10000"
 
 module purge

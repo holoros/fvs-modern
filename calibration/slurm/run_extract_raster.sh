@@ -16,7 +16,7 @@ echo "Node: $(hostname)"
 echo "Start: $(date)"
 echo "=========================================="
 
-cd /users/PUOM0008/crsfaaron/fvs-modern
+cd ${FVS_PROJECT_ROOT:-/path/to/fvs-modern}
 
 python3 -u calibration/R/extract_raster_values.py
 

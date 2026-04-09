@@ -237,7 +237,7 @@ ln(DDS) = b0[species] + b1[species]*ln(DBH) + b2[species]*DBH^2 +
 ## File Locations and Paths
 
 ```
-/home/aweiskittel/Documents/Claude/fvs-modern/calibration/
+/path/to/Documents/Claude/fvs-modern/calibration/
 
 Core Scripts:
 ├── R/00_setup.R
@@ -279,7 +279,7 @@ Output Configuration:
 ### Quick Start
 
 ```bash
-cd /home/aweiskittel/Documents/Claude/fvs-modern
+cd /path/to/Documents/Claude/fvs-modern
 
 # One-time setup (10 minutes)
 Rscript calibration/R/00_setup.R

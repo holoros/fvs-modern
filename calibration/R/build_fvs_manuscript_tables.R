@@ -15,8 +15,8 @@ library(flextable)
 library(officer)
 
 # --- Paths -------------------------------------------------------------------
-results_dir <- "/home/aweiskittel/Documents/Claude/fvs-modern/calibration/output/comparisons"
-out_dir     <- "/home/aweiskittel/Documents/Claude/fvs-modern/calibration/output/tables"
+results_dir <- file.path(project_root, "calibration/output/comparisons")
+out_dir     <- file.path(project_root, "calibration/output/tables")
 dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
 
 # --- Data --------------------------------------------------------------------

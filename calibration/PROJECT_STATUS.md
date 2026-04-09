@@ -27,7 +27,7 @@
 ## Key Paths (Cardinal)
 
 ```
-/users/PUOM0008/crsfaaron/fvs-modern/calibration/
+/path/to/fvs-modern/calibration/
   R/                  # All R scripts (00-12)
   stan/               # Stan model files
   osc/                # SLURM submission scripts
@@ -74,5 +74,5 @@
 ## Monitoring Command
 
 ```bash
-ssh crsfaaron@cardinal.osc.edu "echo 'HMC:' && ls /users/PUOM0008/crsfaaron/fvs-modern/calibration/output/variants/*/diameter_growth_summary.csv 2>/dev/null | wc -l && echo '/25' && sacct -j 7589313 --format=JobID%15,State%12,Elapsed%10 | grep -c RUNNING && echo 'tasks still running'"
+ssh crsfaaron@cardinal.osc.edu "echo 'HMC:' && ls /path/to/fvs-modern/calibration/output/variants/*/diameter_growth_summary.csv 2>/dev/null | wc -l && echo '/25' && sacct -j 7589313 --format=JobID%15,State%12,Elapsed%10 | grep -c RUNNING && echo 'tasks still running'"
 ```

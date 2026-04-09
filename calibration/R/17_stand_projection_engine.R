@@ -20,7 +20,7 @@ library(patchwork)
 
 # --- Paths -------------------------------------------------------------------
 base_dir   <- file.path(Sys.getenv("FVS_PROJECT_ROOT",
-                        "/home/aweiskittel/Documents/Claude/fvs-modern"),
+                        normalizePath(file.path(dirname(sys.frame(1)$ofile), "../.."), mustWork = FALSE)),
                         "calibration")
 output_base <- file.path(base_dir, "output", "variants")
 data_base   <- file.path(base_dir, "data", "processed")

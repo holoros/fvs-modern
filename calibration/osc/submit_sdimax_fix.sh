@@ -4,8 +4,8 @@
 #SBATCH --time=00:30:00
 #SBATCH --mem=16G
 #SBATCH --cpus-per-task=1
-#SBATCH --output=/users/PUOM0008/crsfaaron/fvs-modern/calibration/logs/sdi_fix2_%j.out
-#SBATCH --error=/users/PUOM0008/crsfaaron/fvs-modern/calibration/logs/sdi_fix2_%j.err
+#SBATCH --output=${FVS_PROJECT_ROOT:-/path/to/fvs-modern}/calibration/logs/sdi_fix2_%j.out
+#SBATCH --error=${FVS_PROJECT_ROOT:-/path/to/fvs-modern}/calibration/logs/sdi_fix2_%j.err
 
 # ============================================================================
 # SDIMAX post-hoc fixes:
@@ -18,7 +18,7 @@ echo "=== SDIMAX Post-Hoc Fixes ==="
 echo "Start: $(date)"
 echo "Node: $(hostname)"
 
-export FVS_PROJECT_ROOT="/users/PUOM0008/crsfaaron/fvs-modern"
+export FVS_PROJECT_ROOT="${FVS_PROJECT_ROOT:-/path/to/fvs-modern}"
 
 module purge
 module load gcc/12.3.0

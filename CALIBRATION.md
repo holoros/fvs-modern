@@ -218,7 +218,7 @@ bash fvs-modern/calibration/osc/submit_cardinal.sh  # submits 25 SLURM jobs
 ```
 
 Configuration is in `calibration/osc/config_osc.sh`. FIA data should be
-at `/users/PUOM0008/crsfaaron/FIA` with state subdirectory structure.
+at `$FVS_FIA_DATA` (or `/path/to/FIA`) with state subdirectory structure.
 
 ### On a Local Workstation (single variant)
 

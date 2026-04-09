@@ -36,7 +36,7 @@ CC BY 4.0
 
 ## File to Upload
 PNAS_RD_Disturbance_repository.zip (~12 MB)
-Located at: /home/aweiskittel/Documents/MAINE/DOCS/MINE/Manuscripts/2026/Distrubance/PNAS_RD_Disturbance_repository.zip
+Located at: /path/to/Documents/MAINE/DOCS/MINE/Manuscripts/2026/Distrubance/PNAS_RD_Disturbance_repository.zip
 
 ## Instructions
 1. Select type: Dataset

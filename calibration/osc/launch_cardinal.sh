@@ -10,7 +10,7 @@
 #
 # Usage:
 #   ssh crsfaaron@cardinal.osc.edu
-#   cd /users/PUOM0008/crsfaaron/fvs-modern
+#   cd ${FVS_PROJECT_ROOT:-/path/to/fvs-modern}
 #   bash calibration/osc/launch_cardinal.sh
 #
 # Or to skip setup (if already done):

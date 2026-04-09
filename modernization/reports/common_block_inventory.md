@@ -1,5 +1,5 @@
 # FVS COMMON Block Inventory
-Generated from: /home/aweiskittel/ForestVegetationSimulator-main
+Generated from: /path/to/ForestVegetationSimulator-main
 
 ## Summary
 * Total unique COMMON block files referenced: 104

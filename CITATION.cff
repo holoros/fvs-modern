@@ -1,0 +1,46 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "fvs-modern: Modernized Forest Vegetation Simulator with Bayesian Calibration"
+type: software
+authors:
+  - family-names: Weiskittel
+    given-names: Aaron R.
+    orcid: "https://orcid.org/0000-0002-9249-1686"
+    affiliation: "Center for Research on Sustainable Forests, University of Maine"
+repository-code: "https://github.com/holoros/fvs-modern"
+license: "Unlicense"
+version: "2026.04"
+date-released: "2026-04-09"
+keywords:
+  - forest growth and yield
+  - Forest Vegetation Simulator
+  - FVS
+  - Bayesian calibration
+  - Forest Inventory and Analysis
+  - FIA
+  - diameter growth
+  - mortality
+  - stand projection
+abstract: >-
+  A modernized fork of the USDA Forest Vegetation Simulator (FVS) featuring
+  Fortran 77 to Fortran 90 source conversion, Bayesian hierarchical calibration
+  of growth and mortality equations using FIA remeasurement data, uncertainty
+  quantification through posterior predictive intervals, and National Standard
+  Base Equations (NSBE/VTECO) for volume and biomass estimation. Covers all 25
+  FVS geographic variants across the United States and Canada.
+references:
+  - type: article
+    authors:
+      - family-names: Weiskittel
+        given-names: Aaron R.
+      - family-names: Hann
+        given-names: David W.
+      - family-names: Kershaw
+        given-names: John A.
+      - family-names: Vanclay
+        given-names: Jerome K.
+    title: "Forest Growth and Yield Modeling"
+    year: 2011
+    publisher:
+      name: "John Wiley & Sons"
+    isbn: "978-0-470-66500-8"

@@ -21,10 +21,10 @@ module load gcc/12.3.0
 module load R/4.4.0
 
 # R library paths (includes brms, data.table, ggplot2, cmdstanr)
-export R_LIBS_USER="/users/PUOM0008/crsfaaron/R/cardinal/4.4.0:/users/PUOM0008/crsfaaron/R/x86_64-pc-linux-gnu-library/4.4:/users/PUOM0008/crsfaaron/R/libs"
+export R_LIBS_USER="/path/to/user/path"
 
 # Project root
-export FVS_PROJECT_ROOT="/users/PUOM0008/crsfaaron/fvs-modern"
+export FVS_PROJECT_ROOT="${FVS_PROJECT_ROOT:-/path/to/fvs-modern}"
 
 cd "$FVS_PROJECT_ROOT"
 

@@ -6,15 +6,15 @@
 #SBATCH --cpus-per-task=14
 #SBATCH --mem=64G
 #SBATCH --time=24:00:00
-#SBATCH --output=/users/PUOM0008/crsfaaron/fvs-modern/calibration/logs/ablation_v2_%j.out
-#SBATCH --error=/users/PUOM0008/crsfaaron/fvs-modern/calibration/logs/ablation_v2_%j.err
+#SBATCH --output=${FVS_PROJECT_ROOT:-/path/to/fvs-modern}/calibration/logs/ablation_v2_%j.out
+#SBATCH --error=${FVS_PROJECT_ROOT:-/path/to/fvs-modern}/calibration/logs/ablation_v2_%j.err
 
 module purge
 module load gcc/12.3.0 R/4.4.0 gdal/3.7.3 proj/9.2.1 geos/3.12.0
 
-export FVS_PROJECT_ROOT="/users/PUOM0008/crsfaaron/fvs-modern"
+export FVS_PROJECT_ROOT="${FVS_PROJECT_ROOT:-/path/to/fvs-modern}"
 
-cd /users/PUOM0008/crsfaaron/fvs-modern/calibration
+cd ${FVS_PROJECT_ROOT:-/path/to/fvs-modern}/calibration
 
 # This is the CLEAN RERUN with the v2 engine (calibrated HTG + H-D imputation)
 # Ensure the v2 engine is in place

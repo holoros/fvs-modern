@@ -42,7 +42,7 @@ project_root <- Sys.getenv("FVS_PROJECT_ROOT")
 if (project_root == "") project_root <- getwd()
 
 fia_root     <- Sys.getenv("FVS_FIA_DATA_DIR")
-if (fia_root == "") fia_root <- "/users/PUOM0008/crsfaaron/FIA"
+if (fia_root == "") fia_root <- Sys.getenv("FVS_FIA_DATA_DIR", unset = file.path(dirname(project_root), "FIA"))
 
 output_root  <- file.path(project_root, "calibration/output/comparisons")
 fig_dir      <- file.path(output_root, "manuscript_figures")

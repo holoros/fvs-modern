@@ -116,7 +116,7 @@ The volume equations script (calibration/R/20_volume_equations.R) automatically:
 1. Searches for NSBE data in this order:
    - `$NSBE_ROOT` environment variable
    - `{FVS_PROJECT_ROOT}/data/NSBE`
-   - `/home/aweiskittel/Documents/MAINE/DATA/Analysis/NSBE/VTECO_modified` (fallback)
+   - `/path/to/Documents/MAINE/DATA/Analysis/NSBE/VTECO_modified` (fallback)
 
 2. Loads all coefficient files on first call to `compute_nsbe_volume()` or `compute_stand_volume_nsbe()`
 
@@ -202,7 +202,7 @@ No performance concerns for typical HPC workflows.
 
 If NSBE coefficients are updated (e.g., new species or ecodivisions):
 
-1. Update source in: `/home/aweiskittel/Documents/MAINE/DATA/Analysis/NSBE/VTECO_modified`
+1. Update source in: `/path/to/Documents/MAINE/DATA/Analysis/NSBE/VTECO_modified`
 2. Copy to: `/sessions/kind-upbeat-darwin/mnt/Claude/fvs-modern/data/NSBE/`
 3. Document change in this file
 4. Push to Cardinal using method above (SCP, rsync, or git)

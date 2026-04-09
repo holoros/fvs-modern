@@ -49,7 +49,7 @@ For each variant, the script attempts to parse the following files:
 
 ## Output Structure
 
-Each variant generates a JSON file at `/home/aweiskittel/Documents/Claude/fvs-modern/config/{variant_code}.json` with the following schema:
+Each variant generates a JSON file at `/path/to/Documents/Claude/fvs-modern/config/{variant_code}.json` with the following schema:
 
 ```json
 {
@@ -126,9 +126,9 @@ The script has been validated against the source files and correctly:
 
 ## Files Generated
 
-- **Config Directory**: `/home/aweiskittel/Documents/Claude/fvs-modern/config/`
+- **Config Directory**: `/path/to/Documents/Claude/fvs-modern/config/`
 - **Individual Files**: 25 JSON files (one per variant)
-- **Script Location**: `/home/aweiskittel/Documents/Claude/fvs-modern/modernization/extract_parameters.py`
+- **Script Location**: `/path/to/Documents/Claude/fvs-modern/modernization/extract_parameters.py`
 - **Total Output Size**: ~900 KB
 
 ## Usage
@@ -136,7 +136,7 @@ The script has been validated against the source files and correctly:
 To re-run extraction:
 
 ```bash
-cd /home/aweiskittel/Documents/Claude/fvs-modern/modernization
+cd /path/to/Documents/Claude/fvs-modern/modernization
 python3 extract_parameters.py
 ```
 

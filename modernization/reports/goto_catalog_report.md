@@ -1,5 +1,5 @@
 # FVS Fortran GOTO Catalog Report
-Generated from: /home/aweiskittel/ForestVegetationSimulator-main
+Generated from: /path/to/ForestVegetationSimulator-main
 
 ## Summary Statistics
 **Total GOTO Patterns Found: 13418**

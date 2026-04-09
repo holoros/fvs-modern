@@ -22,7 +22,7 @@ library(tidyverse)
 # --- Paths and Environment ---------------------------------------------------
 
 base_dir <- file.path(Sys.getenv("FVS_PROJECT_ROOT",
-                                 "/home/aweiskittel/Documents/Claude/fvs-modern"),
+                                 normalizePath(file.path(dirname(sys.frame(1)$ofile), "../.."), mustWork = FALSE)),
                       "calibration")
 output_base <- file.path(base_dir, "output", "comparisons")
 dir.create(output_base, showWarnings = FALSE, recursive = TRUE)
@@ -34,7 +34,7 @@ dir.create(output_base, showWarnings = FALSE, recursive = TRUE)
 nsbe_candidates <- c(
   Sys.getenv("NSBE_ROOT", ""),
   file.path(dirname(base_dir), "data", "NSBE"),
-  "/home/aweiskittel/Documents/MAINE/DATA/Analysis/NSBE/VTECO_modified"
+  Sys.getenv("FVS_NSBE_DATA_DIR", unset = file.path(project_root, "data/NSBE/Coefs/combined"))
 )
 
 nsbe_root <- NA_character_

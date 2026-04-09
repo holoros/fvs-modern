@@ -49,7 +49,7 @@ if (length(args) > 0) {
 # =============================================================================
 
 project_root <- Sys.getenv("FVS_PROJECT_ROOT",
-                             "/home/aweiskittel/Documents/Claude/fvs-modern")
+                             normalizePath(file.path(dirname(sys.frame(1)$ofile), "../.."), mustWork = FALSE))
 calibration_dir <- file.path(project_root, "calibration")
 processed_data_dir <- file.path(calibration_dir, "data", "processed")
 output_dir <- file.path(calibration_dir, "output", "variants", variant)

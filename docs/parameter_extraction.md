@@ -17,7 +17,7 @@ This project extracts species-specific parameter DATA statements from FVS (Fores
 
 All JSON configuration files are located in:
 ```
-/home/aweiskittel/Documents/Claude/fvs-modern/config/
+/path/to/Documents/Claude/fvs-modern/config/
 ```
 
 Individual variant files:
@@ -27,7 +27,7 @@ Individual variant files:
 
 ## Script Details
 
-**Location**: `/home/aweiskittel/Documents/Claude/fvs-modern/modernization/extract_parameters.py`
+**Location**: `/path/to/Documents/Claude/fvs-modern/modernization/extract_parameters.py`
 
 **Language**: Python 3
 
@@ -77,7 +77,7 @@ import json
 
 # Process a single variant
 extractor = FortranDataExtractor(
-    '/home/aweiskittel/Documents/Claude/fvs-modern/src-converted/ne',
+    '/path/to/Documents/Claude/fvs-modern/src-converted/ne',
     'ne'
 )
 result = extractor.process_variant()
@@ -97,7 +97,7 @@ print(f"Bark ratios for species 1-5: {bark_ratios[:5]}")
 import json
 
 # Load a variant's data
-with open('/home/aweiskittel/Documents/Claude/fvs-modern/config/ne.json') as f:
+with open('/path/to/Documents/Claude/fvs-modern/config/ne.json') as f:
     ne_data = json.load(f)
 
 # Access specific arrays
@@ -116,7 +116,7 @@ for category, arrays in ne_data['categories'].items():
 
 ```bash
 # Re-run extraction for all variants
-cd /home/aweiskittel/Documents/Claude/fvs-modern/modernization
+cd /path/to/Documents/Claude/fvs-modern/modernization
 python3 extract_parameters.py
 
 # Extract specific variant
@@ -125,7 +125,7 @@ from extract_parameters import FortranDataExtractor
 import json
 
 extractor = FortranDataExtractor(
-    '/home/aweiskittel/Documents/Claude/fvs-modern/src-converted/sn',
+    '/path/to/Documents/Claude/fvs-modern/src-converted/sn',
     'sn'
 )
 result = extractor.process_variant()
@@ -254,14 +254,14 @@ This structured JSON output enables:
 
 To update the extraction:
 
-1. Ensure source files are in `/home/aweiskittel/Documents/Claude/fvs-modern/src-converted/`
+1. Ensure source files are in `/path/to/Documents/Claude/fvs-modern/src-converted/`
 2. Run the extraction script from the modernization directory
 3. New JSON files will overwrite previous versions in config/
 4. All changes are logged to stdout
 
 ## References
 
-- FVS Variant Directories: `/home/aweiskittel/Documents/Claude/fvs-modern/src-converted/`
-- Script Source: `/home/aweiskittel/Documents/Claude/fvs-modern/modernization/extract_parameters.py`
-- Configuration Output: `/home/aweiskittel/Documents/Claude/fvs-modern/config/`
+- FVS Variant Directories: `/path/to/Documents/Claude/fvs-modern/src-converted/`
+- Script Source: `/path/to/Documents/Claude/fvs-modern/modernization/extract_parameters.py`
+- Configuration Output: `/path/to/Documents/Claude/fvs-modern/config/`
 

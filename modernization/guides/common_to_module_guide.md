@@ -779,7 +779,7 @@ END MODULE variant_factory
 
 **Current structure:**
 ```
-/home/aweiskittel/ForestVegetationSimulator-main/
+/path/to/ForestVegetationSimulator-main/
   ├── acd/common/ESPARM.F77, PRGPRM.F77
   ├── ak/common/ESPARM.F77, PRGPRM.F77
   ├── bm/common/ESPARM.F77, PRGPRM.F77

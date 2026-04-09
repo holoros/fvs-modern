@@ -5,8 +5,8 @@
 #SBATCH --mem=128G
 #SBATCH --cpus-per-task=8
 #SBATCH --array=0-17
-#SBATCH --output=/users/PUOM0008/crsfaaron/fvs-modern/calibration/logs/dg_%a_%j.out
-#SBATCH --error=/users/PUOM0008/crsfaaron/fvs-modern/calibration/logs/dg_%a_%j.err
+#SBATCH --output=${FVS_PROJECT_ROOT:-/path/to/fvs-modern}/calibration/logs/dg_%a_%j.out
+#SBATCH --error=${FVS_PROJECT_ROOT:-/path/to/fvs-modern}/calibration/logs/dg_%a_%j.err
 
 # Remaining 18 variants that need DG calibration
 VARIANTS=(ak bc bm ci cr ec em ie ne oc op pn sn so tt ut wc ws)
@@ -21,8 +21,8 @@ echo "=== DG calibration for variant: $VARIANT ==="
 echo "Start: $(date)"
 echo "Node: $(hostname)"
 
-export FVS_PROJECT_ROOT="/users/PUOM0008/crsfaaron/fvs-modern"
-export FVS_FIA_DATA_DIR="/users/PUOM0008/crsfaaron/FIA"
+export FVS_PROJECT_ROOT="${FVS_PROJECT_ROOT:-/path/to/fvs-modern}"
+export FVS_FIA_DATA_DIR="/path/to/user/path"
 export FVS_MAX_OBS="30000"
 
 # Load modules (matching config_osc.sh)

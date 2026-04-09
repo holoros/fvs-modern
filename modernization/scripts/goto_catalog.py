@@ -356,7 +356,7 @@ class GOTOCatalog:
 
 
 def main():
-    root_dir = '/home/aweiskittel/ForestVegetationSimulator-main'
+    root_dir = 'os.environ.get("HOME", "/home") + "/path/to/ForestVegetationSimulator-main'
     catalog = GOTOCatalog(root_dir)
 
     print("Scanning FVS codebase for GOTO patterns...")

@@ -27,7 +27,7 @@ if (length(args) > 0) {
 }
 
 project_root <- Sys.getenv("FVS_PROJECT_ROOT",
-                           "/home/aweiskittel/Documents/Claude/fvs-modern")
+                           normalizePath(file.path(dirname(sys.frame(1)$ofile), "../.."), mustWork = FALSE))
 output_dir <- file.path(project_root, "calibration", "output", "variants", variant)
 
 logger::log_info("Extracting posteriors for variant: {variant}")

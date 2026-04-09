@@ -5,8 +5,8 @@
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=64G
 #SBATCH --time=2:00:00
-#SBATCH --output=/users/PUOM0008/crsfaaron/fvs-modern/calibration/logs/comparison_%j.out
-#SBATCH --error=/users/PUOM0008/crsfaaron/fvs-modern/calibration/logs/comparison_%j.err
+#SBATCH --output=${FVS_PROJECT_ROOT:-/path/to/fvs-modern}/calibration/logs/comparison_%j.out
+#SBATCH --error=${FVS_PROJECT_ROOT:-/path/to/fvs-modern}/calibration/logs/comparison_%j.err
 
 echo "==========================================="
 echo "FVS Comprehensive Comparison"
@@ -22,9 +22,9 @@ module load proj/9.2.1
 module load geos/3.12.0
 
 export R_LIBS_USER="$(Rscript -e 'cat(.libPaths()[1])' 2>/dev/null)"
-export FVS_PROJECT_ROOT="/users/PUOM0008/crsfaaron/fvs-modern"
+export FVS_PROJECT_ROOT="${FVS_PROJECT_ROOT:-/path/to/fvs-modern}"
 
-cd /users/PUOM0008/crsfaaron/fvs-modern
+cd ${FVS_PROJECT_ROOT:-/path/to/fvs-modern}
 
 Rscript calibration/R/10_comprehensive_comparison.R --all 2>&1
 

@@ -6,16 +6,16 @@
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=16G
 #SBATCH --time=04:00:00
-#SBATCH --output=/users/PUOM0008/crsfaaron/fvs-modern/calibration/logs/htinc_refit_fix_%j.out
-#SBATCH --error=/users/PUOM0008/crsfaaron/fvs-modern/calibration/logs/htinc_refit_fix_%j.err
+#SBATCH --output=${FVS_PROJECT_ROOT:-/path/to/fvs-modern}/calibration/logs/htinc_refit_fix_%j.out
+#SBATCH --error=${FVS_PROJECT_ROOT:-/path/to/fvs-modern}/calibration/logs/htinc_refit_fix_%j.err
 
 module purge
 module load gcc/12.3.0 R/4.4.0
 
-export FVS_PROJECT_ROOT="/users/PUOM0008/crsfaaron/fvs-modern"
+export FVS_PROJECT_ROOT="${FVS_PROJECT_ROOT:-/path/to/fvs-modern}"
 export FVS_MAX_OBS=30000
 
-cd /users/PUOM0008/crsfaaron/fvs-modern/calibration
+cd ${FVS_PROJECT_ROOT:-/path/to/fvs-modern}/calibration
 
 # Refit ONLY the variants that failed due to uncaught MAP error (CI, IE)
 VARIANTS="ci ie"
