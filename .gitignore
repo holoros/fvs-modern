@@ -72,6 +72,56 @@ calibration/output/variants/*/wykoff_dg*
 __pycache__/
 *.pyc
 
+# Database and binary test files
+*.db
+*.mdb
+*.exe
+*.xlsx
+*.sqlite
+
+# SLURM job output files (specific jobs)
+calibration/slurm/*_[0-9]*.err
+calibration/slurm/*_[0-9]*.out
+calibration/slurm/inspect_models*.sh
+calibration/slurm/inspect_script.R
+
+# Stan model source (tracked separately or rebuilt)
+calibration/stan/*.stan
+
+# Output data files (too large / regenerated from pipeline)
+calibration/output/dg_all_variants_summary*.csv
+calibration/output/sdimax_fixes_log.csv
+calibration/output/tables/
+calibration/output/variants/*/height_increment*
+calibration/output/comparisons/manuscript_figures/*.pdf
+calibration/output/comparisons/manuscript_tables/*.csv
+calibration/variant_coefficients_template.xlsx
+
+# Ephemeral status notes
+calibration_status_update.md
+fvs-suggestions.txt
+
+# LaTeX slide build artifacts
+calibration/slides/*.log
+calibration/slides/*.out
+calibration/slides/*.tex
+calibration/slides/*.pdf
+
+# Modernization deliverable docs (generated summaries)
+modernization/DELIVERABLES_SUMMARY.txt
+modernization/INDEX.txt
+modernization/SUMMARY.md
+modernization/TESTING_DELIVERABLES.md
+
+# NVEL volume test executables
+src-converted/volume/NVEL/*/publish/
+
+# Validation reports (generated)
+docs/validation/
+docs/*_verification_report.md
+docs/fvs_*.docx
+docs/fvs_update_lifecycle.md
+
 # OS artifacts
 .DS_Store
 *.swp
