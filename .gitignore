@@ -95,6 +95,7 @@ calibration/output/tables/
 calibration/output/variants/*/height_increment*
 calibration/output/comparisons/manuscript_figures/*.pdf
 calibration/output/comparisons/manuscript_tables/*.csv
+!calibration/output/comparisons/manuscript_tables/fia_benchmark_results_ablation_*.csv
 calibration/variant_coefficients_template.xlsx
 
 # Ephemeral status notes
