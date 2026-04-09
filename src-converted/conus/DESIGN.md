@@ -26,114 +26,208 @@ A single CONUS variant with:
 - **Continuous climate covariates** replacing discrete variant assignments
 - **Dynamic species handling** via FIA SPCD codes
 
-## 3. Equation Specifications
+## 3. Design Principles
 
-### 3.1 Diameter Growth
+FVS-CONUS departs from the traditional FVS equation architecture in three
+fundamental ways:
 
-Current: Wykoff (1982) ln(DDS) model, 13 covariates, species random intercept.
+1. **Annualized increment**: All growth equations predict annual increment
+   rather than period increment. Variable FIA remeasurement intervals (5 to
+   10+ years) are standardized to annual rates during fitting. This eliminates
+   the measurement-period bias embedded in current Wykoff-style DDS models and
+   simplifies projection logic (no period-length adjustment needed).
 
-Proposed CONUS extension:
+2. **Biologically consistent equation forms**: The Wykoff (1982) ln(DDS)
+   model is replaced with ORGANON-family equation forms (Zumrawi & Hann 1993
+   and descendants). These forms enforce proper biological behavior at
+   diameter extremes, produce well-behaved predictions for small and large
+   trees, and avoid the log-scale back-transformation issues that plagued
+   the 22-variant calibration (Baskerville correction inflating predictions
+   24 to 86%).
+
+3. **Bayesian hierarchical fitting**: All equations are fit nationally with
+   species and ecoregion random effects, enabling smooth partial pooling
+   across geography. No hard boundaries.
+
+## 4. Equation Specifications
+
+### 4.1 Diameter Growth
+
+Current (22-variant): Wykoff (1982) ln(DDS) model, 13 covariates, species
+random intercept, variable-interval.
+
+Proposed CONUS form (ORGANON-family, annualized):
 
 ```
-ln(DDS) = beta_0 + b_0[species] + b_0[ecoregion] +
-          beta_1 * ln(DBH) + beta_2 * DBH^2 +
-          beta_3 * BAL + beta_4 * ln(BA + 1) +
-          beta_5 * CR + beta_6 * SI_climate +
-          beta_7 * SLOPE + beta_8 * cos(ASPECT) * SLOPE +
-          beta_9 * sin(ASPECT) * SLOPE +
-          beta_10 * ELEV +
-          beta_11 * MAT + beta_12 * CMD +
-          epsilon
+delta_dbh = exp( beta_0 + b_0[species] + b_0[ecoregion]
+               + beta_1 * log((dbh + 1)^beta_3 / (cr * ht + 1)^beta_4)
+               + beta_2 * (bal^beta_5 / (dbh + 2.7))
+               + beta_6 * elev
+               + beta_7 * EMT )
 ```
 
-Key changes from current per-variant fits:
-- Add `b_0[ecoregion]` random intercept (Bailey's ecoregion divisions)
-- Replace variant-specific SI with `SI_climate` (ClimateNA site index)
-- Add explicit climate variables: MAT (mean annual temperature),
-  CMD (climatic moisture deficit)
-- Fit to ALL FIA remeasurement data simultaneously (~4.5M trees)
+where `delta_dbh` is annual diameter increment (inches/year), `dbh` is
+diameter at breast height, `cr` is crown ratio (0 to 1), `ht` is total
+height, `bal` is basal area in larger trees, `elev` is elevation, and
+`EMT` is extreme minimum temperature.
 
-### 3.2 Mortality
+This form (Zumrawi & Hann 1993, as adapted by Johnson/Marshall) has been
+fitted to 84 species across CONUS with >= 5,000 FIA observations each
+(3.48M total records). Key advantages over Wykoff:
 
-Current: Logistic survival with species RE + competition.
+- Exponentiated form guarantees non-negative diameter growth
+- Crown ratio and height enter as a ratio, capturing the competitive
+  status of the live crown relative to tree size
+- BAL effect is scaled by diameter, reflecting size-dependent competition
+- No log-scale back-transformation needed (avoids Baskerville bias)
+- Proper asymptotic behavior: growth approaches zero for very large trees
+  and trees with minimal crown
 
-Proposed CONUS extension:
+Candidate extensions under evaluation:
+
+- Additional climate covariates (MAT, CMD, growing degree days) beyond
+  the current elevation + EMT approach
+- ClimateSI as a continuous productivity proxy replacing site index
+- Soil available water capacity from gSSURGO
+- Slope/aspect interaction terms
+- Nonlinear random slope terms on key parameters (e.g., BAL effect
+  varying by ecoregion within species)
+
+Fitting approach:
+
+- Annualize observed FIA increment by dividing by remeasurement interval
+- Bayesian hierarchical fit via brms/CmdStan
+- Crossed random effects (species + ecoregion) on intercept
+- Species-level random slopes on competition terms where data support it
+- ADVI initialization followed by targeted HMC on stratified subsample
+
+### 4.2 Mortality
+
+Current (22-variant): Logistic survival with species RE + competition,
+threshold-based SDIMAX mortality modifier (onset at RDI=0.55 to 0.70).
+
+Proposed CONUS form (annualized survival probability):
 
 ```
-logit(P_survive) = gamma_0 + g_0[species] + g_0[ecoregion] +
-                   gamma_1 * DBH + gamma_2 * DBH^2 +
-                   gamma_3 * BAL/BA + gamma_4 * RDI +
-                   gamma_5 * CR +
-                   gamma_6 * drought_index
+logit(P_survive_annual) = gamma_0 + g_0[species] + g_0[ecoregion]
+                        + gamma_1 * DBH + gamma_2 * DBH^2
+                        + gamma_3 * (BAL / BA)
+                        + gamma_4 * RDI
+                        + gamma_5 * CR
+                        + gamma_6 * drought_index
 ```
 
-Key changes:
-- Add `g_0[ecoregion]` random intercept
-- Replace threshold-based SDIMAX mortality with continuous RDI effect
-- Add drought index as explicit climate driver
-- Eliminate the binary onset/slope SDIMAX modifier
+Key changes from current architecture:
 
-### 3.3 Height-Diameter
+- Annualized: Predict annual survival probability, compound for projection
+  period. Eliminates the variable-interval mortality adjustment.
+- Continuous RDI effect replaces threshold-based SDIMAX modifier. The
+  hard onset/slope modifier (v2: onset=0.55, slope=2.0; v3: onset=0.70,
+  slope=0.5) is eliminated in favor of a smooth density-dependent term.
+- Explicit drought index as climate driver for background mortality.
+- Ecoregion random effects capture regional mortality patterns (e.g.,
+  higher density-independent mortality in fire-prone western ecoregions).
 
-Current: Chapman-Richards with species RE.
+### 4.3 Height-Diameter
 
-Proposed CONUS extension:
+Current (22-variant): Chapman-Richards with species RE.
+
+Proposed CONUS form:
 
 ```
 HT = 4.5 + a[species, ecoregion] * (1 - exp(-b * DBH))^c
 ```
 
 Key changes:
-- Crossed random effects: species x ecoregion on asymptote parameter `a`
-- Enables smooth interpolation between regions for the same species
 
-### 3.4 Crown Ratio Change
+- Crossed random effects on asymptote parameter `a` (species + ecoregion)
+- Enables smooth interpolation for the same species across regions
+- Consider ORGANON-style height-diameter form as alternative:
+  `HT = 4.5 + exp(a + b / (DBH + c))` with species/ecoregion RE on `a`
 
-Current: Linear with species RE (weakest component).
+### 4.4 Height Growth
 
-Proposed: Explore nonlinear alternatives or empirical lookup tables. Crown
-ratio modeling is the weakest link in FVS and may warrant a fundamentally
-different approach in CONUS (e.g., allometric crown models from lidar data).
+Current (22-variant): Derived from height-diameter relationship at
+projected diameter.
 
-### 3.5 Volume and Biomass
+Proposed CONUS: Direct annual height increment model, fitted independently
+of the height-diameter relationship. This decouples height growth from
+diameter growth, allowing trees to adjust their height-diameter allometry
+over time in response to competition and environment.
+
+### 4.5 Crown Ratio
+
+Current (22-variant): Linear model with species RE (R-squared 0.13 to 0.38,
+weakest component).
+
+Proposed CONUS: Fundamental redesign. Three candidate approaches:
+
+a) **Allometric crown models** from airborne lidar (GEDI, 3DEP). Crown
+   dimensions predicted from tree size, stand density, and canopy structure.
+b) **Nonlinear asymptotic form**: CR as a function of relative stand
+   density, canopy position (BAL/BA), and species shade tolerance class.
+c) **Crown competition factor (CCF)** as an alternative state variable,
+   sidestepping direct crown ratio prediction.
+
+The linear model used in the 22-variant architecture is inadequate. This
+component is the highest priority for research in the CONUS development.
+
+### 4.6 Volume and Biomass
 
 Use NSBE/VTECO equations (Westfall et al. 2024) which are already national
 in scope and species x ecodivision specific. These are production ready
-and implemented in `calibration/R/20_volume_equations.R`.
+and implemented in `calibration/R/20_volume_equations.R`. No changes
+needed for CONUS.
 
-### 3.6 Site Productivity
+### 4.7 Site Productivity
 
-Replace variant-specific site index curves with ClimateNA-derived site
-productivity index. This provides continuous, climate-sensitive site
-quality estimates across CONUS.
+Replace variant-specific site index curves with a continuous productivity
+surface. Candidates:
 
-### 3.7 Ingrowth / Regeneration
+- ClimateSI (ClimateNA-derived site index, 99.6% FIA coverage in current
+  pipeline)
+- Climate and environmental variables directly (elevation, EMT, growing
+  degree days, precipitation) as in the ORGANON DG form
+- Embedded variables (PCA of climate + environment)
+- Asymptotic above-ground biomass from remote sensing
+- Hybrid: ClimateSI + explicit climate terms
+
+Greg Johnson's preliminary CONUS fitting shows that elevation + EMT capture
+much of the productivity gradient but do not fully resolve spatial
+autocorrelation in residuals. Additional climate or remote sensing
+covariates are likely needed.
+
+### 4.8 Ingrowth / Regeneration
 
 The most challenging component. Options:
 
-a) **Empirical FIA-based**: Use observed ingrowth rates by species group
-   and stand condition. Simple, defensible, but not climate-sensitive.
+a) **Empirical FIA-based**: Observed ingrowth rates by species group
+   and stand condition. Simple, defensible, not climate-sensitive.
+   Currently implemented in the 22-variant architecture.
 
-b) **Establishment model**: Climate niche models (species distribution
-   models) combined with gap/disturbance detection.
+b) **Establishment model**: Climate niche models (SDMs) combined with
+   gap/disturbance detection.
 
 c) **Hybrid**: Empirical rates modulated by climate suitability scores.
 
 Recommendation: Start with (a) for initial release, develop (c) as a
-research priority.
+research priority. Ingrowth will be annualized to match the growth/mortality
+framework.
 
-## 4. Data Requirements
+## 5. Data Requirements
 
 | Dataset | Source | Current Status |
 |---------|--------|----------------|
-| FIA remeasurement | USDA FIA DataMart | Available (9 GB processed) |
+| FIA remeasurement | USDA FIA DataMart | 10.87M records pre-screening |
+| FIA screened (>=5K obs/species) | Derived | 3.48M records, 84 species |
 | ClimateNA normals | ClimateNA v7.40 | Available (raster) |
 | Emmerson SDIMAX | Emmerson et al. | Available (raster) |
 | Bailey's ecoregions | USFS | Available (shapefile) |
 | Soil data | gSSURGO | Not yet integrated |
-| Elevation/topo | SRTM 30m | Derived from FIA ELEV |
+| Elevation/topo | SRTM 30m / FIA ELEV | Available |
+| GEDI/3DEP lidar | NASA / USGS | For crown ratio redesign (not yet integrated) |
 
-## 5. Implementation Strategy
+## 6. Implementation Strategy
 
 ### Phase 1: R Prototype
 Refit all equations nationally in R using brms/CmdStan. Validate against
@@ -154,7 +248,7 @@ Build FVS-CONUS as a standalone executable alongside the existing
 variant executables. Users select FVS-CONUS when they want nationally
 consistent projections without variant boundary effects.
 
-## 6. Validation Framework
+## 7. Validation Framework
 
 1. **Within-sample**: Cross-validated RMSE, R-squared, bias by ecoregion
 2. **Out-of-sample**: Hold-out 20% of FIA plots for independent validation
@@ -166,7 +260,7 @@ consistent projections without variant boundary effects.
 5. **Species range edges**: Test performance for species at range margins
    where variant-specific fits have limited data
 
-## 7. Risks and Mitigations
+## 8. Risks and Mitigations
 
 | Risk | Impact | Mitigation |
 |------|--------|------------|
