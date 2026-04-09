@@ -59,7 +59,7 @@ random intercept, variable-interval.
 Proposed CONUS form (ORGANON-family, annualized):
 
 ```
-delta_dbh = exp( beta_0 + b_0[species] + b_0[ecoregion]
+delta_dbh = exp( beta_0 + b_0[species] + b_0[ecoregion(species)]
                + beta_1 * log((dbh + 1)^beta_3 / (cr * ht + 1)^beta_4)
                + beta_2 * (bal^beta_5 / (dbh + 2.7))
                + beta_6 * elev
@@ -93,12 +93,27 @@ Candidate extensions under evaluation:
 - Nonlinear random slope terms on key parameters (e.g., BAL effect
   varying by ecoregion within species)
 
-Fitting approach:
+Annualization approach:
 
-- Annualize observed FIA increment by dividing by remeasurement interval
-- Bayesian hierarchical fit via brms/CmdStan
-- Crossed random effects (species + ecoregion) on intercept
-- Species-level random slopes on competition terms where data support it
+- Use ALL available remeasurement combinations from FIA (5-year, 10-year,
+  and any other intervals that arise from the survey design)
+- Annualize observed increment: delta_dbh_annual = delta_dbh_obs / interval
+- Fitting on the full range of intervals improves coverage of growth
+  conditions and avoids discarding valuable long-interval data
+- Projection uses the annualized rate directly; no period-length adjustment
+
+Random effects structure (nested, not crossed):
+
+- Species as the top-level grouping (84+ species)
+- Ecoregion nested within species: `b_0[ecoregion(species)]`
+- This is more biologically defensible than crossed effects because
+  a species' shade tolerance and growth strategy constrain how much
+  ecoregion can shift its growth rate. A shade-tolerant species won't
+  suddenly become fast-growing just because it's in a productive ecoregion.
+- Reduces parameter count substantially (no species x ecoregion cross
+  for every combination), improving computational tractability
+- Species-level random slopes on competition terms (BAL effect) where
+  data support it
 - ADVI initialization followed by targeted HMC on stratified subsample
 
 ### 4.2 Mortality
@@ -109,7 +124,7 @@ threshold-based SDIMAX mortality modifier (onset at RDI=0.55 to 0.70).
 Proposed CONUS form (annualized survival probability):
 
 ```
-logit(P_survive_annual) = gamma_0 + g_0[species] + g_0[ecoregion]
+logit(P_survive_annual) = gamma_0 + g_0[species] + g_0[ecoregion(species)]
                         + gamma_1 * DBH + gamma_2 * DBH^2
                         + gamma_3 * (BAL / BA)
                         + gamma_4 * RDI
@@ -135,12 +150,14 @@ Current (22-variant): Chapman-Richards with species RE.
 Proposed CONUS form:
 
 ```
-HT = 4.5 + a[species, ecoregion] * (1 - exp(-b * DBH))^c
+HT = 4.5 + a[species] * a_eco[ecoregion(species)] * (1 - exp(-b * DBH))^c
 ```
 
 Key changes:
 
-- Crossed random effects on asymptote parameter `a` (species + ecoregion)
+- Nested random effects: species-level asymptote `a[species]` with
+  ecoregion modifier `a_eco[ecoregion(species)]` nested within species
+- Consistent with the nested RE philosophy across all CONUS equations
 - Enables smooth interpolation for the same species across regions
 - Consider ORGANON-style height-diameter form as alternative:
   `HT = 4.5 + exp(a + b / (DBH + c))` with species/ecoregion RE on `a`
