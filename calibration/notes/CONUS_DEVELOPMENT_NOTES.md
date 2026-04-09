@@ -221,3 +221,27 @@ productivity and drought response predictions. Consider:
    bounds (Reineke SDI limits, expected mortality patterns)
 5. **Species range edges**: Test performance at range margins where
    variant-specific fits have limited data
+
+## Long-Term Model Comparisons (Bakuzis Matrix Update)
+
+The v3 ablation benchmarks only cover short-term projections (~6.5 year
+average FIA remeasurement). ClimateSI and SDImax contribute <0.1% at this
+horizon. However, their effects compound nonlinearly over longer periods:
+
+- SDImax onset at RDI=0.70 only triggers in dense stands and only after
+  enough growth pushes RDI above the threshold. Over 50 to 100 years,
+  cumulative mortality differences will be substantial.
+- ClimateSI drives site-dependent growth rate differences that compound:
+  a 5% annual DG difference becomes a 40%+ BA difference at 50 years.
+
+Plan: Run 100-year projections for a representative set of initial
+conditions (Bakuzis matrix: species x site x density combinations) under
+both default FVS and calibrated (v3) to produce updated long-term
+comparison figures.
+
+Implementation:
+- Use script 17 (stand_projection_engine.R) for long-term projections
+- 4 species groups x 3 site classes x 3 initial densities = 36 scenarios
+- Project at 5-year steps for 100 years under both default and calibrated
+- Compare: BA trajectories, mortality onset timing, volume at rotation age
+- Produce Bakuzis-style matrix figure (patchwork of trajectory plots)
