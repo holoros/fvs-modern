@@ -1,16 +1,38 @@
-PUBLIC DOMAIN NOTICE
+PUBLIC DOMAIN NOTICE (Original FVS Source)
 
-This software is a derivative work of the Forest Vegetation Simulator (FVS),
-originally developed by the USDA Forest Service. As a work of the United States
-Government, the original FVS source code is not subject to copyright protection
-in the United States under 17 U.S.C. § 105.
-
-Modifications in this fork (fvs-modern) are contributed to the public domain
-under the same terms.
-
-This software is provided "as is" without warranty of any kind, express or
-implied, including but not limited to the warranties of merchantability,
-fitness for a particular purpose, and noninfringement.
+The Forest Vegetation Simulator (FVS) was originally developed by the USDA
+Forest Service. As a work of the United States Government, the original FVS
+source code is not subject to copyright protection in the United States under
+17 U.S.C. § 105. The Fortran source in this repository is derived from that
+public domain codebase.
 
 For the original USDA FVS source, see:
 https://github.com/USDAForestService/ForestVegetationSimulator
+
+
+MIT License (Calibration Code, Analysis Scripts, and New Equations)
+
+Copyright (c) 2024-2026 Aaron R. Weiskittel, Greg Johnson, David Marshall
+
+All original contributions in this repository (including but not limited to
+the Bayesian calibration pipeline in calibration/, analysis and visualization
+scripts, CONUS variant equations, and associated documentation) are licensed
+under the MIT License:
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
