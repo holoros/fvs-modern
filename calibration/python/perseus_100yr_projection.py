@@ -104,8 +104,8 @@ CALBSTAT
 TREELIST           0
 ECHOSUM
 
-TIMEINT            0        10
-NUMCYCLE          10
+TIMEINT            0{cycle_length:>10d}
+NUMCYCLE{num_cycles:>10d}
 
 {calibration_keywords}
 
@@ -150,10 +150,32 @@ class NSBECalculator:
         self.volib_coefs = pd.read_csv(coef_dir / "volib_coefs.csv")
         self.volob_coefs = pd.read_csv(coef_dir / "volob_coefs.csv")
 
+        # Normalize SPCD column to clean string representation.
+        # Pandas may read numeric SPCDs as floats (e.g., "12.0"); normalize
+        # these to integer strings ("12") while preserving non-numeric entries
+        # like "1_111" (division-level coefficients).
+        for tbl in [self.total_biomass_coefs, self.volib_coefs, self.volob_coefs]:
+            if "SPCD" in tbl.columns:
+                tbl["SPCD"] = tbl["SPCD"].apply(self._normalize_spcd)
+
         logger.info(
             f"NSBE loaded: {len(self.ref_species)} species, "
             f"{len(self.total_biomass_coefs)} biomass coefs"
         )
+
+    @staticmethod
+    def _normalize_spcd(val) -> str:
+        """Normalize SPCD to consistent string form.
+
+        Converts '12.0' -> '12', keeps '1_111' as-is.
+        """
+        if pd.isna(val):
+            return ""
+        s = str(val).strip()
+        try:
+            return str(int(float(s)))
+        except (ValueError, OverflowError):
+            return s
 
     def _get_coefficient(self, coef_table: pd.DataFrame, spcd: int,
                          jenkins_grp: int | None = None) -> dict | None:
@@ -161,16 +183,27 @@ class NSBECalculator:
 
         Note: SPCD column is stored as strings in the CSV (due to entries
         like '1_111'), so we compare against str(spcd) for SPCD matching.
+        We also check the float-string form (e.g., '12.0') because pandas
+        may read numeric SPCD values as floats before casting to str.
         """
         # Try SPCD match (column is string dtype, so compare as string)
         spcd_str = str(spcd)
-        row = coef_table.loc[coef_table["SPCD"] == spcd_str]
+        spcd_float_str = str(float(spcd))  # e.g., "12.0" for robustness
+        row = coef_table.loc[
+            (coef_table["SPCD"] == spcd_str) |
+            (coef_table["SPCD"] == spcd_float_str)
+        ]
         if len(row) > 0:
             return row.iloc[0].to_dict()
 
         # Fallback to Jenkins group
         if jenkins_grp is not None:
-            row = coef_table.loc[coef_table["JENKINS_SPGRPCD"] == jenkins_grp]
+            # Match Jenkins group as either int or float representation
+            jgrp_mask = (
+                (coef_table["JENKINS_SPGRPCD"] == jenkins_grp) |
+                (coef_table["JENKINS_SPGRPCD"] == float(jenkins_grp))
+            )
+            row = coef_table.loc[jgrp_mask]
             if len(row) > 0:
                 return row.iloc[0].to_dict()
 
@@ -178,7 +211,12 @@ class NSBECalculator:
 
     @staticmethod
     def _apply_equation(dbh: float, ht: float, form: int, coefs: dict) -> float:
-        """Apply NSBE equation. DBH in inches, HT in feet. Returns kg."""
+        """Apply NSBE equation. DBH in inches, HT in feet. Returns POUNDS.
+
+        NSBE equations were calibrated against FIA DRYBIO_AG which is stored
+        in pounds in the FIA database.  The caller (compute_tree_biomass_kg)
+        handles the lbs-to-kg conversion.
+        """
         try:
             form = int(form)
         except (ValueError, TypeError):
@@ -550,6 +588,8 @@ def run_fvs_projection(stand_init_df: pd.DataFrame,
             stand_id=stand_id,
             db_path=db_path,
             calibration_keywords=cal_keywords if cal_keywords else "** DEFAULT PARAMETERS",
+            num_cycles=num_cycles,
+            cycle_length=cycle_length,
         )
 
         keyfile_path = os.path.join(tmpdir, f"{variant}_{stand_id}.key")
@@ -825,8 +865,8 @@ def process_plot(
                 fvs_result = run_fvs_projection(
                     stand_df, tree_df, stand_id, variant,
                     config_version=config,
-                    num_cycles=10,
-                    cycle_length=10,
+                    num_cycles=20,
+                    cycle_length=5,
                 )
 
                 if fvs_result["exit_code"] not in (0, 10):

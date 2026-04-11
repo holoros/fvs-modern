@@ -26,7 +26,7 @@ def load_dll(dll_path: str | os.PathLike) -> ct.CDLL:
     """
     dll_path_str = os.fspath(dll_path)
     logging.info(f"Loading library from {dll_path_str}")
-    dll = ct.CDLL(dll_path_str)
+    dll = ct.CDLL(dll_path_str, mode=1)  # RTLD_LAZY: defer undefined symbol resolution
     logging.info(f"Library loaded successfully from {dll_path_str}")
     return dll
 
