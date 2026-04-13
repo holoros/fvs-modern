@@ -11,8 +11,12 @@ repository-code: "https://github.com/holoros/fvs-modern"
 license:
   - "MIT"
   - "CC0-1.0"
-version: "2026.04"
+version: "2026.04.0"
 date-released: "2026-04-13"
+# Zenodo DOI: pending ingestion at time of tag (webhook delivered OK
+# 2026-04-13T14:39Z). Populate `doi:` and `identifiers:` fields once
+# Zenodo finishes indexing the release at
+# https://zenodo.org/account/settings/github/repository/holoros/fvs-modern
 keywords:
   - forest growth and yield
   - Forest Vegetation Simulator
