@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+from __future__ import annotations
+
 """
 PERSEUS 100-Year FVS Projection with Uncertainty Estimation
 ============================================================
@@ -198,6 +200,11 @@ def process_plot_with_uncertainty(
     raw_cn = plot_row["FIRST_PLTCN"]
     plt_cn = str(int(float(raw_cn))) if pd.notna(raw_cn) else ""
     stand_id = f"P{int(float(plot_id))}"
+
+    # Guard against empty tree data
+    if fia_trees.empty or "PLT_CN" not in fia_trees.columns:
+        logger.warning(f"Plot {plot_id}: no tree data available")
+        return [], []
 
     # Filter trees for this plot
     fia_cn_str = fia_trees["PLT_CN"].apply(
@@ -532,18 +539,23 @@ def main():
     t0 = time.time()
 
     for idx, (_, plot_row) in enumerate(perseus.iterrows()):
-        point, draws = process_plot_with_uncertainty(
-            plot_row.to_dict(),
-            fia_trees,
-            nsbe,
-            uncertainty_engines,
-            default_configs,
-            n_draws=args.n_draws,
-            variants=args.variants,
-            seed=args.seed,
-        )
-        all_point.extend(point)
-        all_draws.extend(draws)
+        try:
+            point, draws = process_plot_with_uncertainty(
+                plot_row.to_dict(),
+                fia_trees,
+                nsbe,
+                uncertainty_engines,
+                default_configs,
+                n_draws=args.n_draws,
+                variants=args.variants,
+                seed=args.seed,
+            )
+            all_point.extend(point)
+            all_draws.extend(draws)
+        except Exception as exc:
+            logger.warning(
+                f"Plot {plot_row.get('PLOT', '?')} failed: {exc}"
+            )
 
         if (idx + 1) % 25 == 0:
             elapsed = time.time() - t0

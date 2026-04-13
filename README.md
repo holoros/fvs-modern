@@ -2,7 +2,7 @@
 
 A community maintained fork of the USDA Forest Vegetation Simulator, modernized for contemporary computing environments and designed for ease of deployment, variant creation, and calibration.
 
-**Status:** Active development, March 2026
+**Status:** Active development, April 2026
 **Origin:** Forked from [USDAForestService/ForestVegetationSimulator](https://github.com/USDAForestService/ForestVegetationSimulator) and [ForestVegetationSimulator-Interface](https://github.com/USDAForestService/ForestVegetationSimulator-Interface)
 **Contact:** Aaron Weiskittel, University of Maine (aaron.weiskittel@maine.edu)
 
@@ -37,7 +37,7 @@ fvs-modern/
             check_upstream.sh       USFS GitHub change detection
             sync_upstream.sh        Pull, patch, convert, rebuild, test
             add_variant.sh          New variant scaffolding
-            run_regression_tests.sh Full test suite (64/65 passing)
+            run_regression_tests.sh Full test suite (66/67 passing)
         config/                 NAMESPACE files, DESCRIPTION, YAML config
         microfvs/               REST API integration (FastAPI, based on microFVS)
         fvs2py/                 Python ctypes wrapper (based on Vibrant Planet fvs2py)
@@ -107,6 +107,20 @@ A GitHub Actions workflow (`.github/workflows/upstream-sync.yml`) runs weekly an
 ```
 
 This scaffolds the directory structure, species mapping template, and calibration parameter files. For runtime calibration without recompilation, use FVS keywords (READCORR, MORTMULT, SITEINDEX) in keyword files.
+
+## Bayesian calibration
+
+The `calibration/` directory contains a complete Bayesian recalibration pipeline for all 25 FVS variants using FIA remeasurement data. Six model components are refitted per variant: diameter growth, height growth, height to diameter allometry, mortality, crown ratio, and stand density (SDImax).
+
+Key features:
+
+- Hierarchical Bayesian models fit via Stan ADVI, producing 500 posterior draws per variant
+- Calibrated parameters stored in `config/calibrated/` as JSON (point estimates and full posteriors)
+- PERSEUS validation framework comparing projected AGB against observed FIA remeasurements for Maine
+- Uncertainty propagation through FVS projections using posterior draw sampling
+- Reproducible HPC workflow via SLURM array jobs (see `calibration/slurm/`)
+
+For details on the calibration pipeline, see `CALIBRATION.md`. For the Python projection scripts, see `calibration/python/README.md`.
 
 ## Regression test results
 

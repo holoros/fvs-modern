@@ -21,6 +21,11 @@
 
 set -euo pipefail
 
+# --- HPC Configuration (override with environment variables) ---
+FVS_PROJECT_ROOT="${FVS_PROJECT_ROOT:-/users/PUOM0008/crsfaaron/fvs-modern}"
+SLURM_ACCOUNT="${SLURM_ACCOUNT:-PUOM0008}"
+FVS_FIA_DATA_DIR="${FVS_FIA_DATA_DIR:-/users/PUOM0008/crsfaaron/fia_data}"
+
 # --- Configuration -----------------------------------------------------------
 N_DRAWS=50
 SEED=42
@@ -30,7 +35,7 @@ BATCH_SIZE=100
 N_PLOTS=3586
 N_BATCHES=$(( (N_PLOTS + BATCH_SIZE - 1) / BATCH_SIZE ))
 
-PROJECT_DIR="/users/PUOM0008/crsfaaron/fvs-modern"
+PROJECT_DIR="${FVS_PROJECT_ROOT}"
 OUTPUT_DIR="${PROJECT_DIR}/calibration/output/perseus/uncertainty_1999_2004"
 LOG_DIR="${PROJECT_DIR}/calibration/logs/perseus_uncertainty"
 
@@ -53,8 +58,8 @@ echo ""
 JOB_ID=$(sbatch --parsable <<SBATCH
 #!/bin/bash
 #SBATCH --job-name=perseus_unc
-#SBATCH --account=PUOM0008
-#SBATCH --partition=serial
+#SBATCH --account=${SLURM_ACCOUNT}
+#SBATCH --partition=cpu
 #SBATCH --array=1-${N_BATCHES}
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=4
@@ -64,11 +69,11 @@ JOB_ID=$(sbatch --parsable <<SBATCH
 #SBATCH --error=${LOG_DIR}/batch_%a.err
 
 # Load environment
-module load python/3.11 gnu/13.2
-source "\${PROJECT_DIR}/calibration/osc/fvs_env/bin/activate"
+module purge
+module load python/3.12
 
 export FVS_PROJECT_ROOT="${PROJECT_DIR}"
-export FVS_FIA_DATA_DIR="/users/PUOM0008/crsfaaron/fia_data"
+export FVS_FIA_DATA_DIR="${FVS_FIA_DATA_DIR}"
 export FVS_LIB_DIR="${PROJECT_DIR}/lib"
 export NSBE_ROOT="${PROJECT_DIR}/data/NSBE"
 export FVS_CONFIG_DIR="${PROJECT_DIR}/config"
@@ -77,16 +82,7 @@ export PERSEUS_CSV="${PERSEUS_CSV}"
 
 echo "Batch \${SLURM_ARRAY_TASK_ID} starting at \$(date)"
 
-python "${PROJECT_DIR}/calibration/python/perseus_uncertainty_projection.py" \\
-    --batch-id \${SLURM_ARRAY_TASK_ID} \\
-    --batch-size ${BATCH_SIZE} \\
-    --n-draws ${N_DRAWS} \\
-    --seed ${SEED} \\
-    --start-year ${START_YEAR} \\
-    --end-year ${END_YEAR} \\
-    --expansion-csv "${EXPNS_CSV}" \\
-    --output-dir "${OUTPUT_DIR}" \\
-    --perseus-csv "${PERSEUS_CSV}"
+python3 "${PROJECT_DIR}/calibration/python/perseus_uncertainty_projection.py" --batch-id \${SLURM_ARRAY_TASK_ID} --batch-size ${BATCH_SIZE} --n-draws ${N_DRAWS} --seed ${SEED} --start-year ${START_YEAR} --end-year ${END_YEAR} --expansion-csv "${EXPNS_CSV}" --output-dir "${OUTPUT_DIR}" --perseus-csv "${PERSEUS_CSV}"
 
 echo "Batch \${SLURM_ARRAY_TASK_ID} finished at \$(date)"
 SBATCH
@@ -99,8 +95,8 @@ echo "Monitor with: squeue -j ${JOB_ID}"
 AGG_ID=$(sbatch --parsable --dependency=afterok:${JOB_ID} <<SBATCH
 #!/bin/bash
 #SBATCH --job-name=perseus_unc_agg
-#SBATCH --account=PUOM0008
-#SBATCH --partition=serial
+#SBATCH --account=${SLURM_ACCOUNT}
+#SBATCH --partition=cpu
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=32G
@@ -108,17 +104,14 @@ AGG_ID=$(sbatch --parsable --dependency=afterok:${JOB_ID} <<SBATCH
 #SBATCH --output=${LOG_DIR}/aggregate.out
 #SBATCH --error=${LOG_DIR}/aggregate.err
 
-module load python/3.11 gnu/13.2
-source "\${PROJECT_DIR}/calibration/osc/fvs_env/bin/activate"
+module purge
+module load python/3.12
 
 export FVS_PROJECT_ROOT="${PROJECT_DIR}"
 
 echo "Aggregation starting at \$(date)"
 
-python "${PROJECT_DIR}/calibration/python/perseus_uncertainty_aggregate.py" \\
-    --output-dir "${OUTPUT_DIR}" \\
-    --expansion-csv "${EXPNS_CSV}" \\
-    --perseus-csv "${PERSEUS_CSV}"
+python3 "${PROJECT_DIR}/calibration/python/perseus_uncertainty_aggregate.py" --output-dir "${OUTPUT_DIR}" --expansion-csv "${EXPNS_CSV}" --perseus-csv "${PERSEUS_CSV}"
 
 echo "Aggregation finished at \$(date)"
 SBATCH

@@ -14,7 +14,10 @@
 
 set -euo pipefail
 
-PROJECT_DIR="/users/PUOM0008/crsfaaron/fvs-modern"
+# --- HPC Configuration (override with environment variables) ---
+FVS_PROJECT_ROOT="${FVS_PROJECT_ROOT:-/users/PUOM0008/crsfaaron/fvs-modern}"
+
+PROJECT_DIR="${FVS_PROJECT_ROOT}"
 OUTPUT_DIR="${PROJECT_DIR}/calibration/output/perseus/uncertainty_1999_2004"
 LOG_DIR="${PROJECT_DIR}/calibration/logs/perseus_uncertainty"
 
