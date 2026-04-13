@@ -129,3 +129,81 @@ docs/fvs_update_lifecycle.md
 *~
 .Rhistory
 .RData
+
+# Build artifacts (shared libraries built from src-converted/)
+lib/
+*.so
+
+# Stale duplicate Fortran tree at repo root.
+# Canonical copy is in src-converted/; these directories were working
+# scratch during the fixed-to-free-form conversion and can be deleted.
+/acd/
+/ak/
+/archive/
+/base/
+/bm/
+/ca/
+/canada/
+/ci/
+/clim/
+/covr/
+/cr/
+/cs/
+/dbs/
+/dbsqlite/
+/dfb/
+/dftm/
+/ec/
+/econ/
+/em/
+/estb/
+/fiavbc/
+/fire/
+/ie/
+/kt/
+/lpmpb/
+/ls/
+/metric/
+/mistoe/
+/nc/
+/ne/
+/oc/
+/op/
+/organon/
+/pg/
+/pn/
+/rd/
+/sn/
+/so/
+/strp/
+/tt/
+/ut/
+/vbase/
+/vcovr/
+/vdbs/
+/vdbsqlite/
+/vestb/
+/vie/
+/vls/
+/volume/
+/vorganon/
+/vso/
+/vstrp/
+/vvolume/
+/vwc/
+/vws/
+/wc/
+/wpbr/
+/ws/
+/wsbwe/
+/wwpb/
+
+# PERSEUS uncertainty run outputs (large CSVs, reproducible from code)
+calibration/output/perseus/
+calibration/output/bakuzis/
+
+# Slide decks (not part of the software distribution)
+calibration/slides/*.pptx
+
+# Draft manuscripts at repo root
+/*.docx

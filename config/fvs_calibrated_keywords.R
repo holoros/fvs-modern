@@ -20,6 +20,11 @@ NULL
   return(getwd())
 }
 
+# Utility function for NULL coalescing
+`%||%` <- function(x, y) {
+  if (is.null(x)) y else x
+}
+
 #' Load FVS Configuration JSON
 #'
 #' Loads Bayesian calibrated or default parameters from a JSON config file.
@@ -82,23 +87,26 @@ load_fvs_config <- function(variant, version = "calibrated", config_dir = NULL) 
 #'
 #' Calculates growth, mortality, height growth, and SDI max multipliers from
 #' calibrated parameters. Multiplier math matches Python config_loader.py.
+#' Returns NULL for any component where required parameters are unavailable.
 #'
 #' @param variant Character. Variant code.
 #' @param config_dir Character. Path to config directory. If NULL, defaults to
 #'   config/ relative to script location.
 #'
-#' @return List with:
-#'   - growth_mult: numeric vector, clipped to [0.1, 10.0]
-#'   - mort_mult: numeric vector, clipped to [0.1, 10.0]
-#'   - hg_mult: numeric vector, clipped to [0.1, 10.0]
-#'   - sdi_max: numeric vector (direct values)
+#' @return List with available components (may be partial):
+#'   - growth_mult: numeric vector, clipped to [0.1, 10.0] (or NULL)
+#'   - mort_mult: numeric vector, clipped to [0.1, 10.0] (or NULL)
+#'   - hg_mult: numeric vector, clipped to [0.1, 10.0] (or NULL)
+#'   - sdi_max: numeric vector (direct values, or NULL)
+#'   - bamax: numeric vector (direct values, or NULL)
 #'
 #' @details
 #' Multiplier formulas:
 #'   - Growth: sqrt(exp(cal_B0 - def_B0)), clipped [0.1, 10.0]
 #'   - Mortality: exp(cal_B0 - def_B0), clipped [0.1, 10.0]
 #'   - Height growth: cal / default, clipped [0.1, 10.0]
-#'   - SDI max: direct from site_index params (searches SDICON, R5SDI, R4SDI, FMSDI, SDIDEF)
+#'   - SDI max: direct from calibrated site_index (SDICON, R5SDI, R4SDI, etc.)
+#'   - BAMAX: direct from calibrated site_index (BAMAXA, BAMAX1, BAMAX)
 #'
 #' @examples
 #' \dontrun{
@@ -111,88 +119,133 @@ compute_multipliers <- function(variant, config_dir = NULL) {
   def_cfg <- load_fvs_config(variant, version = "default", config_dir = config_dir)
   cal_cfg <- load_fvs_config(variant, version = "calibrated", config_dir = config_dir)
 
-  # Extract B0 values from growth category
-  def_growth_b0 <- unlist(def_cfg$categories$growth$B0)
-  cal_growth_b0 <- unlist(cal_cfg$categories$growth$B0)
+  result <- list()
 
-  # Growth multiplier: sqrt(exp(cal_B0 - def_B0))
-  growth_mult <- sqrt(exp(cal_growth_b0 - def_growth_b0))
-  growth_mult <- pmax(pmin(growth_mult, 10.0), 0.1)
-
-  # Extract B0 values from mortality category (handle multiple naming conventions)
-  mort_names <- c("MORT_B0", "B0", "MRT_B0")
-  def_mort_b0 <- NULL
-  cal_mort_b0 <- NULL
-
-  for (name in mort_names) {
-    if (name %in% names(def_cfg$categories$mortality)) {
-      def_mort_b0 <- unlist(def_cfg$categories$mortality[[name]])
+  # ---- Growth multiplier: sqrt(exp(cal_B0 - def_B0)) ----
+  tryCatch({
+    def_growth <- def_cfg$categories$growth
+    cal_growth <- cal_cfg$categories$growth
+    if (!is.null(def_growth) && !is.null(cal_growth)) {
+      # Try B0 first, then B1 as fallback
+      for (bname in c("B0", "B1", "WEIBB1")) {
+        if (bname %in% names(cal_growth) && bname %in% names(def_growth)) {
+          cal_b0 <- unlist(cal_growth[[bname]])
+          def_b0 <- unlist(def_growth[[bname]])
+          n <- min(length(cal_b0), length(def_b0))
+          if (n > 0) {
+            mult <- ifelse(
+              def_b0[1:n] != 0,
+              sqrt(pmax(pmin(exp(cal_b0[1:n] - def_b0[1:n]), 10.0), 0.1)),
+              1.0
+            )
+            result$growth_mult <- mult
+            break
+          }
+        }
+      }
     }
-    if (name %in% names(cal_cfg$categories$mortality)) {
-      cal_mort_b0 <- unlist(cal_cfg$categories$mortality[[name]])
+  }, error = function(e) {
+    message("Note: Could not compute growth multipliers: ", e$message)
+  })
+
+  # ---- Mortality multiplier: exp(cal_B0 - def_B0) ----
+  tryCatch({
+    def_mort <- def_cfg$categories$mortality
+    cal_mort <- cal_cfg$categories$mortality
+    if (!is.null(def_mort) && is.list(def_mort) && length(def_mort) > 0 &&
+        !is.null(cal_mort) && is.list(cal_mort) && length(cal_mort) > 0) {
+      for (bname in c("MORT_B0", "B0", "MRT_B0")) {
+        if (bname %in% names(cal_mort) && bname %in% names(def_mort)) {
+          cal_b0 <- unlist(cal_mort[[bname]])
+          def_b0 <- unlist(def_mort[[bname]])
+          n <- min(length(cal_b0), length(def_b0))
+          if (n > 0) {
+            odds <- ifelse(
+              def_b0[1:n] != 0,
+              exp(cal_b0[1:n] - def_b0[1:n]),
+              1.0
+            )
+            result$mort_mult <- pmax(pmin(odds, 10.0), 0.1)
+            break
+          }
+        }
+      }
     }
-    if (!is.null(def_mort_b0) && !is.null(cal_mort_b0)) break
-  }
+  }, error = function(e) {
+    message("Note: Could not compute mortality multipliers: ", e$message)
+  })
 
-  if (is.null(def_mort_b0) || is.null(cal_mort_b0)) {
-    stop("Could not find mortality B0 parameters in config")
-  }
-
-  # Mortality multiplier: exp(cal_B0 - def_B0)
-  mort_mult <- exp(cal_mort_b0 - def_mort_b0)
-  mort_mult <- pmax(pmin(mort_mult, 10.0), 0.1)
-
-  # Extract height growth values (handle multiple naming conventions)
-  hg_names <- c("HGLD", "HG_B0")
-  def_hg <- NULL
-  cal_hg <- NULL
-
-  for (name in hg_names) {
-    if (name %in% names(def_cfg$categories$height_growth)) {
-      def_hg <- unlist(def_cfg$categories$height_growth[[name]])
+  # ---- Height growth multiplier: cal / default ----
+  tryCatch({
+    for (cat_name in c("height_diameter", "height_growth", "growth")) {
+      cal_cat <- cal_cfg$categories[[cat_name]]
+      def_cat <- def_cfg$categories[[cat_name]]
+      if (!is.null(cal_cat) && is.list(cal_cat) && !is.null(def_cat) && is.list(def_cat)) {
+        for (bname in c("HD_A", "HGLD", "HG_B0")) {
+          if (bname %in% names(cal_cat) && bname %in% names(def_cat)) {
+            cal_vals <- unlist(cal_cat[[bname]])
+            def_vals <- unlist(def_cat[[bname]])
+            n <- min(length(cal_vals), length(def_vals))
+            if (n > 0) {
+              mult <- ifelse(
+                def_vals[1:n] != 0,
+                cal_vals[1:n] / def_vals[1:n],
+                1.0
+              )
+              result$hg_mult <- pmax(pmin(mult, 10.0), 0.1)
+              break
+            }
+          }
+        }
+      }
+      if (!is.null(result$hg_mult)) break
     }
-    if (name %in% names(cal_cfg$categories$height_growth)) {
-      cal_hg <- unlist(cal_cfg$categories$height_growth[[name]])
+  }, error = function(e) {
+    message("Note: Could not compute height growth multipliers: ", e$message)
+  })
+
+  # ---- SDI max: direct from calibrated config ----
+  tryCatch({
+    site_cats <- cal_cfg$categories$site_index %||% list()
+    other_cats <- cal_cfg$categories$other %||% list()
+    all_cats <- c(site_cats, other_cats)
+    for (name in c("SDICON", "R5SDI", "R4SDI", "FMSDI", "SDIDEF")) {
+      if (name %in% names(all_cats)) {
+        result$sdi_max <- unlist(all_cats[[name]])
+        break
+      }
     }
-    if (!is.null(def_hg) && !is.null(cal_hg)) break
-  }
+  }, error = function(e) {
+    message("Note: Could not extract SDI max: ", e$message)
+  })
 
-  if (is.null(def_hg) || is.null(cal_hg)) {
-    stop("Could not find height growth parameters in config")
-  }
-
-  # Height growth multiplier: cal / default
-  hg_mult <- cal_hg / def_hg
-  hg_mult <- pmax(pmin(hg_mult, 10.0), 0.1)
-
-  # Extract SDI max from site_index (search in priority order)
-  sdi_names <- c("SDICON", "R5SDI", "R4SDI", "FMSDI", "SDIDEF")
-  sdi_max <- NULL
-
-  for (name in sdi_names) {
-    if (name %in% names(cal_cfg$categories$site_index)) {
-      sdi_max <- unlist(cal_cfg$categories$site_index[[name]])
-      break
+  # ---- BAMAX: direct from calibrated config ----
+  tryCatch({
+    site_cats <- cal_cfg$categories$site_index %||% list()
+    other_cats <- cal_cfg$categories$other %||% list()
+    all_cats <- c(site_cats, other_cats)
+    for (name in c("BAMAXA", "BAMAX1", "BAMAX")) {
+      if (name %in% names(all_cats)) {
+        result$bamax <- unlist(all_cats[[name]])
+        break
+      }
     }
+  }, error = function(e) {
+    message("Note: Could not extract BAMAX: ", e$message)
+  })
+
+  if (length(result) == 0) {
+    warning("No calibration parameters could be computed for variant '", variant, "'")
   }
 
-  if (is.null(sdi_max)) {
-    stop("Could not find SDI max parameters in config")
-  }
-
-  return(list(
-    growth_mult = growth_mult,
-    mort_mult = mort_mult,
-    hg_mult = hg_mult,
-    sdi_max = sdi_max
-  ))
+  return(result)
 }
 
 #' Generate FVS Keywords from Calibrated Parameters
 #'
-#' Creates FVS keyword strings (SDIMAX, MORTMULT, GROWMULT, HTGMULT) from
+#' Creates FVS keyword strings (SDIMAX, BAMAX, MORTMULT, GROWMULT, HTGMULT) from
 #' calibrated multipliers. Only includes keywords where multiplier differs
-#' from 1.0 by more than 0.01.
+#' from 1.0 by more than 0.01. Gracefully skips unavailable components.
 #'
 #' @param variant Character. Variant code.
 #' @param config_dir Character. Path to config directory. If NULL, defaults to
@@ -201,13 +254,6 @@ compute_multipliers <- function(variant, config_dir = NULL) {
 #'   Default is TRUE.
 #'
 #' @return Character string with FVS keywords, one per line.
-#'
-#' @details
-#' Keyword formats must match exactly:
-#'   - SDIMAX: `SDIMAX          {sp_index:10d}{value:10.1f}`
-#'   - MORTMULT: `MORTMULT        {sp_index:10d}{mult:10.4f}       0.0     999.0`
-#'   - GROWMULT: `GROWMULT        {sp_index:10d}{mult:10.4f}`
-#'   - HTGMULT: `HTGMULT         {sp_index:10d}{mult:10.4f}`
 #'
 #' @examples
 #' \dontrun{
@@ -218,7 +264,7 @@ compute_multipliers <- function(variant, config_dir = NULL) {
 #' @export
 generate_fvs_keywords <- function(variant, config_dir = NULL,
                                   include_comments = TRUE) {
-  # Compute multipliers
+  # Compute multipliers (returns only available components)
   mults <- compute_multipliers(variant, config_dir = config_dir)
 
   lines <- character()
@@ -227,84 +273,75 @@ generate_fvs_keywords <- function(variant, config_dir = NULL,
   if (include_comments) {
     lines <- c(
       lines,
-      paste("C Calibrated FVS keywords for variant:", variant),
-      paste("C Generated:", format(Sys.time(), "%Y-%m-%d %H:%M:%S")),
-      "C"
+      paste("!! Bayesian calibrated parameters for variant", toupper(variant)),
+      "!!"
     )
   }
 
-  # Number of species in vectors (assuming all vectors same length)
-  n_species <- length(mults$growth_mult)
-
   # SDIMAX keywords
-  sdi_keywords <- character()
-  for (i in seq_along(mults$sdi_max)) {
-    sdi_keywords <- c(
-      sdi_keywords,
-      sprintf(
-        "SDIMAX          %10d%10.1f",
-        i, mults$sdi_max[i]
-      )
-    )
+  if (!is.null(mults$sdi_max)) {
+    if (include_comments) lines <- c(lines, "!! Species specific SDI maximums")
+    for (i in seq_along(mults$sdi_max)) {
+      val <- mults$sdi_max[i]
+      if (!is.na(val) && is.numeric(val) && val > 0) {
+        lines <- c(lines, sprintf("SDIMAX          %10d%10.1f", i, val))
+      }
+    }
+  }
+
+  # BAMAX keywords
+  if (!is.null(mults$bamax)) {
+    if (include_comments) lines <- c(lines, "!! Maximum basal area")
+    for (i in seq_along(mults$bamax)) {
+      val <- mults$bamax[i]
+      if (!is.na(val) && is.numeric(val) && val > 0) {
+        lines <- c(lines, sprintf("BAMAX           %10d%10.1f", i, val))
+      }
+    }
   }
 
   # MORTMULT keywords (only if differs from 1.0 by > 0.01)
-  mort_keywords <- character()
-  for (i in seq_along(mults$mort_mult)) {
-    if (abs(mults$mort_mult[i] - 1.0) > 0.01) {
-      mort_keywords <- c(
-        mort_keywords,
-        sprintf(
-          "MORTMULT        %10d%10.4f       0.0     999.0",
-          i, mults$mort_mult[i]
+  if (!is.null(mults$mort_mult)) {
+    if (include_comments) lines <- c(lines, "!! Mortality multipliers")
+    for (i in seq_along(mults$mort_mult)) {
+      if (abs(mults$mort_mult[i] - 1.0) > 0.01) {
+        lines <- c(
+          lines,
+          sprintf("MORTMULT        %10d%10.4f       0.0     999.0", i, mults$mort_mult[i])
         )
-      )
+      }
     }
   }
 
   # GROWMULT keywords (only if differs from 1.0 by > 0.01)
-  grow_keywords <- character()
-  for (i in seq_along(mults$growth_mult)) {
-    if (abs(mults$growth_mult[i] - 1.0) > 0.01) {
-      grow_keywords <- c(
-        grow_keywords,
-        sprintf(
-          "GROWMULT        %10d%10.4f",
-          i, mults$growth_mult[i]
+  if (!is.null(mults$growth_mult)) {
+    if (include_comments) lines <- c(lines, "!! Growth multipliers")
+    for (i in seq_along(mults$growth_mult)) {
+      if (abs(mults$growth_mult[i] - 1.0) > 0.01) {
+        lines <- c(
+          lines,
+          sprintf("GROWMULT        %10d%10.4f", i, mults$growth_mult[i])
         )
-      )
+      }
     }
   }
 
   # HTGMULT keywords (only if differs from 1.0 by > 0.01)
-  htg_keywords <- character()
-  for (i in seq_along(mults$hg_mult)) {
-    if (abs(mults$hg_mult[i] - 1.0) > 0.01) {
-      htg_keywords <- c(
-        htg_keywords,
-        sprintf(
-          "HTGMULT         %10d%10.4f",
-          i, mults$hg_mult[i]
+  if (!is.null(mults$hg_mult)) {
+    if (include_comments) lines <- c(lines, "!! Height growth multipliers")
+    for (i in seq_along(mults$hg_mult)) {
+      if (abs(mults$hg_mult[i] - 1.0) > 0.01) {
+        lines <- c(
+          lines,
+          sprintf("HTGMULT         %10d%10.4f", i, mults$hg_mult[i])
         )
-      )
+      }
     }
   }
 
-  # Assemble final keyword string
-  if (length(sdi_keywords) > 0) {
-    lines <- c(lines, sdi_keywords)
-  }
-  if (length(mort_keywords) > 0) {
-    if (include_comments) lines <- c(lines, "C Mortality multipliers")
-    lines <- c(lines, mort_keywords)
-  }
-  if (length(grow_keywords) > 0) {
-    if (include_comments) lines <- c(lines, "C Growth multipliers")
-    lines <- c(lines, grow_keywords)
-  }
-  if (length(htg_keywords) > 0) {
-    if (include_comments) lines <- c(lines, "C Height growth multipliers")
-    lines <- c(lines, htg_keywords)
+  if (length(lines) <= 2 && include_comments) {
+    warning("No calibration keywords generated for variant '", variant,
+            "'. Config may lack comparable default/calibrated parameters.")
   }
 
   return(paste(lines, collapse = "\n"))
@@ -323,9 +360,6 @@ generate_fvs_keywords <- function(variant, config_dir = NULL,
 #'   config/ relative to script location.
 #'
 #' @return Invisibly returns the path to the output file.
-#'
-#' @details
-#' Inserts keywords before the PROCESS line if found, otherwise appends at the end.
 #'
 #' @examples
 #' \dontrun{
@@ -388,6 +422,8 @@ inject_keywords_into_keyfile <- function(keyfile_path, variant,
 #'   config/ relative to script location.
 #'
 #' @return List with structure matching one entry from draws JSON.
+#'   Each entry is a named list of components (diameter_growth, mortality, etc.),
+#'   each containing parameter name/value pairs from the posterior.
 #'
 #' @examples
 #' \dontrun{
@@ -401,28 +437,27 @@ sample_posterior_draw <- function(variant, draw_index = NULL, seed = NULL,
   # Load draws config
   draws_cfg <- load_fvs_config(variant, version = "draws", config_dir = config_dir)
 
-  # Extract draws array (could be at top level or in a 'draws' key)
+  # The draws JSON has structure:
+  #   { variant, n_draws, draws: { component: [{param: val, ...}, ...], ... } }
+  # Navigate into the draws sub object
   if ("draws" %in% names(draws_cfg)) {
-    draws_list <- draws_cfg$draws
-  } else if (is.list(draws_cfg) && length(draws_cfg) > 0) {
-    # Assume the config itself is a list of draws
-    draws_list <- draws_cfg
+    draws_data <- draws_cfg$draws
   } else {
-    stop("Could not find draws array in ", variant, "_draws.json")
+    draws_data <- draws_cfg
   }
 
-  # Ensure it's a list
-  if (!is.list(draws_list)) {
-    stop("Draws array is not a list")
+  component_names <- names(draws_data)
+  if (length(component_names) == 0) {
+    stop("No components found in ", variant, "_draws.json")
   }
 
-  n_draws <- length(draws_list)
+  # Determine number of draws from first component
+  first_comp <- draws_data[[component_names[1]]]
+  n_draws <- length(first_comp)
 
   # Select draw index
   if (is.null(draw_index)) {
-    if (!is.null(seed)) {
-      set.seed(seed)
-    }
+    if (!is.null(seed)) set.seed(seed)
     draw_index <- sample(seq_len(n_draws), 1)
   } else {
     if (draw_index < 1 || draw_index > n_draws) {
@@ -430,13 +465,25 @@ sample_posterior_draw <- function(variant, draw_index = NULL, seed = NULL,
     }
   }
 
-  return(draws_list[[draw_index]])
+  # Extract the selected draw from each component
+  draw <- list()
+  for (comp in component_names) {
+    draw[[comp]] <- draws_data[[comp]][[draw_index]]
+  }
+
+  attr(draw, "draw_index") <- draw_index
+  return(draw)
 }
 
 #' Generate FVS Keywords for One Posterior Draw
 #'
-#' Generates calibrated FVS keywords for a specific posterior draw.
-#' Used for uncertainty propagation in ensemble runs.
+#' Generates calibrated FVS keywords for a specific posterior draw using
+#' the hierarchical Stan/brms parameterization. Handles two styles:
+#'   - Stan non centered: mu_b0 + sigma_b0 * z_b0[i] (diameter growth)
+#'   - brms random effects: b_Intercept + r_SPCD[code,Intercept] (mortality, SDI)
+#'
+#' FIA species codes in random effects are mapped to FVS species indices
+#' using the FIAJSP array from the variant config.
 #'
 #' @param variant Character. Variant code.
 #' @param draw_index Integer. Which draw to use. If NULL, randomly samples.
@@ -458,132 +505,153 @@ generate_draw_keywords <- function(variant, draw_index = NULL, seed = NULL,
   # Sample posterior draw
   draw <- sample_posterior_draw(variant, draw_index = draw_index, seed = seed,
                                 config_dir = config_dir)
+  actual_idx <- attr(draw, "draw_index") %||% draw_index %||% "random"
 
-  # Compute multipliers from draw parameters
-  # Assume draw has same structure as calibrated config
+  # Load default config for reference
   if (is.null(config_dir)) {
     script_dir <- .get_script_dir()
     config_dir <- file.path(script_dir, "config")
   }
-
-  # Load default config for reference
   def_cfg <- load_fvs_config(variant, version = "default", config_dir = config_dir)
 
-  # Extract parameters from draw
-  def_growth_b0 <- unlist(def_cfg$categories$growth$B0)
-  draw_growth_b0 <- unlist(draw$categories$growth$B0)
+  # Build FIA to FVS species index mapping
+  sp_defs <- def_cfg$categories$species_definitions
+  fiajsp <- unlist(sp_defs$FIAJSP)
+  maxsp <- length(fiajsp)
+  fia_to_fvs <- setNames(seq_along(fiajsp), as.character(as.integer(fiajsp)))
 
-  # Growth multiplier
-  growth_mult <- sqrt(exp(draw_growth_b0 - def_growth_b0))
-  growth_mult <- pmax(pmin(growth_mult, 10.0), 0.1)
-
-  # Mortality
-  mort_names <- c("MORT_B0", "B0", "MRT_B0")
-  def_mort_b0 <- NULL
-  draw_mort_b0 <- NULL
-
-  for (name in mort_names) {
-    if (name %in% names(def_cfg$categories$mortality)) {
-      def_mort_b0 <- unlist(def_cfg$categories$mortality[[name]])
-    }
-    if (name %in% names(draw$categories$mortality)) {
-      draw_mort_b0 <- unlist(draw$categories$mortality[[name]])
-    }
-    if (!is.null(def_mort_b0) && !is.null(draw_mort_b0)) break
-  }
-
-  if (is.null(def_mort_b0) || is.null(draw_mort_b0)) {
-    stop("Could not find mortality B0 parameters in draw")
-  }
-
-  mort_mult <- exp(draw_mort_b0 - def_mort_b0)
-  mort_mult <- pmax(pmin(mort_mult, 10.0), 0.1)
-
-  # Height growth
-  hg_names <- c("HGLD", "HG_B0")
-  def_hg <- NULL
-  draw_hg <- NULL
-
-  for (name in hg_names) {
-    if (name %in% names(def_cfg$categories$height_growth)) {
-      def_hg <- unlist(def_cfg$categories$height_growth[[name]])
-    }
-    if (name %in% names(draw$categories$height_growth)) {
-      draw_hg <- unlist(draw$categories$height_growth[[name]])
-    }
-    if (!is.null(def_hg) && !is.null(draw_hg)) break
-  }
-
-  if (is.null(def_hg) || is.null(draw_hg)) {
-    stop("Could not find height growth parameters in draw")
-  }
-
-  hg_mult <- draw_hg / def_hg
-  hg_mult <- pmax(pmin(hg_mult, 10.0), 0.1)
-
-  # SDI max from draw
-  sdi_names <- c("SDICON", "R5SDI", "R4SDI", "FMSDI", "SDIDEF")
-  sdi_max <- NULL
-
-  for (name in sdi_names) {
-    if (name %in% names(draw$categories$site_index)) {
-      sdi_max <- unlist(draw$categories$site_index[[name]])
-      break
-    }
-  }
-
-  if (is.null(sdi_max)) {
-    stop("Could not find SDI max parameters in draw")
-  }
-
-  # Generate keywords from draw multipliers
-  lines <- character()
   lines <- c(
-    lines,
-    paste("C Posterior draw keywords for variant:", variant),
-    paste("C Draw index:", draw_index %||% "random"),
-    paste("C Generated:", format(Sys.time(), "%Y-%m-%d %H:%M:%S")),
-    "C"
+    paste("!! Posterior draw", actual_idx, "for variant", toupper(variant)),
+    "!!"
   )
 
-  # SDIMAX keywords
-  for (i in seq_along(sdi_max)) {
-    lines <- c(
-      lines,
-      sprintf("SDIMAX          %10d%10.1f", i, sdi_max[i])
-    )
+  # ---- SDI max from stand_density (brms: b_Intercept + r_SPCD[code,Intercept]) ----
+  if ("stand_density" %in% names(draw)) {
+    sd_params <- draw$stand_density
+    fixed <- sd_params$b_Intercept
+    if (!is.null(fixed)) {
+      fixed <- as.numeric(fixed)
+      sdi_vals <- rep(exp(fixed), maxsp)  # default: all species get fixed effect
+
+      # Add species random effects
+      r_pattern <- "^r_SPCD\\[(\\d+),Intercept\\]$"
+      r_keys <- grep(r_pattern, names(sd_params), value = TRUE)
+      for (key in r_keys) {
+        fia_code <- sub(r_pattern, "\\1", key)
+        fvs_idx <- fia_to_fvs[fia_code]
+        if (!is.na(fvs_idx)) {
+          re_val <- as.numeric(sd_params[[key]])
+          sdi_vals[as.integer(fvs_idx)] <- exp(fixed + re_val)
+        }
+      }
+
+      # Clip to reasonable range
+      sdi_vals <- pmax(pmin(sdi_vals, 2000), 100)
+      lines <- c(lines, "!! SDI max (posterior draw)")
+      for (i in seq_along(sdi_vals)) {
+        lines <- c(lines, sprintf("SDIMAX          %10d%10.1f", i, sdi_vals[i]))
+      }
+    }
   }
 
-  # MORTMULT keywords
-  for (i in seq_along(mort_mult)) {
-    if (abs(mort_mult[i] - 1.0) > 0.01) {
-      lines <- c(
-        lines,
-        sprintf(
-          "MORTMULT        %10d%10.4f       0.0     999.0",
-          i, mort_mult[i]
+  # ---- Growth multiplier from diameter_growth (Stan: mu_b0 + sigma_b0 * z_b0[i]) ----
+  if ("diameter_growth" %in% names(draw)) {
+    dg_params <- draw$diameter_growth
+    mu_b0 <- as.numeric(dg_params$mu_b0)
+    sigma_b0 <- as.numeric(dg_params$sigma_b0)
+
+    if (!is.null(mu_b0) && !is.null(sigma_b0)) {
+      # Reconstruct species B0 from non centered parameterization
+      cal_b0 <- rep(mu_b0, maxsp)
+      z_pattern <- "^z_b0\\[(\\d+)\\]$"
+      z_keys <- grep(z_pattern, names(dg_params), value = TRUE)
+      for (key in z_keys) {
+        idx <- as.integer(sub(z_pattern, "\\1", key))
+        if (idx <= maxsp) {
+          cal_b0[idx] <- mu_b0 + sigma_b0 * as.numeric(dg_params[[key]])
+        }
+      }
+
+      # Get default B0 or B1 for comparison
+      def_growth <- def_cfg$categories$growth
+      def_b0 <- NULL
+      for (bname in c("B0", "B1", "WEIBB1")) {
+        if (bname %in% names(def_growth)) {
+          def_b0 <- unlist(def_growth[[bname]])
+          break
+        }
+      }
+
+      if (!is.null(def_b0)) {
+        n <- min(length(cal_b0), length(def_b0))
+        mult <- ifelse(
+          def_b0[1:n] != 0,
+          sqrt(pmax(pmin(exp(cal_b0[1:n] - def_b0[1:n]), 10.0), 0.1)),
+          1.0
         )
-      )
+        grow_kw <- character()
+        for (i in seq_len(n)) {
+          if (abs(mult[i] - 1.0) > 0.01) {
+            grow_kw <- c(grow_kw, sprintf("GROWMULT        %10d%10.4f", i, mult[i]))
+          }
+        }
+        if (length(grow_kw) > 0) {
+          lines <- c(lines, "!! Growth multipliers (posterior draw)", grow_kw)
+        }
+      }
     }
   }
 
-  # GROWMULT keywords
-  for (i in seq_along(growth_mult)) {
-    if (abs(growth_mult[i] - 1.0) > 0.01) {
-      lines <- c(
-        lines,
-        sprintf("GROWMULT        %10d%10.4f", i, growth_mult[i])
-      )
-    }
-  }
+  # ---- Mortality multiplier from brms (b_Intercept + r_SPCD[code,Intercept]) ----
+  if ("mortality" %in% names(draw)) {
+    mort_params <- draw$mortality
+    mort_fixed <- as.numeric(mort_params$b_Intercept)
 
-  # HTGMULT keywords
-  for (i in seq_along(hg_mult)) {
-    if (abs(hg_mult[i] - 1.0) > 0.01) {
-      lines <- c(
-        lines,
-        sprintf("HTGMULT         %10d%10.4f", i, hg_mult[i])
-      )
+    if (!is.null(mort_fixed)) {
+      # Check if default config has mortality reference
+      def_mort <- def_cfg$categories$mortality
+      if (!is.null(def_mort) && is.list(def_mort) && length(def_mort) > 0) {
+        def_mort_b0 <- NULL
+        for (bname in c("MORT_B0", "B0", "MRT_B0")) {
+          if (bname %in% names(def_mort)) {
+            def_mort_b0 <- unlist(def_mort[[bname]])
+            break
+          }
+        }
+
+        if (!is.null(def_mort_b0)) {
+          cal_b0 <- rep(mort_fixed, maxsp)
+          r_pattern <- "^r_SPCD\\[(\\d+),Intercept\\]$"
+          r_keys <- grep(r_pattern, names(mort_params), value = TRUE)
+          for (key in r_keys) {
+            fia_code <- sub(r_pattern, "\\1", key)
+            fvs_idx <- fia_to_fvs[fia_code]
+            if (!is.na(fvs_idx)) {
+              re_val <- as.numeric(mort_params[[key]])
+              cal_b0[as.integer(fvs_idx)] <- mort_fixed + re_val
+            }
+          }
+
+          n <- min(length(cal_b0), length(def_mort_b0))
+          odds <- ifelse(
+            def_mort_b0[1:n] != 0,
+            exp(cal_b0[1:n] - def_mort_b0[1:n]),
+            1.0
+          )
+          odds <- pmax(pmin(odds, 10.0), 0.1)
+          mort_kw <- character()
+          for (i in seq_len(n)) {
+            if (abs(odds[i] - 1.0) > 0.01) {
+              mort_kw <- c(mort_kw, sprintf(
+                "MORTMULT        %10d%10.4f       0.0     999.0", i, odds[i]
+              ))
+            }
+          }
+          if (length(mort_kw) > 0) {
+            lines <- c(lines, "!! Mortality multipliers (posterior draw)", mort_kw)
+          }
+        }
+      }
     }
   }
 
@@ -607,9 +675,6 @@ generate_draw_keywords <- function(variant, draw_index = NULL, seed = NULL,
 #'   - draw_index: which draw was used
 #'   - output_path: path to generated keyfile
 #'
-#' @details
-#' Output filenames follow the pattern: `{basename}_{draw_number}.key`
-#'
 #' @examples
 #' \dontrun{
 #' results <- run_uncertainty_ensemble("example.key", "ne", n_draws = 100, seed = 42)
@@ -629,16 +694,10 @@ run_uncertainty_ensemble <- function(keyfile_path, variant, n_draws = 50,
     dir.create(output_dir, recursive = TRUE)
   }
 
-  # Load draws to check how many are available
+  # Load draws to determine available count
   draws_cfg <- load_fvs_config(variant, version = "draws", config_dir = config_dir)
-
-  if ("draws" %in% names(draws_cfg)) {
-    draws_list <- draws_cfg$draws
-  } else {
-    draws_list <- draws_cfg
-  }
-
-  n_available <- length(draws_list)
+  draws_data <- if ("draws" %in% names(draws_cfg)) draws_cfg$draws else draws_cfg
+  n_available <- length(draws_data[[names(draws_data)[1]]])
 
   if (n_draws > n_available) {
     warning(
@@ -654,16 +713,19 @@ run_uncertainty_ensemble <- function(keyfile_path, variant, n_draws = 50,
   # Sample draw indices without replacement
   draw_indices <- sample(seq_len(n_available), n_draws, replace = FALSE)
 
-  # Generate output keyfiles
+  # Read template keyfile once
+  template_lines <- readLines(keyfile_path)
+  process_idx <- grep("^PROCESS", template_lines, ignore.case = TRUE)
+
+  # Get base filename
+  base_name <- tools::file_path_sans_ext(basename(keyfile_path))
+  ext <- tools::file_ext(keyfile_path)
+
   results <- data.frame(
     draw_index = integer(),
     output_path = character(),
     stringsAsFactors = FALSE
   )
-
-  # Get base filename
-  base_name <- tools::file_path_sans_ext(basename(keyfile_path))
-  ext <- tools::file_ext(keyfile_path)
 
   for (i in seq_along(draw_indices)) {
     draw_idx <- draw_indices[i]
@@ -672,23 +734,17 @@ run_uncertainty_ensemble <- function(keyfile_path, variant, n_draws = 50,
     keywords <- generate_draw_keywords(variant, draw_index = draw_idx,
                                        config_dir = config_dir)
 
-    # Read existing keyfile
-    lines <- readLines(keyfile_path)
-
-    # Find PROCESS line
-    process_idx <- grep("^PROCESS", lines, ignore.case = TRUE)
-
     # Insert keywords before PROCESS line
     if (length(process_idx) > 0) {
-      process_idx <- process_idx[1]
+      pidx <- process_idx[1]
       new_lines <- c(
-        lines[1:(process_idx - 1)],
+        template_lines[1:(pidx - 1)],
         keywords,
         "",
-        lines[process_idx:length(lines)]
+        template_lines[pidx:length(template_lines)]
       )
     } else {
-      new_lines <- c(lines, "", keywords)
+      new_lines <- c(template_lines, "", keywords)
     }
 
     # Write output keyfile
@@ -696,52 +752,16 @@ run_uncertainty_ensemble <- function(keyfile_path, variant, n_draws = 50,
     output_path <- file.path(output_dir, output_filename)
     writeLines(new_lines, output_path)
 
-    # Record result
     results <- rbind(results, data.frame(
       draw_index = draw_idx,
       output_path = output_path,
       stringsAsFactors = FALSE
     ))
+
+    if (i %% 10 == 0 || i == 1) {
+      message(sprintf("Generated %d/%d ensemble keyfiles", i, n_draws))
+    }
   }
 
   return(results)
 }
-
-# Utility function for NULL coalescing
-`%||%` <- function(x, y) {
-  if (is.null(x)) y else x
-}
-
-# ============================================================================
-# Usage Examples (uncommented for testing)
-# ============================================================================
-
-# Examples:
-#
-# # Load default and calibrated configs
-# config_default <- load_fvs_config("ne", version = "default")
-# config_calibrated <- load_fvs_config("ne", version = "calibrated")
-#
-# # Compute multipliers
-# mults <- compute_multipliers("ne")
-# str(mults)
-#
-# # Generate keywords
-# keywords <- generate_fvs_keywords("ne", include_comments = TRUE)
-# cat(keywords)
-#
-# # Inject keywords into a keyfile
-# inject_keywords_into_keyfile("example.key", "ne", output_path = "example_cal.key")
-#
-# # Sample posterior draws
-# draw <- sample_posterior_draw("ne", draw_index = 1)
-# draw_random <- sample_posterior_draw("ne", seed = 123)
-#
-# # Generate keywords for a specific draw
-# draw_keywords <- generate_draw_keywords("ne", draw_index = 5)
-# cat(draw_keywords)
-#
-# # Run uncertainty ensemble
-# results <- run_uncertainty_ensemble("example.key", "ne", n_draws = 50, seed = 42,
-#                                     output_dir = "ensemble_runs")
-# print(results)

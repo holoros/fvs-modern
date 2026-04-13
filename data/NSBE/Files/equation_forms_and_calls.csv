@@ -1,0 +1,14 @@
+﻿equation,rhs
+3,<- a * DBH^b * THT^c
+4,"<- ifelse(DBH < k, a0 * DBH^b0 * THT^c, a0 * k^(b0 - b1) * DBH^b1 * THT^c)"
+5,<- a * DBH^(a1 * (1 - exp(-b1 * (DBH)))^c1) * THT^c
+6,<- (1 - (1 - X)^alpha)^beta
+7,"<- findHT(data, 'DBH', 'THT', dlim= 4)"
+8,"<- findVol(data= data, hl= 1, hu= 'HT4', 'DBH', 'THT', 'VTOTIB')"
+9,"<- findVol(data= data, hl= 1, hu= 'HT4', 'DBH', 'THT', 'VTOTOB')"
+10,"<- findVol(data= data, hl= 0, hu= 1, 'DBH', 'THT', 'VTOTIB')"
+11,"<- findVol(data= data, hl= 0, hu= 1, 'DBH', 'THT', 'VTOTOB')"
+12,"<- findHT(data, 'DBH', 'THT', dlim= saw)"
+13,"<- findVol(data= data, hl= 1, hu= 'HTSAW', 'DBH', 'THT', 'VTOTIB')"
+14,"<- findVol(data= data, hl= 1, hu= 'HTSAW', 'DBH', 'THT', 'VTOTOB')"
+50,<- a * DBH^b * THT^c * exp(-(b2 * DBH))

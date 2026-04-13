@@ -218,6 +218,161 @@ class UncertaintyEngine:
     # Apply Draws to FVS
     # =========================================================================
 
+    def _build_fia_to_fvs_map(
+        self, default_config: dict[str, Any]
+    ) -> dict[int, int]:
+        """Build mapping from FIA species codes to FVS species indices (1 based).
+
+        The posterior draws use FIA species codes in random effect names
+        (e.g. r_SPCD[12,Intercept]), but FVS keywords need species by
+        sequential FVS index. The FIAJSP array in the config provides
+        the mapping: index i (0 based) holds the FIA code for FVS species i+1.
+
+        Args:
+            default_config: Config dictionary with categories.species_definitions
+
+        Returns:
+            Dict mapping FIA code -> FVS species index (1 based)
+        """
+        sp_defs = default_config.get("categories", {}).get("species_definitions", {})
+        fiajsp = sp_defs.get("FIAJSP", [])
+        fia_to_fvs = {}
+        for i, code_str in enumerate(fiajsp):
+            try:
+                fia_to_fvs[int(code_str)] = i + 1
+            except (ValueError, TypeError):
+                continue
+        return fia_to_fvs
+
+    def _reconstruct_hierarchical_intercepts(
+        self,
+        params: dict[str, float],
+        fixed_name: str,
+        random_prefix: str,
+        n_species: int,
+        fia_to_fvs: dict[int, int],
+    ) -> np.ndarray | None:
+        """Reconstruct species level intercepts from hierarchical brms draws.
+
+        brms models parameterize as: species_intercept = b_Intercept + r_SPCD[code,Intercept]
+        Stan hierarchical models use: species_b0 = mu_b0 + sigma_b0 * z_b0[i]
+
+        This method detects the parameterization style and reconstructs an
+        array of species level values indexed by FVS species number.
+
+        Args:
+            params: Parameter dictionary from a single draw
+            fixed_name: Name of fixed effect (e.g. "b_Intercept", "mu_b0")
+            random_prefix: Prefix for random effects (e.g. "r_SPCD", "z_b0")
+            n_species: Number of FVS species slots
+            fia_to_fvs: FIA code -> FVS index mapping
+
+        Returns:
+            Array of length n_species with species level values, or None
+        """
+        import re
+
+        result = np.full(n_species, np.nan, dtype=np.float64)
+
+        # Style 1: brms with r_SPCD[code,Intercept] random effects
+        if random_prefix == "r_SPCD":
+            fixed = params.get(fixed_name)
+            if fixed is None:
+                return None
+
+            r_pattern = re.compile(r"r_SPCD\[(\d+),Intercept\]")
+            found_any = False
+            for key, val in params.items():
+                m = r_pattern.match(key)
+                if m:
+                    fia_code = int(m.group(1))
+                    fvs_idx = fia_to_fvs.get(fia_code)
+                    if fvs_idx is not None and fvs_idx <= n_species:
+                        result[fvs_idx - 1] = fixed + val
+                        found_any = True
+
+            # Species without random effects get the fixed intercept
+            if found_any:
+                result[np.isnan(result)] = fixed
+                return result
+            return None
+
+        # Style 2: Stan non centered parameterization z_b0[i]
+        if random_prefix == "z_b0":
+            mu = params.get("mu_b0")
+            sigma = params.get("sigma_b0")
+            if mu is None or sigma is None:
+                return None
+
+            z_pattern = re.compile(r"z_b0\[(\d+)\]")
+            z_vals = {}
+            for key, val in params.items():
+                m = z_pattern.match(key)
+                if m:
+                    z_vals[int(m.group(1))] = val
+
+            if not z_vals:
+                return None
+
+            # z_b0 indices are sequential (1..N_species in the Stan model)
+            # Map them to FVS indices via FIAJSP ordering
+            # The Stan model species ordering matches FIAJSP
+            for stan_idx, z_val in z_vals.items():
+                if stan_idx <= n_species:
+                    result[stan_idx - 1] = mu + sigma * z_val
+
+            result[np.isnan(result)] = mu
+            return result
+
+        return None
+
+    def _reconstruct_brms_intercepts_double(
+        self,
+        params: dict[str, float],
+        fixed_name: str,
+        random_tag: str,
+        n_species: int,
+        fia_to_fvs: dict[int, int],
+    ) -> np.ndarray | None:
+        """Reconstruct species intercepts from brms with double underscore notation.
+
+        Height diameter models use r_SPCD__a[code,Intercept] style.
+
+        Args:
+            params: Parameter dictionary from a single draw
+            fixed_name: Name of fixed effect (e.g. "b_a_Intercept")
+            random_tag: Tag between underscores (e.g. "a" for r_SPCD__a)
+            n_species: Number of FVS species slots
+            fia_to_fvs: FIA code -> FVS index mapping
+
+        Returns:
+            Array of length n_species with species level values, or None
+        """
+        import re
+
+        fixed = params.get(fixed_name)
+        if fixed is None:
+            return None
+
+        result = np.full(n_species, np.nan, dtype=np.float64)
+        r_pattern = re.compile(
+            rf"r_SPCD__{re.escape(random_tag)}\[(\d+),Intercept\]"
+        )
+        found_any = False
+        for key, val in params.items():
+            m = r_pattern.match(key)
+            if m:
+                fia_code = int(m.group(1))
+                fvs_idx = fia_to_fvs.get(fia_code)
+                if fvs_idx is not None and fvs_idx <= n_species:
+                    result[fvs_idx - 1] = fixed + val
+                    found_any = True
+
+        if found_any:
+            result[np.isnan(result)] = fixed
+            return result
+        return None
+
     def compute_multipliers_for_draw(
         self,
         draw: dict[str, dict[str, float]],
@@ -230,6 +385,14 @@ class UncertaintyEngine:
         SDIMAX). This mirrors the logic in FvsConfigLoader but operates on
         a single draw rather than the posterior median.
 
+        Handles two posterior parameterization styles:
+          - Stan non centered: mu_b0 + sigma_b0 * z_b0[i] (diameter growth)
+          - brms random effects: b_Intercept + r_SPCD[code,Intercept] (mortality,
+            stand density) or b_a_Intercept + r_SPCD__a[code,Intercept] (height)
+
+        FIA species codes in the random effects are mapped to FVS species indices
+        using the FIAJSP array from the variant config.
+
         Args:
             draw: Parameter draw from get_draw() or sample_draw()
             default_config: The default (uncalibrated) config dictionary
@@ -239,16 +402,33 @@ class UncertaintyEngine:
         """
         result = {}
         default_cats = default_config.get("categories", {})
+        maxsp = default_config.get("maxsp", 0)
+        if maxsp == 0:
+            sp_defs = default_cats.get("species_definitions", {})
+            nsp = sp_defs.get("NSP", [])
+            maxsp = int(nsp[0]) if nsp else 108
 
-        # Growth multiplier from diameter growth intercept shift
+        fia_to_fvs = self._build_fia_to_fvs_map(default_config)
+
+        # ---- Growth multiplier from diameter growth intercept shift ----
         if "diameter_growth" in draw:
             dg_params = draw["diameter_growth"]
             default_growth = default_cats.get("growth", {})
 
-            # Look for species specific intercepts (b0[1], b0[2], ...)
-            # or global intercept (b0)
-            cal_b0 = self._extract_species_vector(dg_params, "b0")
-            def_b0_arr = default_growth.get("B0") or default_growth.get("WEIBB1")
+            # Try hierarchical Stan parameterization first (z_b0)
+            cal_b0 = self._reconstruct_hierarchical_intercepts(
+                dg_params, "mu_b0", "z_b0", maxsp, fia_to_fvs
+            )
+            # Fall back to simple indexed form
+            if cal_b0 is None:
+                cal_b0 = self._extract_species_vector(dg_params, "b0")
+
+            # Get default intercepts: try B0, then B1, then WEIBB1
+            def_b0_arr = None
+            for bname in ("B0", "B1", "WEIBB1"):
+                if bname in default_growth:
+                    def_b0_arr = default_growth[bname]
+                    break
 
             if cal_b0 is not None and def_b0_arr is not None:
                 def_b0 = np.array(def_b0_arr, dtype=np.float64)
@@ -264,12 +444,18 @@ class UncertaintyEngine:
                     )
                 result["growth_mult"] = multipliers
 
-        # Mortality multiplier from mortality intercept shift
+        # ---- Mortality multiplier from mortality intercept shift ----
         if "mortality" in draw:
             mort_params = draw["mortality"]
             default_mort = default_cats.get("mortality", {})
 
-            cal_b0 = self._extract_species_vector(mort_params, "b_Intercept")
+            # Try brms hierarchical (b_Intercept + r_SPCD[code,Intercept])
+            cal_b0 = self._reconstruct_hierarchical_intercepts(
+                mort_params, "b_Intercept", "r_SPCD", maxsp, fia_to_fvs
+            )
+            # Fall back to simple indexed
+            if cal_b0 is None:
+                cal_b0 = self._extract_species_vector(mort_params, "b_Intercept")
             if cal_b0 is None:
                 cal_b0 = self._extract_species_vector(mort_params, "b0")
 
@@ -291,14 +477,27 @@ class UncertaintyEngine:
                     )
                 result["mort_mult"] = np.clip(odds_ratio, 0.1, 10.0)
 
-        # Height growth multiplier
-        if "height_increment" in draw:
-            hg_params = draw["height_increment"]
-            for cat_name in ("height_growth", "growth"):
+        # ---- Height growth multiplier ----
+        # Draws may use "height_diameter" or "height_increment" key
+        hg_key = None
+        for k in ("height_increment", "height_diameter"):
+            if k in draw:
+                hg_key = k
+                break
+
+        if hg_key is not None:
+            hg_params = draw[hg_key]
+            for cat_name in ("height_diameter", "height_growth", "growth"):
                 hg_def = default_cats.get(cat_name, {})
-                for b0_name in ("HGLD", "HG_B0"):
+                for b0_name in ("HD_A", "HGLD", "HG_B0"):
                     if b0_name in hg_def:
-                        cal_vals = self._extract_species_vector(hg_params, "b1")
+                        # Try brms double underscore notation (r_SPCD__a)
+                        cal_vals = self._reconstruct_brms_intercepts_double(
+                            hg_params, "b_a_Intercept", "a", maxsp, fia_to_fvs
+                        )
+                        if cal_vals is None:
+                            cal_vals = self._extract_species_vector(hg_params, "b1")
+
                         if cal_vals is not None:
                             def_vals = np.array(hg_def[b0_name], dtype=np.float64)
                             n = min(len(cal_vals), len(def_vals))
@@ -313,12 +512,25 @@ class UncertaintyEngine:
                 if "hg_mult" in result:
                     break
 
-        # SDI max values
+        # ---- SDI max values from stand density ----
         if "stand_density" in draw:
             sdi_params = draw["stand_density"]
-            sdi_vals = self._extract_species_vector(sdi_params, "sdimax")
-            if sdi_vals is not None:
-                result["sdi_values"] = sdi_vals
+
+            # Try brms hierarchical: b_Intercept + r_SPCD[code,Intercept]
+            # The stand density intercept is ln(SDImax), so exponentiate
+            sdi_intercepts = self._reconstruct_hierarchical_intercepts(
+                sdi_params, "b_Intercept", "r_SPCD", maxsp, fia_to_fvs
+            )
+            if sdi_intercepts is not None:
+                # Intercepts are on log scale; convert to SDI values
+                sdi_vals = np.exp(sdi_intercepts)
+                # Clip to reasonable range (100 to 2000)
+                result["sdi_values"] = np.clip(sdi_vals, 100, 2000)
+            else:
+                # Fall back to direct sdimax values
+                sdi_vals = self._extract_species_vector(sdi_params, "sdimax")
+                if sdi_vals is not None:
+                    result["sdi_values"] = sdi_vals
 
         return result
 
