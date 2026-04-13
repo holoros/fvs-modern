@@ -16,6 +16,16 @@ project adheres to calendar-based versioning (YYYY.MM).
   (`conus-variant` branch with Greg Johnson).
 - Ingrowth submodel and crown ratio revision for the next calendar tag.
 
+## [2026.04.5] — 2026-04-13
+
+### Fixed
+- Re-tag only. The v2026.04.4 webhook delivery to Zenodo failed with a
+  `ConnectTimeout` from Zenodo's worker to `api.github.com` (server-
+  side transient). Zenodo's webhook receiver is idempotent on
+  `delivery_id` and returned `The release has already been received`
+  on retry, so a new tag is required to give Zenodo a fresh delivery
+  to process. No source, calibration, deployment, or metadata changes.
+
 ## [2026.04.4] — 2026-04-13
 
 ### Added
