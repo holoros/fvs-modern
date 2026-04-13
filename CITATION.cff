@@ -8,9 +8,11 @@ authors:
     orcid: "https://orcid.org/0000-0002-9249-1686"
     affiliation: "Center for Research on Sustainable Forests, University of Maine"
 repository-code: "https://github.com/holoros/fvs-modern"
-license: "Unlicense"
+license:
+  - "MIT"
+  - "CC0-1.0"
 version: "2026.04"
-date-released: "2026-04-09"
+date-released: "2026-04-13"
 keywords:
   - forest growth and yield
   - Forest Vegetation Simulator
