@@ -151,31 +151,11 @@ fi
 # =========================================================================
 if $DO_PATCH; then
     echo ">>> Step 2: Applying fvs-modern patches..."
-
-    if $DRY_RUN; then
-        echo "  [DRY RUN] Would apply FORMAT fixes to vbase/initre.f"
-    else
-        # FORMAT bug fixes (A8' -> A8,' etc.)
-        PATCHED=0
-
-        # Fix FORMAT descriptors missing commas before string literals
-        for f in $(find "$FVS_SRC" -name "*.f" -o -name "*.F" | sort); do
-            if grep -q "A8'" "$f" 2>/dev/null; then
-                sed -i "s/A8'/A8,'/g" "$f"
-                PATCHED=$((PATCHED + 1))
-            fi
-            if grep -q "A10'" "$f" 2>/dev/null; then
-                sed -i "s/A10'/A10,'/g" "$f"
-                PATCHED=$((PATCHED + 1))
-            fi
-            if grep -q "I3'" "$f" 2>/dev/null; then
-                sed -i "s/I3' TARGETED/I3, ' TARGETED/g" "$f"
-                PATCHED=$((PATCHED + 1))
-            fi
-        done
-
-        echo "  Applied FORMAT fixes to $PATCHED files"
-    fi
+    # Note: FORMAT-descriptor comma fixes (A8' -> A8,' etc.) were folded
+    # into upstream via PR #118 (SDI reporting update, 2026-03-06, commit
+    # 66a5e14e). This step is now a no-op, retained as a hook for future
+    # local patches that cannot be upstreamed.
+    echo "  (no local patches currently required)"
     echo ""
 fi
 

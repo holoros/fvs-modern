@@ -42,13 +42,13 @@ mkdir -p "$(dirname "$SYNC_FILE")"
 if [ ! -f "$SYNC_FILE" ]; then
     cat > "$SYNC_FILE" << 'INIT'
 {
-    "fvs_last_sha": "",
-    "fvs_last_date": "2025-11-06",
+    "fvs_last_sha": "66a5e14e",
+    "fvs_last_date": "2026-03-06",
     "iface_last_sha": "",
     "iface_last_date": "2025-09-30",
     "last_check": "",
-    "last_sync": "2026-03-22",
-    "notes": "Initial baseline from fvs-modern project setup"
+    "last_sync": "2026-04-13",
+    "notes": "Baseline after PR #118 sync (SDI reporting update, format comma fixes, Reineke plumbing)"
 }
 INIT
     $QUIET || echo "Created initial sync file: $SYNC_FILE"
