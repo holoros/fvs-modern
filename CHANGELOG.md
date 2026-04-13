@@ -16,6 +16,15 @@ project adheres to calendar-based versioning (YYYY.MM).
   (`conus-variant` branch with Greg Johnson).
 - Ingrowth submodel and crown ratio revision for the next calendar tag.
 
+## [2026.04.1] — 2026-04-13
+
+### Fixed
+- CITATION.cff `license` field switched from a list (`MIT`, `CC0-1.0`) to a
+  single SPDX identifier (`MIT`) plus `license-url`. Zenodo's CITATION.cff
+  ingestion rejected the list form with "Citation metadata load failed" on
+  the v2026.04.0 release, preventing DOI minting. Dual-license intent is
+  preserved in the adjacent comment block and the LICENSE file.
+
 ## [2026.04.0] — 2026-04-13
 
 ### Added

@@ -8,15 +8,15 @@ authors:
     orcid: "https://orcid.org/0000-0002-9249-1686"
     affiliation: "Center for Research on Sustainable Forests, University of Maine"
 repository-code: "https://github.com/holoros/fvs-modern"
-license:
-  - "MIT"
-  - "CC0-1.0"
-version: "2026.04.0"
+license: MIT
+license-url: "https://github.com/holoros/fvs-modern/blob/main/LICENSE"
+version: "2026.04.1"
 date-released: "2026-04-13"
-# Zenodo DOI: pending ingestion at time of tag (webhook delivered OK
-# 2026-04-13T14:39Z). Populate `doi:` and `identifiers:` fields once
-# Zenodo finishes indexing the release at
-# https://zenodo.org/account/settings/github/repository/holoros/fvs-modern
+# Repository is dual-licensed: MIT for original Python, R, and deployment
+# code; CC0-1.0 for the USDA FVS Fortran source inherited from upstream.
+# See the LICENSE file for the split. A single SPDX identifier is used here
+# because Zenodo's CITATION.cff ingestion rejects a list under the license
+# field.
 keywords:
   - forest growth and yield
   - Forest Vegetation Simulator
