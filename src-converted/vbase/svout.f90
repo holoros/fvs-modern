@@ -50,31 +50,31 @@ IMPLICIT NONE
 !
 !OMMONS
 
-INCLUDE 'PRGPRM.f90'
-INCLUDE 'FMPARM.f90'
+INCLUDE 'PRGPRM.F77'
+INCLUDE 'FMPARM.F77'
 
-INCLUDE 'ARRAYS.f90'
+INCLUDE 'ARRAYS.F77'
 
-INCLUDE 'CONTRL.f90'
+INCLUDE 'CONTRL.F77'
 
-INCLUDE 'FMCOM.f90'
+INCLUDE 'FMCOM.F77'
 
-INCLUDE 'PLOT.f90'
+INCLUDE 'PLOT.F77'
 
-INCLUDE 'SVDATA.f90'
+INCLUDE 'SVDATA.F77'
 
-INCLUDE 'SVDEAD.f90'
+INCLUDE 'SVDEAD.F77'
 
-INCLUDE 'METRIC.f90'
+INCLUDE 'METRIC.F77'
 
 !OMMONS
 
 CHARACTER(*), PARAMETER :: SUFFIX = '_index.svs'
 CHARACTER(*), PARAMETER :: STDTAG = '"Stand='
-INTEGER IFMCLFG,IYEAR,KYLAST,ISTLNB,I,J,K,KYFRST, &
-           NOUT,ISVOBJ,IPS,IDIR,ITC,IPUT,IX,ISNAG
-REAL    X,CW,CRAD,XICR,SNDI,SNHT,SNCRTO,SNCRDI,RAD, &
-           X1,Y1,X2,Y2,XM1,XM2,XM3
+INTEGER IFMCLFG,IYEAR,KYLAST,ISTLNB,I,J,K,KYFRST,
+     & NOUT,ISVOBJ,IPS,IDIR,ITC,IPUT,IX,ISNAG
+REAL    X,CW,CRAD,XICR,SNDI,SNHT,SNCRTO,SNCRDI,RAD,
+     & X1,Y1,X2,Y2,XM1,XM2,XM3
 REAL    EXPSNGS, NFFESNGS, NSTNDNG, XPROB
 CHARACTER*(*) AMSG
 CHARACTER*2 SPCD
@@ -83,30 +83,30 @@ CHARACTER*100 CBUFF
 CHARACTER*23 PLTGEO
 LOGICAL DEBUG,LOPEN
 CALL DBCHK (DEBUG,'SVOUT',5,ICYC)
-IF (DEBUG) WRITE (JOSTND,5) IYEAR, AMSG, JSVOUT, NSVOBJ, &
-     JSVPIC, NIMAGE, IFMCLFG
-5 FORMAT (/' IN SVOUT: IYEAR=',I5,' AMSG=',A,' JSVOUT=',I3, &
-     ' NSVOBJ=',I6,' JSVPIC=',I4,' NIMAGE=',I5,' IFMCLFG=',I5)
+IF (DEBUG) WRITE (JOSTND,5) IYEAR, AMSG, JSVOUT, NSVOBJ,
+     & JSVPIC, NIMAGE, IFMCLFG
+5 FORMAT (/' IN SVOUT: IYEAR=',I5,' AMSG=',A,' JSVOUT=',I3,
+     & ' NSVOBJ=',I6,' JSVPIC=',I4,' NIMAGE=',I5,' IFMCLFG=',I5)
 
 IF (DEBUG) THEN
-  WRITE (JOSTND,1000) ICYC, IYEAR, ILYEAR, &
-                         NDEAD, NSVOBJ
-1000   FORMAT (' ','ENTERING SVOUT, ICYC=',I2, &
-                 ', IYEAR=',I4,', ILYEAR=',I4,':', / , &
-             ' ',T5,'NDEAD=',I4,', NSVOBJ=',I6,//, &
-             ' ',T5,'SNAG LIST:',//, &
-             ' ',T5,'  I   IDTREE  SPP ODIA OLEN IYRCOD STATUS ' &
-                    'FALLDIR OPROB STDNG',/, &
-             ' ',T5,'---- -------- --- ---- ---- ------ ------ ' &
-                    '------- ----- -----' )
+  WRITE (JOSTND,1000) ICYC, IYEAR, ILYEAR,
+     & NDEAD, NSVOBJ
+1000   FORMAT (' ','ENTERING SVOUT, ICYC=',I2,
+     & ', IYEAR=',I4,', ILYEAR=',I4,':', / ,
+     & ' ',T5,'NDEAD=',I4,', NSVOBJ=',I6,//,
+     & ' ',T5,'SNAG LIST:',//,
+     & ' ',T5,'  I   IDTREE  SPP ODIA OLEN IYRCOD STATUS ',
+     & 'FALLDIR OPROB STDNG',/,
+     & ' ',T5,'---- -------- --- ---- ---- ------ ------ ',
+     & '------- ----- -----' )
 !                       XXXX XXXXXXXX XXX XX.X XXX. XXXXXX XXXXXX
 !                       XXXXXX. XXXX. XXXX.
   DO I=1,NDEAD
-    WRITE(JOSTND,1010) I, OIDTRE(I), ISNSP(I), ODIA(I), OLEN(I), &
-                          IYRCOD(I), ISTATUS(I), &
-                          FALLDIR(I), SPROBS(I,1), SPROBS(I,2)
-1010     FORMAT(' ',T5,I4,1X,I8,1X,I3,1X,F4.1,1X,F4.0,1X, &
-                  I6,1X,I6,1X,F7.0,1X,F5.0,1X,F5.0)
+    WRITE(JOSTND,1010) I, OIDTRE(I), ISNSP(I), ODIA(I), OLEN(I),
+     & IYRCOD(I), ISTATUS(I),
+     & FALLDIR(I), SPROBS(I,1), SPROBS(I,2)
+1010     FORMAT(' ',T5,I4,1X,I8,1X,I3,1X,F4.1,1X,F4.0,1X,
+     & I6,1X,I6,1X,F7.0,1X,F5.0,1X,F5.0)
   ENDDO
 
   WRITE(JOSTND,1020)
@@ -128,8 +128,8 @@ IF (JSVOUT.LT.0) GOTO 26 ! PROCESSING IMAGE, BUT NOT OUTPUTING
 inquire(unit=JSVOUT,opened=LOPEN)
 
 if (.not.LOPEN) then
-  open(unit=JSVOUT,file=trim(KWDFIL)//SUFFIX, &
-            status="old",err=7)
+  open(unit=JSVOUT,file=trim(KWDFIL)//SUFFIX,
+     & status="old",err=7)
 
 !       find out the last used value of NIMAGE.
 
@@ -140,8 +140,8 @@ if (.not.LOPEN) then
 2   continue
   close(unit=JSVOUT)
 
-  open(unit=JSVOUT,file=trim(KWDFIL)//SUFFIX, &
-            position="append",err=7)
+  open(unit=JSVOUT,file=trim(KWDFIL)//SUFFIX,
+     & position="append",err=7)
   goto 9
 7   continue
   write (JOSTND,8) trim(KWDFIL)//SUFFIX
@@ -180,25 +180,25 @@ IF (JSVPIC.GT.0) THEN
     IF (KWDFIL(I:I).EQ.'/' .OR. KWDFIL(I:I).EQ.'\') EXIT
     KYFRST=I
   ENDDO
-  IF (DEBUG) WRITE (JOSTND,*) 'KYFRST=',KYFRST, &
-       ' KYLAST=',KYLAST,' KWDFIL=',KWDFIL(KYFRST:KYLAST)
+  IF (DEBUG) WRITE (JOSTND,*) 'KYFRST=',KYFRST,
+     & ' KYLAST=',KYLAST,' KWDFIL=',KWDFIL(KYFRST:KYLAST)
   IF (NIMAGE.LT.1000) THEN
-    WRITE (CBUFF,'(A,''_'',I3.3,''.svs'')') &
-         KWDFIL(KYFRST:KYLAST),NIMAGE
+    WRITE (CBUFF,'(A,''_'',I3.3,''.svs'')')
+     & KWDFIL(KYFRST:KYLAST),NIMAGE
   ELSE
-    WRITE (CBUFF,'(A,''_'',I6.6,''.svs'')') &
-         KWDFIL(KYFRST:KYLAST),NIMAGE
+    WRITE (CBUFF,'(A,''_'',I6.6,''.svs'')')
+     & KWDFIL(KYFRST:KYLAST),NIMAGE
   ENDIF
-  IF (DEBUG) WRITE (JOSTND,*) 'FILE OPEN=', &
-       TRIM(KWDFIL(:KYLAST)//'/'//CBUFF)
+  IF (DEBUG) WRITE (JOSTND,*) 'FILE OPEN=',
+     & TRIM(KWDFIL(:KYLAST)//'/'//CBUFF)
 
 !       TRY TO OPEN A FILE WITH THE DIRECTORY NAME INCLUDED.
 
-  OPEN (UNIT=JSVPIC,FILE=TRIM(KWDFIL(:KYLAST)//'/'//CBUFF), &
-           STATUS="REPLACE",ERR=12)
+  OPEN (UNIT=JSVPIC,FILE=TRIM(KWDFIL(:KYLAST)//'/'//CBUFF),
+     & STATUS="REPLACE",ERR=12)
 
-  WRITE (JSVOUT,10) STDTAG,NPLT(1:MAX(1,ISTLNB(NPLT))),IYEAR, &
-         AMSG,KWDFIL(:KYLAST)//'/'//TRIM(CBUFF)
+  WRITE (JSVOUT,10) STDTAG,NPLT(1:MAX(1,ISTLNB(NPLT))),IYEAR,
+     & AMSG,KWDFIL(:KYLAST)//'/'//TRIM(CBUFF)
 10   FORMAT (A,A,' Year=',I4.4,' ',A,'" "',A,'"')
   GOTO 20
 
@@ -207,8 +207,8 @@ IF (JSVPIC.GT.0) THEN
 12   CONTINUE
 
   OPEN (UNIT=JSVPIC,FILE=TRIM(CBUFF),STATUS="REPLACE",ERR=14)
-  WRITE (JSVOUT,10) STDTAG,NPLT(1:MAX(1,ISTLNB(NPLT))),IYEAR, &
-           AMSG,TRIM(CBUFF)
+  WRITE (JSVOUT,10) STDTAG,NPLT(1:MAX(1,ISTLNB(NPLT))),IYEAR,
+     & AMSG,TRIM(CBUFF)
   GOTO 20
 14   CONTINUE
 
@@ -240,11 +240,11 @@ SELECT CASE (VARACD)
     SFILE='WEST'
 END SELECT
 !
-WRITE (NOUT,21) NPLT(1:MAX(1,ISTLNB(NPLT))),IYEAR,AMSG, &
-     SFILE,PLTGEO(1:ISTLNB(PLTGEO))
-21 FORMAT ('#TITLE Stand=',A,' Year=',I4.4,' ',A/ &
-     '#TREEFORM ',A,'.TRF'/ &
-     '#FORMAT 2'/A)
+WRITE (NOUT,21) NPLT(1:MAX(1,ISTLNB(NPLT))),IYEAR,AMSG,
+     & SFILE,PLTGEO(1:ISTLNB(PLTGEO))
+21 FORMAT ('#TITLE Stand=',A,' Year=',I4.4,' ',A/
+     & '#TREEFORM ',A,'.TRF'/
+     & '#FORMAT 2'/A)
 
 IF (IMETRIC.EQ.0) THEN
   WRITE(NOUT,"('#UNITS ENGLISH')")
@@ -252,10 +252,10 @@ ELSE
   WRITE(NOUT,"('#UNITS METRIC')")
 ENDIF
 
-WRITE(NOUT,"(';                  trcl  stus             fang'/ &
-     ';species        tr#  |crcl|   dbh   ht lang |edia crd', &
-     '  cr    crd  cr    crd  cr    crd  cr ex mk  xloc    yloc', &
-     '  z')")
+WRITE(NOUT,"(';                  trcl  stus             fang'/
+     & ';species        tr#  |crcl|   dbh   ht lang |edia crd',
+     & '  cr    crd  cr    crd  cr    crd  cr ex mk  xloc    yloc',
+     & '  z')")
 
 !     OUTPUT SUBPLOT BOUNDARIES, IF DESIRED.
 
@@ -362,9 +362,9 @@ IF (IRPOLES.EQ.1) THEN
 !         SQUARE PLOTS
 
     WRITE (NOUT,25) J,I,0.00,0.00
-25     FORMAT ('RANGEPOLE',T16, &
-         '0 0 0 1 ',I3,I4,' 0 0 0 0 0 0 0 0 0 0 0 1 0 ', &
-         2F8.2,' 0')
+25     FORMAT ('RANGEPOLE',T16,
+     & '0 0 0 1 ',I3,I4,' 0 0 0 0 0 0 0 0 0 0 0 1 0 ',
+     & 2F8.2,' 0')
     WRITE (NOUT,25) J, I, 0.00,  XM1
     WRITE (NOUT,25) J, I,  XM1, 0.00
     WRITE (NOUT,25) J, I,  XM1,  XM1
@@ -426,18 +426,18 @@ DO ISVOBJ=1,NSVOBJ
 
       IF (JSVOUT.LT.0) GOTO 31 ! PROCESSING IMAGE, BUT NOT OUTPUTING
       IF (IMETRIC.EQ.0) THEN
-        WRITE (NOUT,30) SPCD,I,ITC,0,IPS,DBH(I),HT(I),0,IDIR, &
-             0,CRAD,XICR,CRAD,XICR,CRAD,XICR,CRAD,XICR, &
-             1,0,XSLOC(ISVOBJ),YSLOC(ISVOBJ),0
+        WRITE (NOUT,30) SPCD,I,ITC,0,IPS,DBH(I),HT(I),0,IDIR,
+     & 0,CRAD,XICR,CRAD,XICR,CRAD,XICR,CRAD,XICR,
+     & 1,0,XSLOC(ISVOBJ),YSLOC(ISVOBJ),0
       ELSE
-        WRITE (NOUT,30) SPCD,I,ITC,0,IPS, &
-             DBH(I)*INtoCM,HT(I)*FTtoM,0,IDIR, &
-             0,CRAD*FTtoM,XICR,CRAD*FTtoM,XICR,CRAD*FTtoM, &
-             XICR,CRAD*FTtoM,XICR, &
-             1,0, XSLOC(ISVOBJ),YSLOC(ISVOBJ),0
+        WRITE (NOUT,30) SPCD,I,ITC,0,IPS,
+     & DBH(I)*INtoCM,HT(I)*FTtoM,0,IDIR,
+     & 0,CRAD*FTtoM,XICR,CRAD*FTtoM,XICR,CRAD*FTtoM,
+     & XICR,CRAD*FTtoM,XICR,
+     & 1,0, XSLOC(ISVOBJ),YSLOC(ISVOBJ),0
       ENDIF
-30       FORMAT (A,T16,I5,I3,2I2,F6.1,F6.0,I2,I4,I2, &
-           4(F6.1,1X,F4.2),2I2,2F8.2,I2)
+30       FORMAT (A,T16,I5,I3,2I2,F6.1,F6.0,I2,I4,I2,
+     & 4(F6.1,1X,F4.2),2I2,2F8.2,I2)
 31       CONTINUE
 !
     ELSEIF (IOBJTP(ISVOBJ).EQ.2 .OR. IOBJTP(ISVOBJ).EQ.5) THEN
@@ -463,23 +463,23 @@ DO ISVOBJ=1,NSVOBJ
         XPROB = 0.0
         DO K=1,MXDEAD
           IF ( ISTATUS(K) .NE. 0 ) THEN
-            IF ( OIDTRE(K)  .EQ. OIDTRE(IS2F(ISVOBJ)) .AND. &
-                    IYRCOD(K)  .EQ. IYRCOD(IS2F(ISVOBJ)) .AND. &
-                    FALLDIR(K) .EQ. -1 ) XPROB=XPROB+1
+            IF ( OIDTRE(K)  .EQ. OIDTRE(IS2F(ISVOBJ)) .AND.
+     & IYRCOD(K)  .EQ. IYRCOD(IS2F(ISVOBJ)) .AND.
+     & FALLDIR(K) .EQ. -1 ) XPROB=XPROB+1
           ENDIF
         ENDDO
         DO K=1,MXDEAD
           IF ( ISTATUS(K) .NE. 0 ) THEN
-            IF ( OIDTRE(K) .EQ. OIDTRE(IS2F(ISVOBJ)) .AND. &
-                    IYRCOD(K) .EQ. IYRCOD(IS2F(ISVOBJ)) ) THEN
+            IF ( OIDTRE(K) .EQ. OIDTRE(IS2F(ISVOBJ)) .AND.
+     & IYRCOD(K) .EQ. IYRCOD(IS2F(ISVOBJ)) ) THEN
               SPROBS(K,2) = XPROB
             ENDIF
           ENDIF
         ENDDO
       ENDIF
 
-      CALL SVSNAGE(IYEAR,IS2F(ISVOBJ),SNCRDI,SNCRTO, &
-           SNHT,SNDI)
+      CALL SVSNAGE(IYEAR,IS2F(ISVOBJ),SNCRDI,SNCRTO,
+     & SNHT,SNDI)
 
 !           Keep snags with diameter less than 1", for better
 !           agreement with FFE logic.
@@ -488,8 +488,8 @@ DO ISVOBJ=1,NSVOBJ
         IF (ISTATUS(IS2F(ISVOBJ)).GT.0) NDEAD=NDEAD-1
         IF (DEBUG) THEN
           WRITE (JOSTND,1050) IS2F(ISVOBJ), SNHT, NDEAD
-1050           FORMAT (' ',T5,'Dropping snag:',I5,' with SNHT=',F4.1, &
-                            '. NDEAD=',I5)
+1050           FORMAT (' ',T5,'Dropping snag:',I5,' with SNHT=',F4.1,
+     & '. NDEAD=',I5)
         ENDIF
         ISTATUS(IS2F(ISVOBJ))=0
         IOBJTP(ISVOBJ)=0
@@ -591,21 +591,21 @@ DO ISVOBJ=1,NSVOBJ
       IF( JSVOUT.LT.0) GOTO 32 ! PROCESSING IMAGE, BUT NOT OUTPUTING
 
       IF(IMETRIC.EQ.0) THEN
-        WRITE (NOUT,30) SPCD,I,ITC,0,IPS,SNDI,SNHT,0,IDIR, &
-             0,CRAD,XICR,CRAD,XICR,CRAD,XICR,CRAD,XICR, &
-             1,0,XSLOC(ISVOBJ),YSLOC(ISVOBJ),0
+        WRITE (NOUT,30) SPCD,I,ITC,0,IPS,SNDI,SNHT,0,IDIR,
+     & 0,CRAD,XICR,CRAD,XICR,CRAD,XICR,CRAD,XICR,
+     & 1,0,XSLOC(ISVOBJ),YSLOC(ISVOBJ),0
       ELSE
-        WRITE (NOUT,30) SPCD,I,ITC,0,IPS, SNDI*INtoCM, &
-             SNHT*FTtoM,0,IDIR,0,CRAD*FTtoM,XICR,CRAD*FTtoM, &
-             XICR,CRAD*FTtoM,XICR,CRAD*FTtoM,XICR,1,0, &
-             XSLOC(ISVOBJ),YSLOC(ISVOBJ),0
+        WRITE (NOUT,30) SPCD,I,ITC,0,IPS, SNDI*INtoCM,
+     & SNHT*FTtoM,0,IDIR,0,CRAD*FTtoM,XICR,CRAD*FTtoM,
+     & XICR,CRAD*FTtoM,XICR,CRAD*FTtoM,XICR,1,0,
+     & XSLOC(ISVOBJ),YSLOC(ISVOBJ),0
       ENDIF
       IF (ISTATUS(IS2F(ISVOBJ)) .EQ. 0) IOBJTP(ISVOBJ)=0
 
 !              DRAW FLAME OBJECTS FOR THIS TREE
 
-      IF (IFMCLFG.EQ.4 .AND. ITC.EQ.97 .AND. IDIR.EQ.0) &
-           CALL FMSVTREE (NOUT,ISVOBJ)
+      IF (IFMCLFG.EQ.4 .AND. ITC.EQ.97 .AND. IDIR.EQ.0)
+     & CALL FMSVTREE (NOUT,ISVOBJ)
 
 !              TO HANDLE IOBJTP=3 OBJECTS, OR OBJECTS WHICH WILL B
 !              REMOVED AT THE END OF THIS CYCLE
@@ -673,24 +673,24 @@ DO ISVOBJ=1,NSVOBJ
       IF( JSVOUT.LT.0) GOTO 33 ! PROCESSING IMAGE, BUT NOT OUTPUTING
 
       IF(IMETRIC.EQ.0) THEN
-        WRITE (NOUT,1060) I, ITC, 0, IPS, SNDI, SNHT, &
-                             0, IDIR, 0, &
-                             CRAD, XICR, CRAD, XICR, &
-                             CRAD, XICR, CRAD, XICR, &
-                             1, 0, XSLOC(ISVOBJ), YSLOC(ISVOBJ), 0
+        WRITE (NOUT,1060) I, ITC, 0, IPS, SNDI, SNHT,
+     & 0, IDIR, 0,
+     & CRAD, XICR, CRAD, XICR,
+     & CRAD, XICR, CRAD, XICR,
+     & 1, 0, XSLOC(ISVOBJ), YSLOC(ISVOBJ), 0
       ELSE
         SNDI = SNDI * INtoCM
         SNHT = SNHT * FTtoM
         CRAD = CRAD * FTtoM
-        WRITE (NOUT,1060) I, ITC, 0, IPS, SNDI, SNHT, &
-                             0, IDIR, 0, &
-                             CRAD, XICR, CRAD, XICR, &
-                             CRAD, XICR, CRAD, XICR, &
-                             1, 0, XSLOC(ISVOBJ), YSLOC(ISVOBJ), 0
-1060       FORMAT ('SNAG2',T16,I5,I3,2I2,F6.1,F6.0, &
-                 I2,I4,I2, &
-                 4(F6.1,1X,F4.2), &
-                 2I2,2F8.2,I2)
+        WRITE (NOUT,1060) I, ITC, 0, IPS, SNDI, SNHT,
+     & 0, IDIR, 0,
+     & CRAD, XICR, CRAD, XICR,
+     & CRAD, XICR, CRAD, XICR,
+     & 1, 0, XSLOC(ISVOBJ), YSLOC(ISVOBJ), 0
+1060       FORMAT ('SNAG2',T16,I5,I3,2I2,F6.1,F6.0,
+     & I2,I4,I2,
+     & 4(F6.1,1X,F4.2),
+     & 2I2,2F8.2,I2)
       ENDIF
 33       CONTINUE
     ENDIF
@@ -703,8 +703,8 @@ ILYEAR = IYEAR
 
 IPUT=0
 DO ISVOBJ=1,NSVOBJ
-  IF (IOBJTP(ISVOBJ).LE.0 .OR. IS2F(ISVOBJ).EQ.0 &
-       .OR. IOBJTP(ISVOBJ).EQ.3 .OR. IOBJTP(ISVOBJ).EQ.5) THEN
+  IF (IOBJTP(ISVOBJ).LE.0 .OR. IS2F(ISVOBJ).EQ.0
+     & .OR. IOBJTP(ISVOBJ).EQ.3 .OR. IOBJTP(ISVOBJ).EQ.5) THEN
     IF (IPUT.EQ.0) IPUT=ISVOBJ
   ELSE
     IF (IPUT.GT.0 .AND. IPUT.LT.ISVOBJ) THEN
@@ -775,22 +775,22 @@ IF (DEBUG) THEN
 ENDIF
 
 IF (DEBUG) THEN
-  WRITE (JOSTND,1080) ICYC, IYEAR, ILYEAR, &
-                         NDEAD, NSVOBJ
-1080   FORMAT (' ','Leaving SVOUT, ICYC=',I2, &
-                 ', IYEAR=',I4,', ILYEAR=',I4,':', / , &
-             ' ',T5,'NDEAD=',I4,', NSVOBJ=',I6,//, &
-             ' ',T5,'SNAG LIST:',//, &
-             ' ',T5,'  I   IDTREE  SPP ODIA OLEN IYRCOD STATUS ' &
-                    'FALLDIR OPROB STDNG',/, &
-             ' ',T5,'---- -------- --- ---- ---- ------ ------ ' &
-                    '------- ----- -----' )
+  WRITE (JOSTND,1080) ICYC, IYEAR, ILYEAR,
+     & NDEAD, NSVOBJ
+1080   FORMAT (' ','Leaving SVOUT, ICYC=',I2,
+     & ', IYEAR=',I4,', ILYEAR=',I4,':', / ,
+     & ' ',T5,'NDEAD=',I4,', NSVOBJ=',I6,//,
+     & ' ',T5,'SNAG LIST:',//,
+     & ' ',T5,'  I   IDTREE  SPP ODIA OLEN IYRCOD STATUS ',
+     & 'FALLDIR OPROB STDNG',/,
+     & ' ',T5,'---- -------- --- ---- ---- ------ ------ ',
+     & '------- ----- -----' )
 !                       XXXX XXXXXXXX XXX XX.X XXX. XXXXXX XXXXXX
 !                       XXXXXX. XXXX. XXXX.
   DO I=1,NDEAD
-    WRITE(JOSTND,1010) I, OIDTRE(I), ISNSP(I), ODIA(I), OLEN(I), &
-                          IYRCOD(I), ISTATUS(I), &
-                          FALLDIR(I), SPROBS(I,1), SPROBS(I,2)
+    WRITE(JOSTND,1010) I, OIDTRE(I), ISNSP(I), ODIA(I), OLEN(I),
+     & IYRCOD(I), ISTATUS(I),
+     & FALLDIR(I), SPROBS(I,1), SPROBS(I,2)
   ENDDO
 !
   NSTNDNG = 0.0
@@ -806,19 +806,19 @@ IF (DEBUG) THEN
   DO I=1,NSNAG
     NFFESNGS = NFFESNGS + DENIH(I) + DENIS(I)
   ENDDO
-  WRITE (JOSTND,1090) ICYC, IYEAR, &
-                         NDEAD, NSTNDNG, NFFESNGS, EXPSNGS
-1090   FORMAT (' ','IN SVOUT, ICYC=',I2,', IYEAR=',I4,':', / , &
-             ' ',T5,'NDEAD=',I4,', NSTNDNG=',F5.0,', NFFESNGS=',F5.0, &
-                 ', EXPSNGS=',F5.0)
+  WRITE (JOSTND,1090) ICYC, IYEAR,
+     & NDEAD, NSTNDNG, NFFESNGS, EXPSNGS
+1090   FORMAT (' ','IN SVOUT, ICYC=',I2,', IYEAR=',I4,':', / ,
+     & ' ',T5,'NDEAD=',I4,', NSTNDNG=',F5.0,', NFFESNGS=',F5.0,
+     & ', EXPSNGS=',F5.0)
 ENDIF
 
 IX=0
 DO ISVOBJ=1,NSVOBJ
   IF (IOBJTP(ISVOBJ).EQ.2) IX=IX+1
 ENDDO
-IF (DEBUG) WRITE (JOSTND,*) 'SVOUTNDEAD=',NDEAD, &
-     'DEADOBJECTS=',IX
+IF (DEBUG) WRITE (JOSTND,*) 'SVOUTNDEAD=',NDEAD,
+     & 'DEADOBJECTS=',IX
 
 50 CONTINUE
 
@@ -828,8 +828,8 @@ IF (DEBUG) WRITE (JOSTND,*) 'SVOUTNDEAD=',NDEAD, &
 IF (NOUT.EQ.JSVPIC) CLOSE (JSVPIC)
 
 IF (DEBUG) WRITE (JOSTND,60) NSVOBJ,JSVOUT,JSVPIC
-60 FORMAT (' IN SVOUT: END. NSVOBJ=',I6,' JSVOUT=',I4, &
-     ' JSVPIC=',I4)
+60 FORMAT (' IN SVOUT: END. NSVOBJ=',I6,' JSVOUT=',I4,
+     & ' JSVPIC=',I4)
 
 !     QUICK CHECKS/DEBUG
 
@@ -839,3 +839,4 @@ IF (DEBUG .AND. IFMCLFG.EQ.3) CALL SVCDBH(WK3,0)
 
 RETURN
 END
+

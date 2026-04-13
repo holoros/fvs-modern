@@ -33,17 +33,17 @@ IMPLICIT NONE
 
 !.... PARAMETER INCLUDE FILES.
 
-INCLUDE 'PRGPRM.f90'
-INCLUDE 'FMPARM.f90'
+INCLUDE 'PRGPRM.F77'
+INCLUDE 'FMPARM.F77'
 
 !.... COMMON INCLUDE FILES.
 
 !sng  INCLUDE 'CONTRL.F77'
 !sng  INCLUDE 'PLOT.F77'
-INCLUDE 'CONTRL.f90'
-INCLUDE 'PLOT.f90'
-INCLUDE 'FMCOM.f90'
-INCLUDE 'FMFCOM.f90'
+INCLUDE 'CONTRL.F77'
+INCLUDE 'PLOT.F77'
+INCLUDE 'FMCOM.F77'
+INCLUDE 'FMFCOM.F77'
 !
 !.... VARIABLE DECLARATIONS.
 INTEGER  YRLAST, JYR, II
@@ -113,8 +113,8 @@ DO 100 II = 1, NSNAG
 !        Skip this snag record if there are no snags in it or the snags
 !        are too small to make it into the smallest snag printing class.
 
-   IF ( ((DENIH(II)+DENIS(II)) .LE. 0.0) &
-        .OR. (DBHS(II) .LT. SNPRCL(1)) ) GOTO 100
+   IF ( ((DENIH(II)+DENIS(II)) .LE. 0.0)
+     & .OR. (DBHS(II) .LT. SNPRCL(1)) ) GOTO 100
 
 !        Get the total volume of initially-soft snags in this record.
 
@@ -156,24 +156,24 @@ DO 100 II = 1, NSNAG
 !        ...and add all its snags to the appropriate class totals.
 
    TOTDS(SPS(II),JYR,JCL) = TOTDS(SPS(II),JYR,JCL) + DENIS(II)
-   TOTHTS(SPS(II),JYR,JCL) = TOTHTS(SPS(II),JYR,JCL) + &
-                                HTIS(II) * DENIS(II)
+   TOTHTS(SPS(II),JYR,JCL) = TOTHTS(SPS(II),JYR,JCL) +
+     & HTIS(II) * DENIS(II)
 
    IF (HARD(II)) THEN
      TOTDH(SPS(II),JYR,JCL) = TOTDH(SPS(II),JYR,JCL) + DENIH(II)
-     TOTHTH(SPS(II),JYR,JCL) = TOTHTH(SPS(II),JYR,JCL) + &
-                                  HTIH(II) * DENIH(II)
+     TOTHTH(SPS(II),JYR,JCL) = TOTHTH(SPS(II),JYR,JCL) +
+     & HTIH(II) * DENIH(II)
    ELSE
      TOTDS(SPS(II),JYR,JCL) = TOTDS(SPS(II),JYR,JCL) + DENIH(II)
-     TOTHTS(SPS(II),JYR,JCL) = TOTHTS(SPS(II),JYR,JCL) + &
-                                  HTIH(II) * DENIH(II)
+     TOTHTS(SPS(II),JYR,JCL) = TOTHTS(SPS(II),JYR,JCL) +
+     & HTIH(II) * DENIH(II)
    END IF
 
    TOTVLS(SPS(II),JYR,JCL) = TOTVLS(SPS(II),JYR,JCL) + SNVOLS
    TOTVLH(SPS(II),JYR,JCL) = TOTVLH(SPS(II),JYR,JCL) + SNVOLH
 
-   TOTDBH(SPS(II),JYR,JCL) = TOTDBH(SPS(II),JYR,JCL) + &
-                                DBHS(II) * (DENIS(II) + DENIH(II))
+   TOTDBH(SPS(II),JYR,JCL) = TOTDBH(SPS(II),JYR,JCL) +
+     & DBHS(II) * (DENIS(II) + DENIH(II))
 
 100 CONTINUE
 
@@ -184,15 +184,15 @@ DO 130 JYR= 1,YRLAST
          IF (TOTN .EQ. 0.0) GOTO 110
          TOTDBH(IDC,JYR,JCL) = TOTDBH(IDC,JYR,JCL) / TOTN
          IF (TOTDH(IDC,JYR,JCL) .GT. 0.0) THEN
-            TOTHTH(IDC,JYR,JCL) = TOTHTH(IDC,JYR,JCL) / &
-                                     TOTDH(IDC,JYR,JCL)
+            TOTHTH(IDC,JYR,JCL) = TOTHTH(IDC,JYR,JCL) /
+     & TOTDH(IDC,JYR,JCL)
          ELSE
             TOTHTH(IDC,JYR,JCL) = 0.0
          ENDIF
 
          IF (TOTDS(IDC,JYR,JCL) .GT. 0.0) THEN
-            TOTHTS(IDC,JYR,JCL) = TOTHTS(IDC,JYR,JCL) / &
-                                     TOTDS(IDC,JYR,JCL)
+            TOTHTS(IDC,JYR,JCL) = TOTHTS(IDC,JYR,JCL) /
+     & TOTDS(IDC,JYR,JCL)
          ELSE
             TOTHTS(IDC,JYR,JCL) = 0.0
          ENDIF
@@ -205,8 +205,8 @@ DO 130 JYR= 1,YRLAST
 !     CALL THE DBS MODULE TO OUTPUT DETAILED SNAG REPORT TO A DATABASE
 !
 DBSKODE = 1
-CALL DBSFMDSNAG(IYR,TOTDBH,TOTHTH,TOTHTS,TOTVLH, &
-     TOTVLS,TOTDH,TOTDS,YRLAST,DBSKODE)
+CALL DBSFMDSNAG(IYR,TOTDBH,TOTHTH,TOTHTS,TOTVLH,
+     & TOTVLS,TOTDH,TOTDS,YRLAST,DBSKODE)
 IF (DBSKODE.EQ.0) GOTO 500
 
 !     Make sure JSNOUT is openned.
@@ -223,16 +223,16 @@ IF (LSHEAD) THEN
    WRITE(JSNOUT,211)
    WRITE(JSNOUT,220)
    WRITE(JSNOUT,222)
-200    FORMAT(' ESTIMATED SNAG CHARACTERISTICS ' &
-             '(BASED ON STOCKABLE AREA), STAND ID=',A)
-210    FORMAT(13X,'DEATH CURR', &
-            ' HEIGHT CURR VOLUME (FT3)      ', &
-            '   DENSITY (SNAGS/ACRE)  ')
-211    FORMAT(9X,'DBH  DBH ',1X, &
-            4('-'),'(FT)',3('-'),1X,17('-'),1X,'YEAR',1X,23('-'))
-220    FORMAT(' YEAR SP  CL  (IN)',1X, &
-            ' HARD  SOFT  HARD  SOFT TOTAL', &
-            1X,'DIED   HARD    SOFT    TOTAL')
+200    FORMAT(' ESTIMATED SNAG CHARACTERISTICS ',
+     & '(BASED ON STOCKABLE AREA), STAND ID=',A)
+210    FORMAT(13X,'DEATH CURR',
+     & ' HEIGHT CURR VOLUME (FT3)      ',
+     & '   DENSITY (SNAGS/ACRE)  ')
+211    FORMAT(9X,'DBH  DBH ',1X,
+     & 4('-'),'(FT)',3('-'),1X,17('-'),1X,'YEAR',1X,23('-'))
+220    FORMAT(' YEAR SP  CL  (IN)',1X,
+     & ' HARD  SOFT  HARD  SOFT TOTAL',
+     & 1X,'DIED   HARD    SOFT    TOTAL')
 222    FORMAT(1X,76('-'))
    LSHEAD = .FALSE.
 ENDIF
@@ -247,15 +247,15 @@ DO 430 JYR= 1,YRLAST
          TOTN = TOTDH(IDC,JYR,JCL) + TOTDS(IDC,JYR,JCL)
          IF (TOTN .EQ. 0.0) GOTO 410
 
-         WRITE(JSNOUT,300) IYR,JSP(IDC),JCL, &
-                TOTDBH(IDC,JYR,JCL), &
-                TOTHTH(IDC,JYR,JCL), TOTHTS(IDC,JYR,JCL), &
-                INT(TOTVLH(IDC,JYR,JCL)), INT(TOTVLS(IDC,JYR,JCL)), &
-                INT(TOTVLH(IDC,JYR,JCL)+TOTVLS(IDC,JYR,JCL)), &
-                (IYR-JYR+1), TOTDH(IDC,JYR,JCL), TOTDS(IDC,JYR,JCL), &
-                TOTN
-300          FORMAT(1X,I4,1X,A2,1X,I3,1X,3(F5.1,1X), &
-                   3(I5,1X),I4,1X,3(F7.2,1X))
+         WRITE(JSNOUT,300) IYR,JSP(IDC),JCL,
+     & TOTDBH(IDC,JYR,JCL),
+     & TOTHTH(IDC,JYR,JCL), TOTHTS(IDC,JYR,JCL),
+     & INT(TOTVLH(IDC,JYR,JCL)), INT(TOTVLS(IDC,JYR,JCL)),
+     & INT(TOTVLH(IDC,JYR,JCL)+TOTVLS(IDC,JYR,JCL)),
+     & (IYR-JYR+1), TOTDH(IDC,JYR,JCL), TOTDS(IDC,JYR,JCL),
+     & TOTN
+300          FORMAT(1X,I4,1X,A2,1X,I3,1X,3(F5.1,1X),
+     & 3(I5,1X),I4,1X,3(F7.2,1X))
 410       CONTINUE
 420    CONTINUE
 430 CONTINUE
@@ -267,4 +267,5 @@ IF (LOK) CLOSE(UNIT=JSNOUT)
 
 RETURN
 END
+
 

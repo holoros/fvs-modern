@@ -18,25 +18,25 @@ IMPLICIT NONE
 !OMMONS
 !
 !
-INCLUDE 'PRGPRM.f90'
+INCLUDE 'PRGPRM.F77'
 !
 !
-INCLUDE 'COEFFS.f90'
+INCLUDE 'COEFFS.F77'
 !
 !
-INCLUDE 'CONTRL.f90'
+INCLUDE 'CONTRL.F77'
 !
 !
-INCLUDE 'PLOT.f90'
+INCLUDE 'PLOT.F77'
 !
 !
-INCLUDE 'VARCOM.f90'
+INCLUDE 'VARCOM.F77'
 !
 !
-INCLUDE 'VOLSTD.f90'
+INCLUDE 'VOLSTD.F77'
 !
 !
-INCLUDE 'SNCOM.f90'
+INCLUDE 'SNCOM.F77'
 !
 !
 !OMMONS
@@ -54,49 +54,49 @@ REAL MGRSI(9), MGSI, MGSPIX, MGSION
 !----------
 !  LOAD SDI MAXIMUM VALUES
 !----------
-DATA SDICON / &
-     655., 354., 412., 499., 490., 385., 490., 332., 398., 398., &
-     310., 529., 480., 499., 692., 623., 518., 371., 344., 421., &
-     590., 371., 371., 400., 350., 375., 276., 492., 420., 422., &
-     257., 147., 364., 414., 408., 423., 414., 338., 492., 430., &
-     155., 283., 283., 430., 478., 492., 415., 492., 492., 492., &
-     422., 277., 726., 430., 704., 304., 164., 492., 499., 648., &
-     520., 384., 361., 315., 342., 405., 326., 387., 384., 326., &
-     417., 336., 365., 417., 414., 342., 311., 370., 410., 343., &
-     447., 492., 526., 282., 263., 282., 227., 354., 492., 421./
+DATA SDICON /
+     & 655., 354., 412., 499., 490., 385., 490., 332., 398., 398.,
+     & 310., 529., 480., 499., 692., 623., 518., 371., 344., 421.,
+     & 590., 371., 371., 400., 350., 375., 276., 492., 420., 422.,
+     & 257., 147., 364., 414., 408., 423., 414., 338., 492., 430.,
+     & 155., 283., 283., 430., 478., 492., 415., 492., 492., 492.,
+     & 422., 277., 726., 430., 704., 304., 164., 492., 499., 648.,
+     & 520., 384., 361., 315., 342., 405., 326., 387., 384., 326.,
+     & 417., 336., 365., 417., 414., 342., 311., 370., 410., 343.,
+     & 447., 492., 526., 282., 263., 282., 227., 354., 492., 421./
 !----------
 !  THIS ARRAY CONTAINS OFFICIAL SITE SPECIES USED IN FIA DATA AND
 !  IS CONTAINED IN THE SN SPECIES LIST
 !----------
-DATA ISNSIS/ &
-      5,   6,  11,  17,  64,  35,  47,  75,  78,  15, &
-     16,  44,  59,  76,  45,   8,  12,  13,   2,   1, &
-      3,   7,   4,  14,  34,  61,  65,  87,  74,  10, &
-     20,  22,  24,  25,  33,  60,  62,  63,  66,  69, &
-     71,  73,  83/
+DATA ISNSIS/
+     & 5,   6,  11,  17,  64,  35,  47,  75,  78,  15,
+     & 16,  44,  59,  76,  45,   8,  12,  13,   2,   1,
+     & 3,   7,   4,  14,  34,  61,  65,  87,  74,  10,
+     & 20,  22,  24,  25,  33,  60,  62,  63,  66,  69,
+     & 71,  73,  83/
 !----------
 !  THIS ARRAY CONTAINS A MAP FROM THE OFFICIAL SITE SPECIES TO AN
 !  INDEX GROUP.
 !----------
-DATA ISNGRP/ &
-      1,   1,   1,   1,   2,   2,   2,   2,   2,   3, &
-      3,   3,   3,   3,   3,   4,   4,   4,   5,   5, &
-      5,   5,   5,   5,   6,   6,   6,   6,   7,   8, &
-      9,   9,   9,   9,   9,   9,   9,   9,   9,   9, &
-      9,   9,   9/
+DATA ISNGRP/
+     & 1,   1,   1,   1,   2,   2,   2,   2,   2,   3,
+     & 3,   3,   3,   3,   3,   4,   4,   4,   5,   5,
+     & 5,   5,   5,   5,   6,   6,   6,   6,   7,   8,
+     & 9,   9,   9,   9,   9,   9,   9,   9,   9,   9,
+     & 9,   9,   9/
 !----------
 !  THIS ARRAY CONTAINS A MAP TO ESTIMATE INDIVIDUAL SITE INDICIES.
 !----------
-DATA MAPSI/ &
-      5,   5,   5,   5,   1,   1,   5,   4,   9,   8, &
-      1,   4,   4,   5,   3,   3,   1,   9,   9,   9, &
-      9,   9,   9,   9,   9,   9,   9,   9,   9,   9, &
-      9,   9,   9,   6,   2,   9,   9,   9,   9,   9, &
-      9,   9,   9,   3,   3,   9,   2,   9,   9,   9, &
-      9,   9,   9,   9,   9,   9,   9,   9,   3,   9, &
-      6,   9,   9,   2,   6,   9,   9,   9,   9,   9, &
-      9,   9,   9,   7,   2,   3,   9,   2,   9,   9, &
-      9,   9,   9,   9,   9,   9,   6,   5,   9,   9/
+DATA MAPSI/
+     & 5,   5,   5,   5,   1,   1,   5,   4,   9,   8,
+     & 1,   4,   4,   5,   3,   3,   1,   9,   9,   9,
+     & 9,   9,   9,   9,   9,   9,   9,   9,   9,   9,
+     & 9,   9,   9,   6,   2,   9,   9,   9,   9,   9,
+     & 9,   9,   9,   3,   3,   9,   2,   9,   9,   9,
+     & 9,   9,   9,   9,   9,   9,   9,   9,   3,   9,
+     & 6,   9,   9,   2,   6,   9,   9,   9,   9,   9,
+     & 9,   9,   9,   7,   2,   3,   9,   2,   9,   9,
+     & 9,   9,   9,   9,   9,   9,   6,   5,   9,   9/
 !----------
 !  ARRAY TO IDENTIFY THE "MASTER GROUP" SPECIES WHICH HAVE PUBLISHED
 !  REFERENCES TO ALLOW DIRECT TRANSFORMATION OF SITE INDEX BETWEEN
@@ -111,27 +111,27 @@ DATA MGSISP /5, 64, 45, 12, 14, 65, 74, 10, 63/
 !  MODIFIED FOR USE IN HEIGHT GROWTH SITE INDEX SCALING.
 !  THIS PROCESS IS ESPECIALLY IMPORTANT FOR THE SHORTER TREE SPECIES.
 !----------
-DATA SIMIN/ &
-     15,   15,   15,   35,   35,   35,   45,   45,   35,   25, &
-     35,   40,   40,   35,   30,   30,   35,   35,   35,   35, &
-     30,   35,   25,   35,   35,   15,   25,   30,   15,   15, &
-     15,   15,   35,   35,   35,   35,   35,   25,   15,   15, &
-     35,   35,   35,   30,   30,   35,   25,   35,   15,   35, &
-     15,   15,   30,   35,   35,   15,   15,   15,   30,   40, &
-     30,   35,   25,   25,   25,   30,   25,   25,   35,   25, &
-     35,   35,   30,   25,   25,   15,   25,   25,   30,   25, &
-     15,   15,   35,   35,   35,   35,   35,   15,   15,   15/
+DATA SIMIN/
+     & 15,   15,   15,   35,   35,   35,   45,   45,   35,   25,
+     & 35,   40,   40,   35,   30,   30,   35,   35,   35,   35,
+     & 30,   35,   25,   35,   35,   15,   25,   30,   15,   15,
+     & 15,   15,   35,   35,   35,   35,   35,   25,   15,   15,
+     & 35,   35,   35,   30,   30,   35,   25,   35,   15,   35,
+     & 15,   15,   30,   35,   35,   15,   15,   15,   30,   40,
+     & 30,   35,   25,   25,   25,   30,   25,   25,   35,   25,
+     & 35,   35,   30,   25,   25,   15,   25,   25,   30,   25,
+     & 15,   15,   35,   35,   35,   35,   35,   15,   15,   15/
 !
-DATA SIMAX/ &
-    100,   70,   80,  100,  105,  105,   90,  125,   70,   95, &
-    105,  135,  125,   95,  120,  120,   90,   70,   70,   85, &
-    105,  100,   90,   85,   70,   40,   85,   90,   90,   40, &
-     45,   70,   85,  105,   95,   85,  105,  120,   50,   65, &
-     70,   85,   85,  125,  135,  125,  115,  125,   75,  125, &
-     40,   55,  105,  105,   95,   40,   70,   60,  120,  125, &
-     90,  105,  115,  115,  115,  125,   65,   65,   95,   65, &
-     95,   75,  115,  115,  115,  125,   85,  115,   65,   95, &
-    110,   80,   90,   90,   90,   90,   90,   55,   55,   55/
+DATA SIMAX/
+     & 100,   70,   80,  100,  105,  105,   90,  125,   70,   95,
+     & 105,  135,  125,   95,  120,  120,   90,   70,   70,   85,
+     & 105,  100,   90,   85,   70,   40,   85,   90,   90,   40,
+     & 45,   70,   85,  105,   95,   85,  105,  120,   50,   65,
+     & 70,   85,   85,  125,  135,  125,  115,  125,   75,  125,
+     & 40,   55,  105,  105,   95,   40,   70,   60,  120,  125,
+     & 90,  105,  115,  115,  115,  125,   65,   65,   95,   65,
+     & 95,   75,  115,  115,  115,  125,   85,  115,   65,   95,
+     & 110,   80,   90,   90,   90,   90,   90,   55,   55,   55/
 !-----------
 !  SEE IF WE NEED TO DO SOME DEBUG.
 !-----------
@@ -167,9 +167,9 @@ IF (SITEAR(ISISP) .GE. SIMAX(ISISP)) THEN
   WRITE (JOSTND,110) JSP(ISISP), SITEAR(ISISP)
   CALL ERRGRO(.TRUE., 54)
 ENDIF
-110 FORMAT('***** WARNING - THE SITE SPECIES (',A4,') SITE INDEX ' &
-   ' VALUE WAS OUTSIDE OF THE ALLOWABLE RANGE, ' &
-   'THE VALUE USED WAS ',F5.1)
+110 FORMAT('***** WARNING - THE SITE SPECIES (',A4,') SITE INDEX ',
+     & ' VALUE WAS OUTSIDE OF THE ALLOWABLE RANGE, ',
+     & 'THE VALUE USED WAS ',F5.1)
 !----------
 !  COMPUTE RELATIVE SITE INDEX FOR SITE SPECIES
 !----------
@@ -303,8 +303,8 @@ DO 130 I=1, 9
     ENDIF
   ENDIF
   MGSI = C + D * MGSPIX
-  MGRSI(I) = ( MGSI - SIMIN(MGSISP(I))) / &
-                ( SIMAX(MGSISP(I)) - SIMIN(MGSISP(I)))
+  MGRSI(I) = ( MGSI - SIMIN(MGSISP(I))) /
+     & ( SIMAX(MGSISP(I)) - SIMIN(MGSISP(I)))
 130 CONTINUE
 !----------
 !    GIVEN THE TRANSFORMED RELATIVE SITE INDEX VALUES FOR EACH OF THE
@@ -329,8 +329,8 @@ DO 150 I = 1, MAXSP
       SITEAR(I) = SIMAX(I)
     ENDIF
   ENDIF
-155   FORMAT('*** WARNING - THE SITE SPECIES (',A4,f5.1,')SITE INDEX &
-    WAS OUTSIDE OF THE ALLOWABLE RANGE, THE VALUE USED WAS ',F5.1)
+155   FORMAT('*** WARNING - THE SITE SPECIES (',A4,f5.1,')SITE INDEX
+     & WAS OUTSIDE OF THE ALLOWABLE RANGE, THE VALUE USED WAS ',F5.1)
 150 CONTINUE
 !----------
 !  END OF SITE DUBBING LOGIC
@@ -410,9 +410,9 @@ IF(IREGN.EQ.8)THEN
           DBHMIN(ISPC)=8.
         ENDIF
       ELSE
-        IF((ISPC.EQ.39).OR.(ISPC.EQ.43).OR.(ISPC.EQ.44).OR. &
-              (ISPC.EQ.52).OR.(ISPC.EQ.53).OR.(ISPC.EQ.55).OR. &
-              (ISPC.EQ.63))THEN
+        IF((ISPC.EQ.39).OR.(ISPC.EQ.43).OR.(ISPC.EQ.44).OR.
+     & (ISPC.EQ.52).OR.(ISPC.EQ.53).OR.(ISPC.EQ.55).OR.
+     & (ISPC.EQ.63))THEN
           DBHMIN(ISPC)=6.
         ELSE
           DBHMIN(ISPC)=4.
@@ -439,8 +439,8 @@ IF(IREGN.EQ.8)THEN
       CASE(11)
         IF((KODIST.EQ.3).OR.(KODIST.EQ.10))THEN
           BFMIND(ISPC)=11.0
-        ELSEIF((ISPC.EQ.2).OR.(ISPC.EQ.12).OR. &  ! SYP, SPRUCE, FIR GROUP
-                  (ISPC.EQ.15).OR.(ISPC.EQ.16).OR.(ISPC.EQ.17))THEN
+        ELSEIF((ISPC.EQ.2).OR.(ISPC.EQ.12).OR. ! SYP, SPRUCE, FIR GROUP
+     & (ISPC.EQ.15).OR.(ISPC.EQ.16).OR.(ISPC.EQ.17))THEN
           BFMIND(ISPC)=12.
         ELSE
           BFMIND(ISPC)=10.
@@ -465,8 +465,8 @@ IF(IREGN.EQ.8)THEN
       IF(IFOR.EQ.11)THEN
         IF((KODIST.EQ.3).OR.(KODIST.EQ.10))THEN
           BFTOPD(ISPC)=6.3
-        ELSEIF((ISPC.EQ.2).OR.(ISPC.EQ.12).OR. &  ! SYP, SPRUCE, FIR GROUP
-                  (ISPC.EQ.15).OR.(ISPC.EQ.16).OR.(ISPC.EQ.17))THEN
+        ELSEIF((ISPC.EQ.2).OR.(ISPC.EQ.12).OR. ! SYP, SPRUCE, FIR GROUP
+     & (ISPC.EQ.15).OR.(ISPC.EQ.16).OR.(ISPC.EQ.17))THEN
           BFTOPD(ISPC)=9.
         ELSE
           BFTOPD(ISPC)=6.3
@@ -498,8 +498,8 @@ IF(IREGN.EQ.8)THEN
       CASE(11)
         IF((KODIST.EQ.3).OR.(KODIST.EQ.10))THEN
           SCFMIND(ISPC)=11.0
-        ELSEIF((ISPC.EQ.2).OR.(ISPC.EQ.12).OR. &  ! SYP, SPRUCE, FIR GROUP
-                  (ISPC.EQ.15).OR.(ISPC.EQ.16).OR.(ISPC.EQ.17))THEN
+        ELSEIF((ISPC.EQ.2).OR.(ISPC.EQ.12).OR. ! SYP, SPRUCE, FIR GROUP
+     & (ISPC.EQ.15).OR.(ISPC.EQ.16).OR.(ISPC.EQ.17))THEN
           SCFMIND(ISPC)=12.
         ELSE
           SCFMIND(ISPC)=10.
@@ -524,8 +524,8 @@ IF(IREGN.EQ.8)THEN
       IF(IFOR.EQ.11)THEN
         IF((KODIST.EQ.3).OR.(KODIST.EQ.10))THEN
           SCFTOPD(ISPC)=6.3
-        ELSEIF((ISPC.EQ.2).OR.(ISPC.EQ.12).OR. &  ! SYP, SPRUCE, FIR GROUP
-                  (ISPC.EQ.15).OR.(ISPC.EQ.16).OR.(ISPC.EQ.17))THEN
+        ELSEIF((ISPC.EQ.2).OR.(ISPC.EQ.12).OR. ! SYP, SPRUCE, FIR GROUP
+     & (ISPC.EQ.15).OR.(ISPC.EQ.16).OR.(ISPC.EQ.17))THEN
           SCFTOPD(ISPC)=9.
         ELSE
           SCFTOPD(ISPC)=6.3
@@ -630,26 +630,26 @@ IF (LFIANVB) CALL NVB_REGION_CHECK
 DO ISPC=1,MAXSP
 READ(FIAJSP(ISPC),'(I4)')IFIASP
 VOLEQ='           '
-IF(((METHC(ISPC).EQ.6).OR.(METHC(ISPC).EQ.9)).AND. &
-        (VEQNNC(ISPC).EQ.'           '))THEN
+IF(((METHC(ISPC).EQ.6).OR.(METHC(ISPC).EQ.9)).AND.
+     & (VEQNNC(ISPC).EQ.'           '))THEN
 
   PROD='02'
   CALL VOLEQDEF(VAR,IREGN,FORST,DIST,IFIASP,PROD,VOLEQ,ERRFLAG)
   VEQNNC(ISPC)=VOLEQ
 
-IF(DEBUG)WRITE(16,*)'VAR,IREGN,FORST,DIST,IFIASP,PROD,VOLEQ,', &
-    'ERRFLAG= ',VAR,IREGN,FORST,DIST,IFIASP,PROD,VOLEQ,ERRFLAG
+IF(DEBUG)WRITE(16,*)'VAR,IREGN,FORST,DIST,IFIASP,PROD,VOLEQ,',
+     & 'ERRFLAG= ',VAR,IREGN,FORST,DIST,IFIASP,PROD,VOLEQ,ERRFLAG
 
 ELSE IF (METHC(ISPC).EQ.10) THEN
   CALL NVBEQDEF(IFIASP, VOLEQ)
   VEQNNC(ISPC) = VOLEQ
-  IF(DEBUG)WRITE(16,*)'VAR,IREGN,FORST,DIST,IFIASP,PROD,VOLEQ,', &
-     'ERRFLAG= ',VAR,IREGN,FORST,DIST,IFIASP,PROD,VOLEQ,ERRFLAG
+  IF(DEBUG)WRITE(16,*)'VAR,IREGN,FORST,DIST,IFIASP,PROD,VOLEQ,',
+     & 'ERRFLAG= ',VAR,IREGN,FORST,DIST,IFIASP,PROD,VOLEQ,ERRFLAG
 
 ENDIF
 IF(VEQNNC(ISPC)(11:11) .EQ. CHAR(0)) VEQNNC(ISPC)(11:11) = " "
-IF(((METHB(ISPC).EQ.6).OR.(METHB(ISPC).EQ.9)).AND. &
-        (VEQNNB(ISPC).EQ.'           '))THEN
+IF(((METHB(ISPC).EQ.6).OR.(METHB(ISPC).EQ.9)).AND.
+     & (VEQNNB(ISPC).EQ.'           '))THEN
   PROD='01'
   VOLEQ='           '
   CALL VOLEQDEF(VAR,IREGN,FORST,DIST,IFIASP,PROD,VOLEQ,ERRFLAG)
@@ -857,8 +857,8 @@ IF(IFOR .EQ. 20)THEN
   HT1(13) = 4.79
   HT2(13) = -8.5
   WRITE(JOSTND,310)
-310   FORMAT(/,T12,'ECOLOGICAL UNIT CODE CHANGED TO 232BQ FOR ', &
-     'FURTHER PROCESSING OF FORT BRAGG LOCATION.')
+310   FORMAT(/,T12,'ECOLOGICAL UNIT CODE CHANGED TO 232BQ FOR ',
+     & 'FURTHER PROCESSING OF FORT BRAGG LOCATION.')
 ENDIF
 !----------
 !  IF FIA CODES WERE IN INPUT DATA, WRITE TRANSLATION TABLE
@@ -877,3 +877,4 @@ WRITE(JOSTND,230)(NSP(J,1)(1:2),VEQNNC(J),VEQNNB(J),J=1,MAXSP)
 !
 RETURN
 END
+

@@ -17,18 +17,18 @@ IMPLICIT NONE
 
 !     PARAMETER INCLUDE FILES.
 
-INCLUDE 'PRGPRM.f90'
-INCLUDE 'FMPARM.f90'
+INCLUDE 'PRGPRM.F77'
+INCLUDE 'FMPARM.F77'
 
 !     COMMON INCLUDE FILES
 
-INCLUDE 'PLOT.f90'
-INCLUDE 'CONTRL.f90'
-INCLUDE 'ARRAYS.f90'
-INCLUDE 'FMCOM.f90'
-INCLUDE 'FMFCOM.f90'
+INCLUDE 'PLOT.F77'
+INCLUDE 'CONTRL.F77'
+INCLUDE 'ARRAYS.F77'
+INCLUDE 'FMCOM.F77'
+INCLUDE 'FMFCOM.F77'
 !      INCLUDE 'FMCLCOM.F77'
-INCLUDE 'METRIC.f90'
+INCLUDE 'METRIC.F77'
 
 !     VARIABLE DECLARATIONS
 
@@ -54,8 +54,8 @@ IF (DEBUG) WRITE(JOSTND,1) ICYC
 CALL GETLUN (JROUT)
 !
 IF (DEBUG) WRITE(JOSTND,40) ICRPTB,ICRPTE,IDCRPT,JROUT
-40 FORMAT(' FMDOUT: ICRPTB=',I5,' ICRPTE=',I5, &
-     ' IDCRPT=',I5,' JROUT=',I3)
+40 FORMAT(' FMDOUT: ICRPTB=',I5,' ICRPTE=',I5,
+     & ' IDCRPT=',I5,' JROUT=',I3)
 
 IF (CRDCAY .GT. 0.0) THEN
   LDCAY = .TRUE.
@@ -125,8 +125,8 @@ DO I = 1,ITRN
     CRWNRTO = ICR(I)
     LIVEDEAD='L'
     IF (LVWEST) LMERCH = .TRUE.
-    CALL FMSVL2(JS,D,H,X,VT,CRWNRTO, &
-                   LIVEDEAD,LMERCH,DEBUG,JOSTND)
+    CALL FMSVL2(JS,D,H,X,VT,CRWNRTO,
+     & LIVEDEAD,LMERCH,DEBUG,JOSTND)
     V(2) = V(2) + FMPROB(I) * VT * V2T(JS)
   ENDIF
 ENDDO
@@ -240,22 +240,22 @@ IF (ICRPAS .EQ. 1) THEN
 699   FORMAT(1(/1X,I5))
 700   FORMAT(1X,I5,1X,110('-'))
 701   FORMAT(1X,I5,1X,30X,'******  CARBON REPORT VERSION 1.0 ******')
-702   FORMAT(1X,I5,1X,41X,'STAND CARBON REPORT ' &
-                         '(BASED ON STOCKABLE AREA)')
+702   FORMAT(1X,I5,1X,41X,'STAND CARBON REPORT ',
+     & '(BASED ON STOCKABLE AREA)')
 44   FORMAT(1X,I5,' STAND ID: ',A26,4X,'MGMT ID: ',A4)
-704   FORMAT(1X,I5,1X,6(' '),'Aboveground Live    Belowground', &
-       24(' '),'Forest',13(' '),'Total    Total     Carbon')
-705   FORMAT(1X,I5,1X,5(' '),17('-'),' ',17('-'),'    Stand  ', &
-       25('-'),'    Stand  Removed   Released')
-706   FORMAT(1X,I5,1X,'YEAR    Total    Merch     Live     ', &
-       'Dead     Dead      DDW    Floor  Shb/Hrb   ', &
-       'Carbon   Carbon  from Fire')
-707   FORMAT(1X,I5,1X,25(' '), &
-    ('ALL VARIABLES ARE REPORTED IN METRIC TONS/HECTARE'))
-708   FORMAT(1X,I5,1X,30(' '), &
-    ('ALL VARIABLES ARE REPORTED IN TONS/ACRE'))
-709   FORMAT(1X,I5,1X,27(' '), &
-    ('ALL VARIABLES ARE REPORTED IN METRIC TONS/ACRE'))
+704   FORMAT(1X,I5,1X,6(' '),'Aboveground Live    Belowground',
+     & 24(' '),'Forest',13(' '),'Total    Total     Carbon')
+705   FORMAT(1X,I5,1X,5(' '),17('-'),' ',17('-'),'    Stand  ',
+     & 25('-'),'    Stand  Removed   Released')
+706   FORMAT(1X,I5,1X,'YEAR    Total    Merch     Live     ',
+     & 'Dead     Dead      DDW    Floor  Shb/Hrb   ',
+     & 'Carbon   Carbon  from Fire')
+707   FORMAT(1X,I5,1X,25(' '),
+     & ('ALL VARIABLES ARE REPORTED IN METRIC TONS/HECTARE'))
+708   FORMAT(1X,I5,1X,30(' '),
+     & ('ALL VARIABLES ARE REPORTED IN TONS/ACRE'))
+709   FORMAT(1X,I5,1X,27(' '),
+     & ('ALL VARIABLES ARE REPORTED IN METRIC TONS/ACRE'))
 ENDIF
 
 WRITE(JROUT,800) IDCRPT,IYR,(V(I),I=1,11)
@@ -277,3 +277,4 @@ ENDIF
 
 RETURN
 END
+
