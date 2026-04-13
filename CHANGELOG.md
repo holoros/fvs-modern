@@ -16,6 +16,17 @@ project adheres to calendar-based versioning (YYYY.MM).
   (`conus-variant` branch with Greg Johnson).
 - Ingrowth submodel and crown ratio revision for the next calendar tag.
 
+## [2026.04.3] — 2026-04-13
+
+### Fixed
+- CITATION.cff: removed `license-url` field and the machine-readable
+  `references:` block. Zenodo's GitHub release ingestion continued to
+  return "Citation metadata load failed" on v2026.04.1 and v2026.04.2
+  despite the file validating cleanly under cffconvert 2.0 against CFF
+  schema 1.2.0. Empirically, Zenodo's parser accepts only a minimal
+  subset of CFF fields. The upstream Weiskittel et al. 2011 citation is
+  preserved in README.md and the v3 manuscript.
+
 ## [2026.04.2] — 2026-04-13
 
 ### Fixed

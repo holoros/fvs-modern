@@ -9,14 +9,14 @@ authors:
     affiliation: "Center for Research on Sustainable Forests, University of Maine"
 repository-code: "https://github.com/holoros/fvs-modern"
 license: MIT
-license-url: "https://github.com/holoros/fvs-modern/blob/main/LICENSE"
-version: "2026.04.2"
+version: "2026.04.3"
 date-released: "2026-04-13"
 # Repository is dual-licensed: MIT for original Python, R, and deployment
 # code; CC0-1.0 for the USDA FVS Fortran source inherited from upstream.
-# See the LICENSE file for the split. A single SPDX identifier is used here
-# because Zenodo's CITATION.cff ingestion rejects a list under the license
-# field.
+# See the LICENSE file for the split. A single SPDX identifier is used
+# here because Zenodo's CITATION.cff ingestion only accepts one license.
+# The license-url field is also omitted because Zenodo's parser rejects
+# it on GitHub release ingestion.
 keywords:
   - forest growth and yield
   - Forest Vegetation Simulator
@@ -34,19 +34,8 @@ abstract: >-
   quantification through posterior predictive intervals, and National Standard
   Base Equations (NSBE/VTECO) for volume and biomass estimation. Covers all 25
   FVS geographic variants across the United States and Canada.
-references:
-  - type: article
-    authors:
-      - family-names: Weiskittel
-        given-names: Aaron R.
-      - family-names: Hann
-        given-names: David W.
-      - family-names: Kershaw
-        given-names: John A.
-      - family-names: Vanclay
-        given-names: Jerome K.
-    title: "Forest Growth and Yield Modeling"
-    year: 2011
-    publisher:
-      name: "John Wiley & Sons"
-    isbn: "978-0-470-66500-8"
+# Upstream reference (Weiskittel, Hann, Kershaw, Vanclay 2011, "Forest
+# Growth and Yield Modeling", Wiley, ISBN 978-0-470-66500-8) is omitted
+# from the machine-readable `references:` block because Zenodo's
+# CITATION.cff ingestion has historically failed to parse that block.
+# The citation is preserved in README.md and the v3 manuscript.
