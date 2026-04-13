@@ -85,8 +85,8 @@ calibration/slurm/*_[0-9]*.out
 calibration/slurm/inspect_models*.sh
 calibration/slurm/inspect_script.R
 
-# Stan model source (tracked separately or rebuilt)
-calibration/stan/*.stan
+# Stan model specs are kept under version control for reproducibility.
+# calibration/stan/*.stan
 
 # Output data files (too large / regenerated from pipeline)
 calibration/output/dg_all_variants_summary*.csv

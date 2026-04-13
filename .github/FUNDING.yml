@@ -1,0 +1,9 @@
+# fvs-modern funding and acknowledgment metadata
+# Research support for this project comes from federal awards; GitHub's
+# sponsor button is disabled because we do not accept individual donations.
+
+github: []
+custom:
+  - "https://crsf.umaine.edu"
+  - "https://nifa.usda.gov"
+  - "https://www.nsf.gov/awardsearch/"
