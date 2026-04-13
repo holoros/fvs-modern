@@ -69,6 +69,29 @@ or default variant-level SDIMAX values.
 
 ## Build System
 
+### ACD variant on cardinal.osc.edu
+
+Earlier development cycles reported ACD build instability on Cardinal.
+The 2026-04-13 diagnostic (see `deployment/scripts/diagnose_acd_cardinal.sh`
+and `docs/acd_cardinal_handoff.md`) resolved this:
+
+- `src-converted/acd/blkdat.f90` and `src-converted/acd/crown.f90` are
+  byte-identical on Cardinal and the workspace
+  (sha256 `59db704b...` and `33415929...`).
+- All MAXSP-dimensioned DATA statements in ACD carry 108 values, matching
+  the declared MAXSP in `src-converted/acd/common/PRGPRM.f90`.
+- ifort 2021.10.0 and ifx 2023.2.3 both compile ACD sources cleanly on
+  Cardinal (warnings only for explicit interface declarations of DBCHK,
+  OPFIND, OPGET, OPDONE, which are benign).
+- `FVSacd.so` (built 2026-04-10) loads successfully via `ctypes.CDLL` on
+  Cardinal.
+
+gfortran 11.4.1 on Cardinal flags an undeclared `iosum` symbol in
+`src-converted/common/OUTCOM.f90` when compiled with `-fimplicit-none`.
+This is a smoke-test artifact from the diagnostic script, not a bug that
+appears in the production build (which relies on implicit typing). Tracked
+as a backlog item for the next calendar tag; harmless at runtime.
+
 ### macOS compilation
 
 On Apple Silicon Macs, the Homebrew gfortran installation may require explicit
