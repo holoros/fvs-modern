@@ -10,8 +10,25 @@ This is a pre-existing issue inherited from the upstream USDA FVS source
 module under specific stand initialization conditions. All other 66 regression
 tests pass (98.5% pass rate).
 
-**Status**: Known, not yet investigated. Does not affect core growth/mortality
+**Status**: Known, triaged 2026-04-13. Does not affect core growth/mortality
 projections or the Bayesian calibration pipeline.
+
+**Triage notes**: The iet03 keyword file exercises the Fire and Fuels
+Extension (FFE) together with SNAGINIT, SIMFIRE, SALVAGE, DEFULMOD, POTFIRE,
+FMORTMLT, and the full BurnRept/FuelOut/FuelRept/SOILHEAT reporting stack,
+seeded only with a TREEFMT descriptor and no TreeInit tree list. The segfault
+is consistent with FFE snag and fuels initialization running before the tree
+list is populated. See `src-converted/tests/FVSie/iet03.key`.
+
+**Planned investigation**:
+
+1. Run `FVSie` under `gdb --args FVSie --keyword=iet03.key` to capture the
+   faulting frame; expected location is the FFE snag or pot-fire initializer.
+2. Compare against upstream Open-FVS r3360 to confirm the fault is inherited
+   (it is listed as preexisting but never pinned to a commit).
+3. If reproducible upstream, file an issue on the USDA Open-FVS tracker and
+   keep the test skipped here with an explicit xfail marker in
+   `run_regression_tests.sh`.
 
 **Workaround**: Avoid the specific stand initialization configuration used in
 iet03. Normal FVS runs with standard StandInit/TreeInit inputs are unaffected.
