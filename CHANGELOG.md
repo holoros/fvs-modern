@@ -16,6 +16,17 @@ project adheres to calendar-based versioning (YYYY.MM).
   (`conus-variant` branch with Greg Johnson).
 - Ingrowth submodel and crown ratio revision for the next calendar tag.
 
+## [2026.04.4] — 2026-04-13
+
+### Added
+- `.zenodo.json` with native Zenodo metadata (upload_type, license,
+  creators with bare ORCID, keywords, related_identifiers). Zenodo uses
+  `.zenodo.json` in preference to CITATION.cff on GitHub release
+  ingestion. After v2026.04.1, .2, and .3 all returned "Citation
+  metadata load failed" with distinct error_ids despite cffconvert
+  validating the CITATION.cff against CFF schema 1.2.0, switching to the
+  native format bypasses whatever parser quirk was hitting the CFF path.
+
 ## [2026.04.3] — 2026-04-13
 
 ### Fixed
