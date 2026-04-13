@@ -16,6 +16,23 @@ project adheres to calendar-based versioning (YYYY.MM).
   (`conus-variant` branch with Greg Johnson).
 - Ingrowth submodel and crown ratio revision for the next calendar tag.
 
+## [2026.04.2] — 2026-04-13
+
+### Fixed
+- `src-converted/base/CONTRL.f90`: stripped CRLF line terminators and
+  converted fixed-form continuation (`     &` in column 6) to free-form
+  trailing `&`. The file is consumed by 40+ base modules via `INCLUDE`,
+  so the defect cascaded to `volkey.f90` and `evldx.f90` under the
+  `gfortran -ffree-form` CI sanity check.
+- `src-converted/base/errgro.f90`: renamed legacy `INCLUDE 'PRGPRM.F77'`,
+  `'CONTRL.F77'`, and `'PLOT.F77'` references to the actual `.f90`
+  include targets in the tree, and applied the same CRLF and
+  continuation fixes as CONTRL.
+- CI `syntax-check` job in `.github/workflows/ci.yml` now passes on all
+  six sanity-check base files (main, myopen, volkey, algevl, evldx,
+  errgro). Preexisting CI red since the PR #118 upstream sync is
+  cleared.
+
 ## [2026.04.1] — 2026-04-13
 
 ### Fixed

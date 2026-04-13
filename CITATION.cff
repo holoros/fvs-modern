@@ -10,7 +10,7 @@ authors:
 repository-code: "https://github.com/holoros/fvs-modern"
 license: MIT
 license-url: "https://github.com/holoros/fvs-modern/blob/main/LICENSE"
-version: "2026.04.1"
+version: "2026.04.2"
 date-released: "2026-04-13"
 # Repository is dual-licensed: MIT for original Python, R, and deployment
 # code; CC0-1.0 for the USDA FVS Fortran source inherited from upstream.
