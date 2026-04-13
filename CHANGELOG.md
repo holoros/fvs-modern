@@ -7,11 +7,16 @@ project adheres to calendar-based versioning (YYYY.MM).
 ## [Unreleased]
 
 ### Planned
-- Deploy PR #118 Fortran baseline to OSC Cardinal once current PERSEUS
-  uncertainty ensemble completes.
-- Add CONUS unified variant based on ORGANON growth forms.
+- Resolve ACD variant build state on cardinal.osc.edu using
+  `deployment/scripts/diagnose_acd_cardinal.sh` and promote ACD from
+  advisory to supported in the next tag.
+- Root-cause the `iet03` FFE segfault under gdb and, if reproducible
+  upstream, file an Open-FVS issue.
+- Add CONUS unified variant based on ORGANON growth forms
+  (`conus-variant` branch with Greg Johnson).
+- Ingrowth submodel and crown ratio revision for the next calendar tag.
 
-## [2026.04] — 2026-04-13
+## [2026.04.0] — 2026-04-13
 
 ### Added
 - Bayesian calibration pipeline producing posterior distributions for seven
