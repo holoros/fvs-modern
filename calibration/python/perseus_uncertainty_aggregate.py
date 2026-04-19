@@ -66,8 +66,12 @@ def compute_state_mmt(
 ) -> pd.DataFrame:
     """Compute state-level MMT from plot-level AGB.
 
-    MMT = sum(AGB_tons_ac * EXPNS_acres) * 0.907185 / 1e6
+    MMT = sum(AGB_tons_ac * EXPNS_acres) * 0.907185 / 1e6 * CARBON_FRACTION
+
+    Output MMT is aboveground carbon (AGC), matching PERSEUS units.
+    MMT_AGB is retained for reference.
     """
+    CARBON_FRACTION = 0.5
     maine_forest_acres = 17_600_000
 
     if expns_df is not None and "EXPNS" not in df.columns:
@@ -82,7 +86,8 @@ def compute_state_mmt(
         .groupby(group_cols)
         .apply(
             lambda g: pd.Series({
-                "MMT": (g["AGB_TONS_AC"] * g["EXPNS"]).sum() * 0.907185 / 1e6,
+                "MMT_AGB": (g["AGB_TONS_AC"] * g["EXPNS"]).sum() * 0.907185 / 1e6,
+                "MMT": (g["AGB_TONS_AC"] * g["EXPNS"]).sum() * 0.907185 / 1e6 * CARBON_FRACTION,
                 "MEAN_AGB_TONS_AC": g["AGB_TONS_AC"].mean(),
                 "N_PLOTS": g["PLOT"].nunique(),
             }),

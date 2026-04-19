@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from __future__ import annotations
 """
 PERSEUS 100-Year FVS Projection for Maine FIA Plots
 ====================================================
@@ -878,6 +879,10 @@ def process_plot(
                 # Extract AGB at each 10-year step
                 for cycle_year, treelist in sorted(fvs_result["treelists"].items()):
                     proj_year = cycle_year - inv_year
+                    # Skip cycle-0 treelist — we already have the
+                    # manual initial record from FIA tree data above
+                    if proj_year <= 0:
+                        continue
                     agb = compute_plot_agb(treelist, nsbe)
                     results.append({
                         "PLOT": plot_id,

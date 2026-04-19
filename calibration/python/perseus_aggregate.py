@@ -111,9 +111,14 @@ def main():
     #
     #   MMT = sum(AGB_tons_ac * EXPNS) * 0.907185 / 1e6
     #
+    # Carbon conversion: AGB * 0.5 = AGC (standard carbon fraction)
+    # Output MMT column is AGC (matching PERSEUS units)
+    #
     # If we don't have EXPNS, we estimate it from total Maine forestland
     # (~17.6 million acres) / number of sampled plots.
     # -----------------------------------------------------------------------
+
+    CARBON_FRACTION = 0.5
 
     n_plots = combined["PLOT"].nunique()
 
@@ -137,13 +142,16 @@ def main():
         )
 
     # Compute MMT at each projection year for each variant x config
+    # MMT is aboveground carbon (AGC); MMT_AGB is aboveground biomass
     mmt_results = (
         combined
         .groupby(["VARIANT", "CONFIG", "PROJ_YEAR"])
         .apply(
             lambda g: pd.Series({
+                "MMT_AGB": (g["AGB_TONS_AC"] * g["EXPNS"]).sum()
+                           * 0.907185 / 1e6,
                 "MMT": (g["AGB_TONS_AC"] * g["EXPNS"]).sum()
-                        * 0.907185 / 1e6,
+                        * 0.907185 / 1e6 * CARBON_FRACTION,
                 "MEAN_AGB_TONS_AC": g["AGB_TONS_AC"].mean(),
                 "N_PLOTS": g["PLOT"].nunique(),
             }),

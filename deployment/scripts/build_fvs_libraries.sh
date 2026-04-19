@@ -138,6 +138,13 @@ for var in "${VARIANTS[@]}"; do
         [ -d "$SOURCE_DIR/canada/newmist" ] && INCDIRS="$INCDIRS -I$SOURCE_DIR/canada/newmist"
         [ -d "$srcdir" ] && INCDIRS="$INCDIRS -I$srcdir"
         INCDIRS="$INCDIRS -I$SOURCE_DIR/dbs -I$SOURCE_DIR/dbsqlite"
+        # NVEL volume library includes (.inc files like wdbkwtdata.inc)
+        [ -d "$SOURCE_DIR/volume/NVEL" ] && INCDIRS="$INCDIRS -I$SOURCE_DIR/volume/NVEL"
+        [ -d "$SOURCE_DIR/volume" ] && INCDIRS="$INCDIRS -I$SOURCE_DIR/volume"
+        # Cross-variant source files (e.g., ie/vols.f90 used by acd) need
+        # the originating variant's common dir for ESPARM.f90 etc.
+        [ -d "$SOURCE_DIR/ie/common" ] && INCDIRS="$INCDIRS -I$SOURCE_DIR/ie/common"
+        [ -d "$SOURCE_DIR/ls/common" ] && INCDIRS="$INCDIRS -I$SOURCE_DIR/ls/common"
 
         if compile_file "$srcfile" "$objpath" "$INCDIRS" 2>/dev/null && [ -f "$objpath" ]; then
             OBJECTS+=("$objpath")

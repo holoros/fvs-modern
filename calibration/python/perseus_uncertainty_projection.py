@@ -95,6 +95,17 @@ logger = logging.getLogger(__name__)
 
 
 # ===========================================================================
+# Constants
+# ===========================================================================
+
+MAX_FVS_FAILURES_PER_PLOT = 4  # Skip remaining combos after this many failures
+
+# Carbon fraction: convert aboveground biomass (AGB) to aboveground carbon (AGC)
+# Standard value 0.5; species-specific values range 0.47-0.52 (FIA CRM docs)
+CARBON_FRACTION = 0.5
+
+
+# ===========================================================================
 # Uncertainty-Aware FVS Runner
 # ===========================================================================
 
@@ -351,6 +362,27 @@ def aggregate_with_uncertainty(
     if quantiles is None:
         quantiles = [0.025, 0.10, 0.25, 0.50, 0.75, 0.90, 0.975]
 
+    # Deduplicate: if both a manual initial record and an FVS cycle-0
+    # treelist exist at PROJ_YEAR(_BIN)=0, keep only the first (FIA-based)
+    yr_col_dedup = "PROJ_YEAR_BIN" if "PROJ_YEAR_BIN" in point_df.columns else "PROJ_YEAR"
+    for df in [point_df, draw_df]:
+        if df.empty:
+            continue
+        dedup_cols = ["PLOT", "VARIANT"]
+        if "CONFIG" in df.columns:
+            dedup_cols.append("CONFIG")
+        if "DRAW" in df.columns:
+            dedup_cols.append("DRAW")
+        dedup_cols.append(yr_col_dedup)
+        before = len(df)
+        df.drop_duplicates(subset=dedup_cols, keep="first", inplace=True)
+        after = len(df)
+        if before != after:
+            logger.info(
+                f"Deduplicated {before - after} duplicate records "
+                f"(cycle-0 treelist overlap)"
+            )
+
     # Add expansion factors
     maine_forest_acres = 17_600_000
 
@@ -368,14 +400,17 @@ def aggregate_with_uncertainty(
             df.loc[:, "EXPNS"] = approx_expns
 
     # --- Point estimates ---
+    # Use PROJ_YEAR_BIN if available (cycle-aligned bins), else PROJ_YEAR
     point_mmt = pd.DataFrame()
     if not point_df.empty:
+        yr_col = "PROJ_YEAR_BIN" if "PROJ_YEAR_BIN" in point_df.columns else "PROJ_YEAR"
         point_mmt = (
             point_df
-            .groupby(["VARIANT", "CONFIG", "PROJ_YEAR"])
+            .groupby(["VARIANT", "CONFIG", yr_col])
             .apply(
                 lambda g: pd.Series({
-                    "MMT": (g["AGB_TONS_AC"] * g["EXPNS"]).sum() * 0.907185 / 1e6,
+                    "MMT_AGB": (g["AGB_TONS_AC"] * g["EXPNS"]).sum() * 0.907185 / 1e6,
+                    "MMT": (g["AGB_TONS_AC"] * g["EXPNS"]).sum() * 0.907185 / 1e6 * CARBON_FRACTION,
                     "MEAN_AGB_TONS_AC": g["AGB_TONS_AC"].mean(),
                     "N_PLOTS": g["PLOT"].nunique(),
                 }),
@@ -383,17 +418,20 @@ def aggregate_with_uncertainty(
             )
             .reset_index()
         )
+        # Normalize column name to PROJ_YEAR for downstream compatibility
+        if yr_col != "PROJ_YEAR":
+            point_mmt = point_mmt.rename(columns={yr_col: "PROJ_YEAR"})
 
     # --- Uncertainty ensemble ---
     uncertainty_mmt = pd.DataFrame()
     if not draw_df.empty:
-        # Compute MMT per draw
+        # Compute MMT per draw (AGC = AGB * carbon fraction)
         draw_mmt = (
             draw_df
             .groupby(["VARIANT", "DRAW", "PROJ_YEAR"])
             .apply(
                 lambda g: pd.Series({
-                    "MMT": (g["AGB_TONS_AC"] * g["EXPNS"]).sum() * 0.907185 / 1e6,
+                    "MMT": (g["AGB_TONS_AC"] * g["EXPNS"]).sum() * 0.907185 / 1e6 * CARBON_FRACTION,
                     "N_PLOTS": g["PLOT"].nunique(),
                 }),
                 include_groups=False,
