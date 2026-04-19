@@ -188,6 +188,12 @@ def main():
         help="Path to local NVEL .inc files (default: src-converted/volume/NVEL)",
     )
     parser.add_argument("--verbose", "-v", action="store_true", help="Show sample differences")
+    parser.add_argument(
+        "--allow-differ",
+        nargs="*",
+        default=[],
+        help="Files allowed to differ without failing (e.g. regndftdata.inc)",
+    )
     args = parser.parse_args()
 
     # Resolve paths relative to repo root
@@ -224,8 +230,12 @@ def main():
     print(f"{'=' * 70}")
     print()
 
+    # Build allowlist of files that may differ without failing CI
+    allow_set = {name.lower() for name in args.allow_differ}
+
     matched = 0
     diverged = 0
+    diverged_allowed = 0
     missing = 0
     results = []
 
@@ -243,7 +253,8 @@ def main():
             print(f"  [{inc.name:30s}]  MATCH  ({result['local_count']} values)")
             matched += 1
         else:
-            tag = "DIFFERS"
+            allowed = inc.name.lower() in allow_set
+            tag = "DIFFERS (allowed)" if allowed else "DIFFERS"
             detail = []
             if result["differences"] > 0:
                 detail.append(f"{result['differences']} value diffs")
@@ -259,22 +270,33 @@ def main():
             if args.verbose and "sample_diffs" in result:
                 for pos, lv, uv in result["sample_diffs"]:
                     print(f"      position {pos}: local={lv}, upstream={uv}")
-            diverged += 1
+            if allowed:
+                diverged_allowed += 1
+            else:
+                diverged += 1
             results.append((inc.name, result))
 
     print()
     print(f"{'=' * 70}")
-    print(f"Summary: {matched} match, {diverged} differ, {missing} not found upstream")
+    summary_parts = [f"{matched} match", f"{diverged} differ"]
+    if diverged_allowed > 0:
+        summary_parts.append(f"{diverged_allowed} differ (allowed)")
+    summary_parts.append(f"{missing} not found upstream")
+    print(f"Summary: {', '.join(summary_parts)}")
     print(f"{'=' * 70}")
 
     if diverged > 0:
         print()
-        print("Files with numeric differences should be reviewed for upstream updates.")
+        print("Files with unexpected numeric differences should be reviewed.")
         print("See docs/nvel_integration_recommendations.md for the backport procedure.")
+        print("Use --allow-differ <file> to mark intentional divergences.")
         sys.exit(1)
     else:
         print()
-        print("All .inc coefficient files match upstream numerically.")
+        if diverged_allowed > 0:
+            print(f"All .inc files match or have allowed differences ({diverged_allowed} allowed).")
+        else:
+            print("All .inc coefficient files match upstream numerically.")
         sys.exit(0)
 
 

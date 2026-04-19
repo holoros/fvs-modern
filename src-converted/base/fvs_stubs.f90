@@ -15,14 +15,8 @@
 !   SUMOUT - FORMAT continuation fixed to free-form
 !   DBSFMPF, DBSSUMRY2 - F77 continuation artifacts fixed
 !   INITRE, SVOUT - F77 continuation false positives corrected
+!   DBSSTANDIN - F77 column-6 continuations converted to free-form
 !
+! All stubs have been eliminated. This file is kept for documentation
+! and as a placeholder for any future stubs that may be needed.
 ! -----------------------------------------------------------------------
-
-! DBSSTANDIN: Database stand input routine. The vdbsqlite/ version
-! has pre-existing F77 conversion issues (CASE continuation).
-SUBROUTINE DBSSTANDIN(SQLSTR, LKECHO)
-  IMPLICIT NONE
-  CHARACTER(*), INTENT(IN) :: SQLSTR
-  LOGICAL, INTENT(IN) :: LKECHO
-  RETURN
-END SUBROUTINE DBSSTANDIN
