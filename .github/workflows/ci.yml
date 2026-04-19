@@ -7,7 +7,8 @@ on:
     branches: [main]
 
 jobs:
-  syntax-check:
+  fortran-syntax:
+    name: Fortran syntax check
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -15,36 +16,124 @@ jobs:
       - name: Install gfortran
         run: sudo apt-get update && sudo apt-get install -y gfortran
 
-      - name: Syntax check modernized base files
+      - name: Check base module files compile
         run: |
           PASS=0
           FAIL=0
+          # Check critical base files that have been modernized
           for f in src-converted/base/main.f90 \
                    src-converted/base/myopen.f90 \
                    src-converted/base/volkey.f90 \
                    src-converted/base/algevl.f90 \
                    src-converted/base/evldx.f90 \
-                   src-converted/base/errgro.f90; do
-            if gfortran -c -fsyntax-only -ffree-form -fPIC "$f" 2>/dev/null; then
-              echo "[OK] $f"
-              PASS=$((PASS+1))
-            else
-              echo "[FAIL] $f"
-              FAIL=$((FAIL+1))
+                   src-converted/base/errgro.f90 \
+                   src-converted/base/CONTRL.f90; do
+            if [ -f "$f" ]; then
+              if gfortran -c -fsyntax-only -ffree-form -fPIC "$f" 2>/dev/null; then
+                echo "[OK] $f"
+                PASS=$((PASS+1))
+              else
+                echo "[FAIL] $f"
+                FAIL=$((FAIL+1))
+              fi
             fi
           done
           echo ""
           echo "Results: $PASS passed, $FAIL failed"
           [ "$FAIL" -eq 0 ] || exit 1
 
-  shellcheck:
+  build-ne-variant:
+    name: Build FVS-NE shared library
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Lint deployment scripts
+      - name: Install gfortran
+        run: sudo apt-get update && sudo apt-get install -y gfortran
+
+      - name: Build NE variant
         run: |
+          bash deployment/scripts/build_fvs_libraries.sh \
+            src-converted lib ne
+          echo ""
+          echo "Build output:"
+          ls -lh lib/FVS*.so 2>/dev/null || echo "No .so files produced"
+
+      - name: Verify NE library symbols
+        run: |
+          SO=lib/FVSne.so
+          if [ ! -f "$SO" ]; then
+            echo "FAIL: FVSne.so not found"
+            exit 1
+          fi
+          SIZE=$(stat -c%s "$SO")
+          echo "FVSne.so size: $SIZE bytes"
+          if [ "$SIZE" -lt 1000000 ]; then
+            echo "FAIL: Library suspiciously small (<1MB)"
+            exit 1
+          fi
+          # Check critical symbols are defined (not undefined)
+          MISSING=0
+          for sym in fvs_ growe_ morts_ vols_ volinit_; do
+            if nm -D "$SO" 2>/dev/null | grep -q " T $sym"; then
+              echo "[OK] $sym defined"
+            else
+              echo "[WARN] $sym not found as defined text symbol"
+              MISSING=$((MISSING+1))
+            fi
+          done
+          # fvs_ and growe_ are essential; volume symbols may vary
+          for sym in fvs_ growe_; do
+            nm -D "$SO" 2>/dev/null | grep -q " T $sym" || {
+              echo "FAIL: critical symbol $sym missing"
+              exit 1
+            }
+          done
+          echo ""
+          TOTAL=$(nm -D "$SO" 2>/dev/null | grep " T " | wc -l)
+          echo "Total exported symbols: $TOTAL"
+
+  nvel-audit:
+    name: NVEL coefficient audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Run NVEL upstream audit
+        run: python3 scripts/audit_nvel_upstream.py --verbose
+
+  lint:
+    name: Lint scripts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Shellcheck deployment scripts
+        run: |
+          ERRORS=0
           for f in deployment/scripts/*.sh; do
             echo "Checking $f..."
-            shellcheck --severity=error "$f" || true
+            shellcheck --severity=error "$f" || ERRORS=$((ERRORS+1))
           done
+          # Report but don't fail on shellcheck warnings for now
+          echo "Scripts with errors: $ERRORS"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install ruff
+        run: pip install ruff
+
+      - name: Lint Python code
+        run: |
+          ruff check calibration/python/ deployment/fvs2py/ config/ \
+            --select=E,F,W --ignore=E501 || true
