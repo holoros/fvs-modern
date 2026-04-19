@@ -51,10 +51,13 @@ echo "Build:    $BUILD_DIR"
 echo "================================================================"
 echo ""
 
-# Check source directory
-if [ ! -d "$SOURCE_DIR/bin" ] || [ ! -d "$SOURCE_DIR/base" ]; then
+# Resolve source directory: accept project root (with src-converted/) or
+# direct path to the source tree (with bin/ and base/).
+if [ -d "$SOURCE_DIR/src-converted/bin" ] && [ -d "$SOURCE_DIR/src-converted/base" ]; then
+    SOURCE_DIR="$SOURCE_DIR/src-converted"
+elif [ ! -d "$SOURCE_DIR/bin" ] || [ ! -d "$SOURCE_DIR/base" ]; then
     echo "ERROR: $SOURCE_DIR does not look like a FVS source tree."
-    echo "Expected bin/ and base/ subdirectories."
+    echo "Expected bin/ and base/ subdirectories (or src-converted/ parent)."
     exit 1
 fi
 

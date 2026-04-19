@@ -93,6 +93,46 @@ jobs:
           TOTAL=$(nm "$SO" 2>/dev/null | grep -c " T ")
           echo "Total exported text symbols: $TOTAL"
 
+  build-ne-executable:
+    name: Build FVS-NE executable
+    needs: build-ne-variant
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install gfortran
+        run: sudo apt-get update && sudo apt-get install -y gfortran
+
+      - name: Build NE shared library (needed for fallback linking)
+        run: bash deployment/scripts/build_fvs_libraries.sh . lib ne
+
+      - name: Build NE executable
+        run: |
+          bash deployment/scripts/build_fvs_executables.sh . lib ne
+          EXE=lib/FVSne
+          if [ ! -f "$EXE" ]; then
+            echo "FAIL: FVSne executable not found"
+            exit 1
+          fi
+          SIZE=$(stat -c%s "$EXE")
+          echo "FVSne size: $SIZE bytes"
+          if [ "$SIZE" -lt 1000000 ]; then
+            echo "FAIL: Executable suspiciously small (<1MB)"
+            exit 1
+          fi
+
+      - name: Smoke test (banner prints and exits)
+        run: |
+          export LD_LIBRARY_PATH="$(pwd)/lib:$LD_LIBRARY_PATH"
+          OUTPUT=$(echo "" | timeout 10 ./lib/FVSne 2>&1 || true)
+          echo "$OUTPUT"
+          if echo "$OUTPUT" | grep -q "FVS VARIANT"; then
+            echo "PASS: FVS banner detected"
+          else
+            echo "FAIL: FVS banner not found in output"
+            exit 1
+          fi
+
   nvel-audit:
     name: NVEL coefficient audit
     runs-on: ubuntu-latest

@@ -18,23 +18,23 @@
 !  AKMERCHCDS CONTAINS MERCH SPEC CATEOGORIES (MERCHCAT) FOR EACH
 !  AK LOCATION CODE
  DATA AKMERCHCDS/ &
-     &13,  1, &
-     &20,  2, &
-     &400, 2, &
-     &401, 2, &
-     &402, 2, &
-     &403, 2, &
-     &404, 2, &
-     &405, 2, &
-     &406, 2, &
-     &407, 2, &
-     &408, 2, &
-     &03,  3, &
-     &005, 3, &
-     &134, 3, &
-     &135, 3, &
-     &112, 3, &
-     &004, 4/
+     713,  1, &
+     720,  2, &
+     7400, 2, &
+     7401, 2, &
+     7402, 2, &
+     7403, 2, &
+     7404, 2, &
+     7405, 2, &
+     7406, 2, &
+     7407, 2, &
+     7408, 2, &
+     703,  3, &
+     1005, 3, &
+     8134, 3, &
+     8135, 3, &
+     8112, 3, &
+     1004, 4/
 
  SELECT CASE (VARACD)
    CASE('AK')
@@ -42,7 +42,7 @@
 !  LOOP THROUGH AKMERCHCDS AND SELECT MERCHCAT BASED ON
 !  LOCATION CODE (KODFOR - 17 OPTIONS)
 !----------
-     &O I=1, 17
+     DO I=1, 17
        IF(KODFOR .EQ. AKMERCHCDS(1,I)) THEN
           AKMERCHCAT= AKMERCHCDS(2,I)
        EXIT
@@ -50,13 +50,13 @@
 !  AKMERCHCDS
        ELSE
          AKMERCHCAT= 3
-       ENDIF &
-     &ND DO
+       ENDIF
+     END DO
 !----------
 !  DETERMINE DBHMIN, TOPD, SCFMIND AND SCFTOPD BASED ON AKMERCHCAT
 !----------
 !  SET DBHMIN DEFAULTS
-     &O ISPC=1,MAXSP
+     DO ISPC=1,MAXSP
 
        STMP(ISPC) = 1
        SCFSTMP(ISPC) = 1
@@ -87,23 +87,23 @@
            TOPD(ISPC)   = 7
            SCFMIND(ISPC)= 9
            SCFTOPD(ISPC)= 7
-       END SELECT &
-     &ND DO
+       END SELECT
+     END DO
 
-   CASE ("BM") &
-     &O ISPC=1,MAXSP
+   CASE ("BM")
+     DO ISPC=1,MAXSP
        STMP(ISPC)    = 1
        DBHMIN(ISPC)  = 7.0
        TOPD(ISPC)    = 4.5
        SCFSTMP(ISPC) = 1
        SCFMIND(ISPC) = 7.0
-       SCFTOPD(ISPC) = 4.5 &
-     &ND DO &
-     &BHMIN(7)       = 6.0 &
-     &CFMIND(7)      = 6.0
+       SCFTOPD(ISPC) = 4.5
+     END DO
+     DBHMIN(7)       = 6.0
+     SCFMIND(7)      = 6.0
 
-   CASE ("CA") &
-     &O ISPC=1,MAXSP
+   CASE ("CA")
+     DO ISPC=1,MAXSP
        STMP(ISPC)    = 1
        DBHMIN(ISPC)  = 7.0
        SCFSTMP(ISPC) = 1
@@ -115,26 +115,26 @@
          CASE DEFAULT
            TOPD(ISPC)    = 6
            SCFTOPD(ISPC) = 6
-       END SELECT &
-     &ND DO &
-     &BHMIN(11)       = 6.0 &
-     &CFMIND(11)      = 6.0
+       END SELECT
+     END DO
+     DBHMIN(11)       = 6.0
+     SCFMIND(11)      = 6.0
 
-   CASE ("CI") &
-     &O ISPC=1,MAXSP
+   CASE ("CI")
+     DO ISPC=1,MAXSP
        STMP(ISPC)    = 1
        DBHMIN(ISPC)  = 8.0
        TOPD(ISPC)    = 6.0
        SCFSTMP(ISPC) = 1
        SCFMIND(ISPC) = 8.0
-       SCFTOPD(ISPC) = 6.0 &
-     &ND DO
+       SCFTOPD(ISPC) = 6.0
+     END DO
        DBHMIN(7)  = 7.0
        SCFMIND(7) = 7.0
 
    CASE ("CR")
-    IF (IMODTY .LE. 0 .OR. IMODTY .GT. 5) IMODTY=CRDEFMT(IFOR) &
-     &O ISPC=1,MAXSP
+    IF (IMODTY .LE. 0 .OR. IMODTY .GT. 5) IMODTY=CRDEFMT(IFOR)
+     DO ISPC=1,MAXSP
        STMP(ISPC)    = 1
        SCFSTMP(ISPC) = 1
        SELECT CASE (IMODTY)
@@ -149,11 +149,11 @@
            TOPD(ISPC)    = 6.0
            SCFMIND(ISPC) = 9.0
            SCFTOPD(ISPC) = 6.0
-         END SELECT &
-     &ND DO
+         END SELECT
+     END DO
 
-   CASE ("CS") &
-     &O ISPC=1,MAXSP
+   CASE ("CS")
+     DO ISPC=1,MAXSP
        STMP(ISPC)    = 0.5
        SCFSTMP(ISPC) = 1.
        DBHMIN(ISPC)  = 6.
@@ -165,59 +165,59 @@
        IF(ISPC .GT. 7 .AND. IFOR .NE. 1) SCFMIND(ISPC) = 11.
        SCFTOPD(ISPC) = 7.6
        IF(ISPC .EQ. 1 .AND. IFOR .EQ. 1) SCFTOPD(ISPC) = 5.
-       IF(ISPC .GT. 7 .AND. IFOR .NE. 1) SCFTOPD(ISPC) = 9.6 &
-     &ND DO
+       IF(ISPC .GT. 7 .AND. IFOR .NE. 1) SCFTOPD(ISPC) = 9.6
+     END DO
 
-   CASE ("EC") &
-     &O ISPC=1,MAXSP
+   CASE ("EC")
+     DO ISPC=1,MAXSP
        STMP(ISPC)    = 1
        SCFSTMP(ISPC) = 1
        DBHMIN(ISPC)  = 7.
        TOPD(ISPC)    = 4.5
        SCFMIND(ISPC) = 7.0
-       SCFTOPD(ISPC) = 4.5 &
-     &ND DO
+       SCFTOPD(ISPC) = 4.5
+     END DO
        DBHMIN(7)  = 6.
        SCFMIND(7) = 6.
 
-   CASE ("EM") &
-     &O ISPC=1,MAXSP
+   CASE ("EM")
+     DO ISPC=1,MAXSP
        STMP(ISPC)    = 1
        SCFSTMP(ISPC) = 1
        DBHMIN(ISPC)  = 7.0
        TOPD(ISPC)    = 4.5
        SCFMIND(ISPC) = 7.0
-       SCFTOPD(ISPC) = 4.5 &
-     &ND DO
+       SCFTOPD(ISPC) = 4.5
+     END DO
        DBHMIN(7)  = 6.
        SCFMIND(7) = 6.
 
-   CASE ("IE") &
-     &O ISPC=1,MAXSP
+   CASE ("IE")
+     DO ISPC=1,MAXSP
        STMP(ISPC)    = 1
        SCFSTMP(ISPC) = 1
        DBHMIN(ISPC)  = 7.0
        TOPD(ISPC)    = 4.5
        SCFMIND(ISPC) = 7.0
-       SCFTOPD(ISPC) = 4.5 &
-     &ND DO
+       SCFTOPD(ISPC) = 4.5
+     END DO
        DBHMIN(7)  = 6.
        SCFMIND(7) = 6.
 
-   CASE ("KT") &
-     &O ISPC=1,MAXSP
+   CASE ("KT")
+     DO ISPC=1,MAXSP
        STMP(ISPC)    = 1
        SCFSTMP(ISPC) = 1
        DBHMIN(ISPC)  = 7.0
        TOPD(ISPC)    = 4.5
        SCFMIND(ISPC) = 7.0
-       SCFTOPD(ISPC) = 4.5 &
-     &ND DO
+       SCFTOPD(ISPC) = 4.5
+     END DO
        DBHMIN(7)  = 6.
        SCFMIND(7) = 6.
 
-   CASE ("LS") &
-     &O ISPC=1,MAXSP
+   CASE ("LS")
+     DO ISPC=1,MAXSP
        STMP(ISPC)    = 0.5
        SCFSTMP(ISPC) = 1
        DBHMIN(ISPC)  = 5.
@@ -244,10 +244,10 @@
              SCFMIND(ISPC) = 11.
              SCFTOPD(ISPC) = 9.6
          END SELECT
-       END IF &
-     &ND DO
+       END IF
+     END DO
 
-     &ASE ("NC")
+     CASE ("NC")
        DO ISPC=1,MAXSP
          STMP(ISPC)     = 1.
          SCFSTMP(ISPC)  = 1.
@@ -266,7 +266,7 @@
          END SELECT
        END DO
 
-     &ASE ("NE")
+     CASE ("NE")
        DO ISPC=1,MAXSP
          STMP(ISPC)    = 1.
          SCFSTMP(ISPC) = 1.

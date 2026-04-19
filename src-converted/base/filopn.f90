@@ -89,7 +89,11 @@ if (KWDFIL.ne.' ') then
   CALL DBSVKFN(KWDFIL)
 
 !       open the scratch file (should be removed sometime)
-  open(unit=JOTREE,status="scratch",form="unformatted")
+!       Guard: skip if already opened (e.g., by cmdline path)
+  inquire(unit=JOTREE,opened=LOPEN)
+  if (.not.LOPEN) then
+    open(unit=JOTREE,status="scratch",form="unformatted")
+  endif
 
   return
 101   continue
@@ -242,10 +246,14 @@ ELSE
 ENDIF
 !----------
 !  OPEN THE SAMPLE TREE SCRATCH FILE.
+!  Guard: skip if already opened by cmdline keyword path above.
 !----------
-CNAME=' '
-CALL MYOPEN (JOTREE,CNAME,4,512, 0,2,1,0,KODE)
-IF (KODE.GT.0) WRITE (*,'('' OPEN FAILED FOR '',I4)') JOTREE
+inquire(unit=JOTREE,opened=LOPEN)
+if (.not.LOPEN) then
+  CNAME=' '
+  CALL MYOPEN (JOTREE,CNAME,4,512, 0,2,1,0,KODE)
+  IF (KODE.GT.0) WRITE (*,'('' OPEN FAILED FOR '',I4)') JOTREE
+endif
 100 CONTINUE
 !
 RETURN

@@ -109,18 +109,18 @@ ELSEIF ((VARACD .EQ. 'ON')) THEN
 !
 ELSE
 !
-  IF (LCVOLS) THEN &
-     &TD(1)='USER TOTAL' &
-     &TD(2)='USER MERCH'
-  ELSE &
-     &TD(1)='TOTAL' &
-     &TD(2)='MERCH'
+  IF (LCVOLS) THEN
+     STD(1)='USER TOTAL'
+     STD(2)='USER MERCH'
+  ELSE
+     STD(1)='TOTAL'
+     STD(2)='MERCH'
   ENDIF
 !
-  IF (LBVOLS) THEN &
-     &TD(3)='USER MERCH'
-  ELSE &
-     &TD(3)='MERCH'
+  IF (LBVOLS) THEN
+     STD(3)='USER MERCH'
+  ELSE
+     STD(3)='MERCH'
   ENDIF
 ENDIF
 !----------
@@ -131,13 +131,13 @@ ENDIF
 IF (ITABLE(1) .EQ. 1) GO TO 32
 IF(LSTART) GO TO 30
 IF(ONTREM(7).LE.0.0) GO TO 20
-WRITE(JOSTND,9003) &
-     &ORMAT(/)
+WRITE(JOSTND,9003)
+9003 FORMAT(/)
 WRITE(JOSTND,9004) AT1, &
                       (ONTREM(I)*INtoCM,I=1,6), &
                       ONTREM(7)/ACRtoHA, &
-                      (OSPTT(I),IOSPTT(I),I=1,4) &
-     &ORMAT(6X,A9,3X,5F7.1,F8.1,F9.0,' TREES   ', &
+                      (OSPTT(I),IOSPTT(I),I=1,4)
+9004 FORMAT(6X,A9,3X,5F7.1,F8.1,F9.0,' TREES   ', &
           3(F5.0,'% ',A3,','),F5.0,'% ',A3)
 !
 SELECT CASE (VARACD)
@@ -164,14 +164,14 @@ SELECT CASE (VARACD)
                       STD(3), &
                       (OBFREM(I)*INtoCM,I=1,6), &
                       OMCREM(7)*FT3pACRtoM3pHA
-END SELECT &
-     &ORMAT(6X,A9/8X,A10,5F7.1,F8.1,F9.0,' CU M    ', &
+END SELECT
+9005 FORMAT(6X,A9/8X,A10,5F7.1,F8.1,F9.0,' CU M    ', &
           3(F5.0,'% ',A3,','),F5.0,'% ',A3/ &
          8X,A10,5F7.1,F8.1,F9.0,' CU M    ', &
           3(F5.0,'% ',A3,','),F5.0,'% ',A3/ &
          8X,A10,5F7.1,F8.1,F9.0,' CU M    ', &
-          3(F5.0,'% ',A3,','),F5.0,'% ',A3) &
-     &ORMAT(6X,A9/8X,A10,5F7.1,F8.1,F9.0,' CU M    ', &
+          3(F5.0,'% ',A3,','),F5.0,'% ',A3)
+9008 FORMAT(6X,A9/8X,A10,5F7.1,F8.1,F9.0,' CU M    ', &
           3(F5.0,'% ',A3,','),F5.0,'% ',A3/ &
          8X,A10,5F7.1,F8.1,F9.0,' CU M    ', &
           3(F5.0,'% ',A3,','),F5.0,'% ',A3)
@@ -203,8 +203,8 @@ ELSE
                         (OMORT(I)*INtoCM,I=1,6), &
                         OMORT(7)*FT3pACRtoM3pHA, &
                         (OSPMO(I),IOSPMO(I),I=1,4)
-ENDIF &
-     &ORMAT(6X,A9,3X,5F7.1,F8.1,F9.0,' CU M/YR ', &
+ENDIF
+9006 FORMAT(6X,A9,3X,5F7.1,F8.1,F9.0,' CU M/YR ', &
           3(F5.0,'% ',A3,','),F5.0,'% ',A3)
 !----------
 !  WRITE CURRENT STAND STATISTICS.
@@ -214,8 +214,8 @@ WRITE(JOSTND,9003)
 WRITE(JOSTND,9007) JYR, &
                       (ONTCUR(I)*INtoCM,I=1,6), &
                       ONTCUR(7)/ACRtoHA, &
-                      (OSPCT(I),IOSPCT(I),I=1,4) &
-     &ORMAT(/I4,'  TREES',T19,5F7.1,F8.1,F9.0,' TREES   ', &
+                      (OSPCT(I),IOSPCT(I),I=1,4)
+9007 FORMAT(/I4,'  TREES',T19,5F7.1,F8.1,F9.0,' TREES   ', &
           3(F5.0,'% ',A3,','),F5.0,'% ',A3)
 !
 SELECT CASE (VARACD)
@@ -550,7 +550,7 @@ IF (LECON) CALL ECLBL
 150 CONTINUE
 IF (LSTART.AND.LSCRN) CALL SUMHED
 IF ((.NOT.LSTART).AND.LSCRN) &
-     &RITE (JOSCRN,170) IOSUM(1,IKNT), &
+     WRITE (JOSCRN,170) IOSUM(1,IKNT), &
        NINT(IOSUM(3,IKNT)/ACRtoHA), &
        NINT(IOLDBA(IKNT)*FT2pACRtoM2pHA), &
        NINT(ISDI(IKNT)/ACRtoHA), &

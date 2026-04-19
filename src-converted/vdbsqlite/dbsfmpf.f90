@@ -1,7 +1,7 @@
 SUBROUTINE DBSFMPF(IYEAR,NPLT,SFLMSU,MFLMSU,SFLMTO,MFLMTO,SFTYPE, &
-     &FTYPE,SPTRCH,MPTRCH,TORCHI,CROWNI,CNPYHT,CNPYDNST,SMORTBA, &
-     &MORTBA,SMORTVOL,MMORTVOL,SPSMOKE,MPSMOKE,SFUELMOD,SFUELWT, &
-     &UELMOD,FUELWT,KODE)
+     MFTYPE,SPTRCH,MPTRCH,TORCHI,CROWNI,CNPYHT,CNPYDNST,SMORTBA, &
+     MMORTBA,SMORTVOL,MMORTVOL,SPSMOKE,MPSMOKE,SFUELMOD,SFUELWT, &
+     FUELMOD,FUELWT,KODE)
 
 IMPLICIT NONE
 !----------
@@ -149,21 +149,21 @@ IF ((VARACD .EQ. 'SN') .OR. (VARACD .EQ. 'CS')) THEN
                  'Fuel_Wt1_Mod real null,'// &
                  'Fuel_Wt2_Mod real null,'// &
                  'Fuel_Wt3_Mod real null,'// &
-                 'Fuel_Wt4_Mod real null);'//CHAR(0) &
-     &Ret = fsql3_exec(IoutDBref,SQLStmtStr) &
-     &F (iRet.NE.0) THEN
+                 'Fuel_Wt4_Mod real null);'//CHAR(0)
+     iRet = fsql3_exec(IoutDBref,SQLStmtStr)
+     IF (iRet.NE.0) THEN
        iRet = fsql3_errmsg(IinDBref, Msg, MxMsg)
        print *,"FVS_PotFire_East exec direct east error:", &
             Msg(:iRet)
        IPOTFIRE = 0
        RETURN
-       ENDIF
+     ENDIF
    ENDIF
 ELSE !NOT SN VARIANT
   iRet = fsql3_tableexists(IoutDBref, &
           "FVS_PotFire"//CHAR(0))
-  IF(iRet.EQ.0) THEN &
-     &QLStmtStr='CREATE TABLE FVS_PotFire ('// &
+  IF(iRet.EQ.0) THEN
+     SQLStmtStr='CREATE TABLE FVS_PotFire ('// &
                  'CaseID text not null,'// &
                  'StandID text not null,'// &
                  'Year int null,'// &
@@ -192,14 +192,14 @@ ELSE !NOT SN VARIANT
                  'Fuel_Wt1 real null,'// &
                  'Fuel_Wt2 real null,'// &
                  'Fuel_Wt3 real null,'// &
-                 'Fuel_Wt4 real null);'//CHAR(0) &
-     &Ret = fsql3_exec(IoutDBref,SQLStmtStr) &
-     &F (iRet.NE.0) THEN
+                 'Fuel_Wt4 real null);'//CHAR(0)
+     iRet = fsql3_exec(IoutDBref,SQLStmtStr)
+     IF (iRet.NE.0) THEN
        iRet = fsql3_errmsg(IinDBref, Msg, MxMsg)
        print *,"FVS_PotFire west exec direct error:",Msg(:iRet)
        IPOTFIRE = 0
        RETURN
-       ENDIF
+     ENDIF
    ENDIF
 ENDIF
 

@@ -46,8 +46,8 @@ CALL DBSCASE(1)
 
   iRet = fsql3_tableexists(IoutDBref, &
           "FVS_PotFire_Cond_Metric"//CHAR(0))
-  IF(iRet.EQ.0) THEN &
-     &QLStmtStr='CREATE TABLE FVS_PotFire_Cond_Metric ('// &
+  IF(iRet.EQ.0) THEN
+     SQLStmtStr='CREATE TABLE FVS_PotFire_Cond_Metric ('// &
                  'CaseID text not null,'// &
                  'StandID text not null,'// &
                  'Fire_Condition text null,'// &
@@ -59,15 +59,15 @@ CALL DBSCASE(1)
                  'Thousand_Hr_Moisture real null,'// &
                  'Duff_Moisture real null,'// &
                  'Live_Woody_Moisture real null,'// &
-                 'Live_Herb_Moisture real null);'//CHAR(0) &
-     &Ret = fsql3_exec(IoutDBref,SQLStmtStr) &
-     &F (iRet.NE.0) THEN
+                 'Live_Herb_Moisture real null);'//CHAR(0)
+     iRet = fsql3_exec(IoutDBref,SQLStmtStr)
+     IF (iRet.NE.0) THEN
        iRet = fsql3_errmsg(IinDBref, Msg, MxMsg)
        print *,"FVS_PotFire_Cond_Metric exec direct error:", &
              Msg(:iRet)
        IPOTFIREC = 0
-       RETURN &
-     &NDIF
+       RETURN
+     ENDIF
    ENDIF
 
   DWINDSP=WINDSP

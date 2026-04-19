@@ -272,45 +272,45 @@ DO ColNumber = 0,ColumnCount-1
 
   SELECT CASE(ColName)
 
-   CASE('STAND_CN') &
-     &Ret = fsql3_coltext (IinDBref,ColNumber,TMP_DBCN, &
-                             LEN(TMP_DBCN),NullChar) &
-     &f (iRet.LT.LEN(TMP_DBCN)) TMP_DBCN((iRet+1):) = ' ' &
-     &F (TMP_DBCN .ne. NullChar) DBCN_LI = 1
+   CASE('STAND_CN')
+     iRet = fsql3_coltext (IinDBref,ColNumber,TMP_DBCN, &
+                             LEN(TMP_DBCN),NullChar)
+     if (iRet.LT.LEN(TMP_DBCN)) TMP_DBCN((iRet+1):) = ' '
+     IF (TMP_DBCN .ne. NullChar) DBCN_LI = 1
 
-   CASE('STAND_ID') &
-     &Ret = fsql3_coltext (IinDBref,ColNumber,CSTAND, &
-                              LEN(CSTAND),NullChar) &
-     &f (iRet.LT.LEN(CSTAND)) CSTAND((iRet+1):) = ' ' &
-     &F (CSTAND .ne. NullChar) Stand_LI = 1
+   CASE('STAND_ID')
+     iRet = fsql3_coltext (IinDBref,ColNumber,CSTAND, &
+                              LEN(CSTAND),NullChar)
+     if (iRet.LT.LEN(CSTAND)) CSTAND((iRet+1):) = ' '
+     IF (CSTAND .ne. NullChar) Stand_LI = 1
 
-   CASE('INV_YEAR') &
-     &STANDDATA(1) = fsql3_colint(IinDBref,ColNumber,NullInt) &
-     &F (ISTANDDATA(1) .ne. NullInt) IY_LI = 1
+   CASE('INV_YEAR')
+     ISTANDDATA(1) = fsql3_colint(IinDBref,ColNumber,NullInt)
+     IF (ISTANDDATA(1) .ne. NullInt) IY_LI = 1
 
-   CASE('LATITUDE') &
-     &STANDDATA(2) = fsql3_colreal(IinDBref,ColNumber,NullReal) &
-     &F (RSTANDDATA(2) .ne. NullReal) Lat_LI = 1
+   CASE('LATITUDE')
+     RSTANDDATA(2) = fsql3_colreal(IinDBref,ColNumber,NullReal)
+     IF (RSTANDDATA(2) .ne. NullReal) Lat_LI = 1
 
-   CASE('LONGITUDE') &
-     &STANDDATA(3) = fsql3_colreal(IinDBref,ColNumber,NullReal) &
-     &F (RSTANDDATA(3) .ne. NullReal) Long_LI = 1
+   CASE('LONGITUDE')
+     RSTANDDATA(3) = fsql3_colreal(IinDBref,ColNumber,NullReal)
+     IF (RSTANDDATA(3) .ne. NullReal) Long_LI = 1
 
-   CASE('REGION') &
-     &STANDDATA(29) = fsql3_colint(IinDBref,ColNumber,NullInt) &
-     &F (ISTANDDATA(29) .ne. NullInt) Region_LI = 1
+   CASE('REGION')
+     ISTANDDATA(29) = fsql3_colint(IinDBref,ColNumber,NullInt)
+     IF (ISTANDDATA(29) .ne. NullInt) Region_LI = 1
 
-   CASE('FOREST') &
-     &STANDDATA(30) = fsql3_colint(IinDBref,ColNumber,NullInt) &
-     &F (ISTANDDATA(30) .ne. NullInt) Forest_LI = 1
+   CASE('FOREST')
+     ISTANDDATA(30) = fsql3_colint(IinDBref,ColNumber,NullInt)
+     IF (ISTANDDATA(30) .ne. NullInt) Forest_LI = 1
 
-   CASE('DISTRICT') &
-     &STANDDATA(31) = fsql3_colint(IinDBref,ColNumber,NullInt) &
-     &F (ISTANDDATA(31) .ne. NullInt) District_LI = 1
+   CASE('DISTRICT')
+     ISTANDDATA(31) = fsql3_colint(IinDBref,ColNumber,NullInt)
+     IF (ISTANDDATA(31) .ne. NullInt) District_LI = 1
 
-   CASE('COMPARTMENT') &
-     &STANDDATA(32) = fsql3_colint(IinDBref,ColNumber,NullInt) &
-     &F (ISTANDDATA(32) .ne. NullInt) Compartment_LI = 1
+   CASE('COMPARTMENT')
+     ISTANDDATA(32) = fsql3_colint(IinDBref,ColNumber,NullInt)
+     IF (ISTANDDATA(32) .ne. NullInt) Compartment_LI = 1
 
    CASE('ECOREGION')
     iRet = fsql3_coltext (IinDBref,ColNumber,CECOREG, &
@@ -318,9 +318,9 @@ DO ColNumber = 0,ColumnCount-1
     if (iRet.LT.LEN(CECOREG)) CECOREG((iRet+1):) = ' '
     IF (CECOREG .ne. NullChar) Ecoregion_LI = 1
 
-   CASE('LOCATION') &
-     &STANDDATA(4) = fsql3_colint(IinDBref,ColNumber,NullInt) &
-     &F (ISTANDDATA(4) .ne. NullInt) Location_LI = 1
+   CASE('LOCATION')
+     ISTANDDATA(4) = fsql3_colint(IinDBref,ColNumber,NullInt)
+     IF (ISTANDDATA(4) .ne. NullInt) Location_LI = 1
 
    CASE('HABITAT','PV_CODE')
     iRet = fsql3_coltext (IinDBref,ColNumber,CHAB, &
@@ -336,77 +336,77 @@ DO ColNumber = 0,ColumnCount-1
     ISTANDDATA(6) = fsql3_colint(IinDBref,ColNumber,NullInt)
     IF (ISTANDDATA(6) .ne. NullInt) Age_LI = 1
 
-   CASE('ASPECT') &
-     &STANDDATA(7) = fsql3_colreal(IinDBref,ColNumber,NullReal) &
-     &F (RSTANDDATA(7) .ne. NullReal) Aspect_LI = 1
+   CASE('ASPECT')
+     RSTANDDATA(7) = fsql3_colreal(IinDBref,ColNumber,NullReal)
+     IF (RSTANDDATA(7) .ne. NullReal) Aspect_LI = 1
 
-   CASE('SLOPE') &
-     &STANDDATA(8) = fsql3_colreal(IinDBref,ColNumber,NullReal) &
-     &F (RSTANDDATA(8) .ne. NullReal) Slope_LI = 1
+   CASE('SLOPE')
+     RSTANDDATA(8) = fsql3_colreal(IinDBref,ColNumber,NullReal)
+     IF (RSTANDDATA(8) .ne. NullReal) Slope_LI = 1
 
-   CASE('ELEVATION') &
-     &STANDDATA(9) = fsql3_colreal(IinDBref,ColNumber,NullReal) &
-     &F (RSTANDDATA(9) .ne. NullReal) Elev_LI = 1 &
-     &STANDDATA(9) = RSTANDDATA(9) * MtoFt / 100.
+   CASE('ELEVATION')
+     RSTANDDATA(9) = fsql3_colreal(IinDBref,ColNumber,NullReal)
+     IF (RSTANDDATA(9) .ne. NullReal) Elev_LI = 1
+     RSTANDDATA(9) = RSTANDDATA(9) * MtoFt / 100.
 
-   CASE('ELEVFT') &
-     &STANDDATA(33) = fsql3_colreal(IinDBref,ColNumber,NullReal) &
-     &F (RSTANDDATA(33) .ne. NullReal) ElevFt_LI = 1
+   CASE('ELEVFT')
+     RSTANDDATA(33) = fsql3_colreal(IinDBref,ColNumber,NullReal)
+     IF (RSTANDDATA(33) .ne. NullReal) ElevFt_LI = 1
 
-   CASE('BASAL_AREA_FACTOR') &
-     &STANDDATA(10) = fsql3_colreal(IinDBref,ColNumber,NullReal) &
-     &F (RSTANDDATA(10) .ne. NullReal) Basal_LI = 1 &
-     &F (RSTANDDATA(10) .LT. 0.0) THEN
-       RSTANDDATA(10) = RSTANDDATA(10) / HAtoACR &
-     &LSE
-       RSTANDDATA(10) = RSTANDDATA(10) * M2pHAtoFT2pACR &
-     &NDIF
+   CASE('BASAL_AREA_FACTOR')
+     RSTANDDATA(10) = fsql3_colreal(IinDBref,ColNumber,NullReal)
+     IF (RSTANDDATA(10) .ne. NullReal) Basal_LI = 1
+     IF (RSTANDDATA(10) .LT. 0.0) THEN
+       RSTANDDATA(10) = RSTANDDATA(10) / HAtoACR
+     ELSE
+       RSTANDDATA(10) = RSTANDDATA(10) * M2pHAtoFT2pACR
+     ENDIF
 
-   CASE('INV_PLOT_SIZE') &
-     &STANDDATA(11) = fsql3_colreal(IinDBref,ColNumber,NullReal) &
-     &F (RSTANDDATA(11) .ne. NullReal) PlotArea_LI = 1 &
-     &STANDDATA(11) = RSTANDDATA(11) / HAtoACR
+   CASE('INV_PLOT_SIZE')
+     RSTANDDATA(11) = fsql3_colreal(IinDBref,ColNumber,NullReal)
+     IF (RSTANDDATA(11) .ne. NullReal) PlotArea_LI = 1
+     RSTANDDATA(11) = RSTANDDATA(11) / HAtoACR
 
-   CASE('BRK_DBH') &
-     &STANDDATA(12) = fsql3_colreal(IinDBref,ColNumber,NullReal) &
-     &F (RSTANDDATA(12) .ne. NullReal) BPDBH_LI = 1 &
-     &STANDDATA(12) = RSTANDDATA(12) * CMtoIN
+   CASE('BRK_DBH')
+     RSTANDDATA(12) = fsql3_colreal(IinDBref,ColNumber,NullReal)
+     IF (RSTANDDATA(12) .ne. NullReal) BPDBH_LI = 1
+     RSTANDDATA(12) = RSTANDDATA(12) * CMtoIN
 
-   CASE('NUM_PLOTS') &
-     &STANDDATA(13) = fsql3_colint(IinDBref,ColNumber,NullInt) &
-     &F (ISTANDDATA(13) .ne. NullInt) NumPlots_LI = 1
+   CASE('NUM_PLOTS')
+     ISTANDDATA(13) = fsql3_colint(IinDBref,ColNumber,NullInt)
+     IF (ISTANDDATA(13) .ne. NullInt) NumPlots_LI = 1
 
-   CASE('NONSTK_PLOTS') &
-     &STANDDATA(14) = fsql3_colint(IinDBref,ColNumber,NullInt) &
-     &F (ISTANDDATA(14) .ne. NullInt) NonStock_LI = 1
+   CASE('NONSTK_PLOTS')
+     ISTANDDATA(14) = fsql3_colint(IinDBref,ColNumber,NullInt)
+     IF (ISTANDDATA(14) .ne. NullInt) NonStock_LI = 1
 
-   CASE('SAM_WT') &
-     &STANDDATA(15) = fsql3_colreal(IinDBref,ColNumber,NullReal) &
-     &F (RSTANDDATA(15) .ne. NullReal) SamWt_LI = 1
+   CASE('SAM_WT')
+     RSTANDDATA(15) = fsql3_colreal(IinDBref,ColNumber,NullReal)
+     IF (RSTANDDATA(15) .ne. NullReal) SamWt_LI = 1
 
-   CASE('STK_PCNT') &
-     &STANDDATA(16) = fsql3_colreal(IinDBref,ColNumber,NullReal) &
-     &F (RSTANDDATA(16) .ne. NullReal) Stock_LI = 1
+   CASE('STK_PCNT')
+     RSTANDDATA(16) = fsql3_colreal(IinDBref,ColNumber,NullReal)
+     IF (RSTANDDATA(16) .ne. NullReal) Stock_LI = 1
 
-   CASE('DG_TRANS') &
-     &STANDDATA(17) = fsql3_colint(IinDBref,ColNumber,NullInt) &
-     &F (ISTANDDATA(17) .ne. NullInt) DGT_LI = 1
+   CASE('DG_TRANS')
+     ISTANDDATA(17) = fsql3_colint(IinDBref,ColNumber,NullInt)
+     IF (ISTANDDATA(17) .ne. NullInt) DGT_LI = 1
 
-   CASE('DG_MEASURE') &
-     &STANDDATA(18) = fsql3_colint(IinDBref,ColNumber,NullInt) &
-     &F (ISTANDDATA(18) .ne. NullInt) DGM_LI = 1
+   CASE('DG_MEASURE')
+     ISTANDDATA(18) = fsql3_colint(IinDBref,ColNumber,NullInt)
+     IF (ISTANDDATA(18) .ne. NullInt) DGM_LI = 1
 
-   CASE('HTG_TRANS') &
-     &STANDDATA(19) = fsql3_colint(IinDBref,ColNumber,NullInt) &
-     &F (ISTANDDATA(19) .ne. NullInt) HTT_LI = 1
+   CASE('HTG_TRANS')
+     ISTANDDATA(19) = fsql3_colint(IinDBref,ColNumber,NullInt)
+     IF (ISTANDDATA(19) .ne. NullInt) HTT_LI = 1
 
-   CASE('HTG_MEASURE') &
-     &STANDDATA(20) = fsql3_colint(IinDBref,ColNumber,NullInt) &
-     &F (ISTANDDATA(20) .ne. NullInt) HTM_LI = 1
+   CASE('HTG_MEASURE')
+     ISTANDDATA(20) = fsql3_colint(IinDBref,ColNumber,NullInt)
+     IF (ISTANDDATA(20) .ne. NullInt) HTM_LI = 1
 
-   CASE('MORT_MEASURE') &
-     &STANDDATA(21) = fsql3_colint(IinDBref,ColNumber,NullInt) &
-     &F (ISTANDDATA(21) .ne. NullInt) Mort_LI = 1
+   CASE('MORT_MEASURE')
+     ISTANDDATA(21) = fsql3_colint(IinDBref,ColNumber,NullInt)
+     IF (ISTANDDATA(21) .ne. NullInt) Mort_LI = 1
 
    CASE('SITE_SPECIES')
     iRet = fsql3_coltext (IinDBref,ColNumber,CSITECODE, &
@@ -414,131 +414,131 @@ DO ColNumber = 0,ColumnCount-1
     if (iRet.LT.LEN(CSITECODE)) CSITECODE((iRet+1):) = ' '
     IF (CSITECODE .ne. ' ') SiteSp_LI = 1
 
-   CASE('SITE_INDEX') &
-     &STANDDATA(35) = fsql3_colreal(IinDBref,ColNumber,NullReal) &
-     &F (RSTANDDATA(35) .ne. NullReal) SiteIndx_LI = 1 &
-     &STANDDATA(35) = RSTANDDATA(35) * MtoFt
+   CASE('SITE_INDEX')
+     RSTANDDATA(35) = fsql3_colreal(IinDBref,ColNumber,NullReal)
+     IF (RSTANDDATA(35) .ne. NullReal) SiteIndx_LI = 1
+     RSTANDDATA(35) = RSTANDDATA(35) * MtoFt
 
-   CASE('MAX_BA') &
-     &STANDDATA(22) = fsql3_colreal(IinDBref,ColNumber,NullReal) &
-     &F (RSTANDDATA(22) .ne. NullReal) MaxB_LI = 1 &
-     &STANDDATA(22) = RSTANDDATA(22) * M2pHAtoFT2pACR
+   CASE('MAX_BA')
+     RSTANDDATA(22) = fsql3_colreal(IinDBref,ColNumber,NullReal)
+     IF (RSTANDDATA(22) .ne. NullReal) MaxB_LI = 1
+     RSTANDDATA(22) = RSTANDDATA(22) * M2pHAtoFT2pACR
 
-   CASE('MAX_SDI') &
-     &STANDDATA(36) = fsql3_colreal(IinDBref,ColNumber,NullReal) &
-     &F (RSTANDDATA(36) .ne. NullReal) MaxSDI_LI = 1 &
-     &STANDDATA(36) = RSTANDDATA(36) / HAtoACR
+   CASE('MAX_SDI')
+     RSTANDDATA(36) = fsql3_colreal(IinDBref,ColNumber,NullReal)
+     IF (RSTANDDATA(36) .ne. NullReal) MaxSDI_LI = 1
+     RSTANDDATA(36) = RSTANDDATA(36) / HAtoACR
 
-   CASE('MODEL_TYPE') &
-     &STANDDATA(25) = fsql3_colint(IinDBref,ColNumber,NullInt) &
-     &F (ISTANDDATA(25) .ne. NullInt) Model_LI = 1
+   CASE('MODEL_TYPE')
+     ISTANDDATA(25) = fsql3_colint(IinDBref,ColNumber,NullInt)
+     IF (ISTANDDATA(25) .ne. NullInt) Model_LI = 1
 
-   CASE('PHYSIO_REGION') &
-     &STANDDATA(26) = fsql3_colint(IinDBref,ColNumber,NullInt) &
-     &F (ISTANDDATA(26) .ne. NullInt) PhysioR_LI = 1
+   CASE('PHYSIO_REGION')
+     ISTANDDATA(26) = fsql3_colint(IinDBref,ColNumber,NullInt)
+     IF (ISTANDDATA(26) .ne. NullInt) PhysioR_LI = 1
 
-   CASE('FOREST_TYPE') &
-     &STANDDATA(27) = fsql3_colint(IinDBref,ColNumber,NullInt) &
-     &F (ISTANDDATA(27) .ne. NullInt) ForType_LI = 1
+   CASE('FOREST_TYPE')
+     ISTANDDATA(27) = fsql3_colint(IinDBref,ColNumber,NullInt)
+     IF (ISTANDDATA(27) .ne. NullInt) ForType_LI = 1
 
-   CASE('STATE') &
-     &STANDDATA(37) = fsql3_colint(IinDBref,ColNumber,NullInt) &
-     &F (ISTANDDATA(37) .ne. NullInt) State_LI = 1
+   CASE('STATE')
+     ISTANDDATA(37) = fsql3_colint(IinDBref,ColNumber,NullInt)
+     IF (ISTANDDATA(37) .ne. NullInt) State_LI = 1
 
-   CASE('COUNTY') &
-     &STANDDATA(38) = fsql3_colint(IinDBref,ColNumber,NullInt) &
-     &F (ISTANDDATA(38) .ne. NullInt) Connty_LI = 1
+   CASE('COUNTY')
+     ISTANDDATA(38) = fsql3_colint(IinDBref,ColNumber,NullInt)
+     IF (ISTANDDATA(38) .ne. NullInt) Connty_LI = 1
 
-   CASE('FUEL_0_25') &
-     &STANDDATA(39) = fsql3_colreal(IinDBref,ColNumber,NullReal) &
-     &F (RSTANDDATA(39) .ne. NullReal) Fuel0_LI = 1 &
-     &STANDDATA(39) = RSTANDDATA(39) * TMtoTI / HAtoACR
-   CASE('FUEL_25_76','FUEL_25_76_H') &
-     &STANDDATA(40) = fsql3_colreal(IinDBref,ColNumber,NullReal) &
-     &F (RSTANDDATA(40) .ne. NullReal) Fuel1_LI = 1 &
-     &STANDDATA(40) = RSTANDDATA(40) * TMtoTI / HAtoACR
-   CASE('FUEL_76_152','FUEL_76_152_H') &
-     &STANDDATA(41) = fsql3_colreal(IinDBref,ColNumber,NullReal) &
-     &F (RSTANDDATA(41) .ne. NullReal) Fuel3_LI = 1 &
-     &STANDDATA(41) = RSTANDDATA(41) * TMtoTI / HAtoACR
-   CASE('FUEL_152_305','FUEL_152_305_H') &
-     &STANDDATA(42) = fsql3_colreal(IinDBref,ColNumber,NullReal) &
-     &F (RSTANDDATA(42) .ne. NullReal) Fuel6_LI = 1 &
-     &STANDDATA(42) = RSTANDDATA(42) * TMtoTI / HAtoACR
-   CASE('FUEL_GT_305','FUEL_305_508','FUEL_305_508_H') &
-     &STANDDATA(43) = fsql3_colreal(IinDBref,ColNumber,NullReal) &
-     &F (RSTANDDATA(43) .ne. NullReal) Fuel12_LI = 1 &
-     &STANDDATA(43) = RSTANDDATA(43) * TMtoTI / HAtoACR
-   CASE('FUEL_LITTER') &
-     &STANDDATA(44) = fsql3_colreal(IinDBref,ColNumber,NullReal) &
-     &F (RSTANDDATA(44) .ne. NullReal) FuelLt_LI = 1 &
-     &STANDDATA(44) = RSTANDDATA(44) * TMtoTI / HAtoACR
-   CASE('FUEL_DUFF') &
-     &STANDDATA(45) = fsql3_colreal(IinDBref,ColNumber,NullReal) &
-     &F (RSTANDDATA(45) .ne. NullReal) FuelDf_LI = 1 &
-     &STANDDATA(45) = RSTANDDATA(45) * TMtoTI / HAtoACR
-   CASE('FUEL_0_06','FUEL_0_06_H') &
-     &STANDDATA(46) = fsql3_colreal(IinDBref,ColNumber,NullReal) &
-     &F (RSTANDDATA(46) .ne. NullReal) Fuel025_LI = 1 &
-     &STANDDATA(46) = RSTANDDATA(46) * TMtoTI / HAtoACR
-   CASE('FUEL_06_25','FUEL_06_25_H') &
-     &STANDDATA(47) = fsql3_colreal(IinDBref,ColNumber,NullReal) &
-     &F (RSTANDDATA(47) .ne. NullReal) Fuel251_LI = 1 &
-     &STANDDATA(47) = RSTANDDATA(47) * TMtoTI / HAtoACR
-   CASE('FUEL_508_889','FUEL_508_889_H') &
-     &STANDDATA(48) = fsql3_colreal(IinDBref,ColNumber,NullReal) &
-     &F (RSTANDDATA(48) .ne. NullReal) Fuel20_LI = 1 &
-     &STANDDATA(48) = RSTANDDATA(48) * TMtoTI / HAtoACR
-   CASE('FUEL_889_1270','FUEL_889_1270_H') &
-     &STANDDATA(49) = fsql3_colreal(IinDBref,ColNumber,NullReal) &
-     &F (RSTANDDATA(49) .ne. NullReal) Fuel35_LI = 1 &
-     &STANDDATA(49) = RSTANDDATA(49) * TMtoTI / HAtoACR
-   CASE('FUEL_GT_1270','FUEL_GT_1270_H') &
-     &STANDDATA(50) = fsql3_colreal(IinDBref,ColNumber,NullReal) &
-     &F (RSTANDDATA(50) .ne. NullReal) Fuel50_LI = 1 &
-     &STANDDATA(50) = RSTANDDATA(50) * TMtoTI / HAtoACR
-   CASE('FUEL_0_06_S') &
-     &STANDDATA(55) = fsql3_colreal(IinDBref,ColNumber,NullReal) &
-     &F (RSTANDDATA(55) .ne. NullReal) FuelS025_LI = 1 &
-     &STANDDATA(55) = RSTANDDATA(55) * TMtoTI / HAtoACR
-   CASE('FUEL_06_25_S') &
-     &STANDDATA(56) = fsql3_colreal(IinDBref,ColNumber,NullReal) &
-     &F (RSTANDDATA(56) .ne. NullReal) FuelS251_LI = 1 &
-     &STANDDATA(56) = RSTANDDATA(56) * TMtoTI / HAtoACR
-   CASE('FUEL_25_76_S') &
-     &STANDDATA(57) = fsql3_colreal(IinDBref,ColNumber,NullReal) &
-     &F (RSTANDDATA(57) .ne. NullReal) FuelS1_LI = 1 &
-     &STANDDATA(57) = RSTANDDATA(57) * TMtoTI / HAtoACR
-   CASE('FUEL_76_152_S') &
-     &STANDDATA(58) = fsql3_colreal(IinDBref,ColNumber,NullReal) &
-     &F (RSTANDDATA(58) .ne. NullReal) FuelS3_LI = 1 &
-     &STANDDATA(58) = RSTANDDATA(58) * TMtoTI / HAtoACR
-   CASE('FUEL_152_305_S') &
-     &STANDDATA(59) = fsql3_colreal(IinDBref,ColNumber,NullReal) &
-     &F (RSTANDDATA(59) .ne. NullReal) FuelS6_LI = 1 &
-     &STANDDATA(59) = RSTANDDATA(59) * TMtoTI / HAtoACR
-   CASE('FUEL_305_508_S') &
-     &STANDDATA(60) = fsql3_colreal(IinDBref,ColNumber,NullReal) &
-     &F (RSTANDDATA(60) .ne. NullReal) FuelS12_LI = 1 &
-     &STANDDATA(60) = RSTANDDATA(60) * TMtoTI / HAtoACR
-   CASE('FUEL_508_889_S') &
-     &STANDDATA(61) = fsql3_colreal(IinDBref,ColNumber,NullReal) &
-     &F (RSTANDDATA(61) .ne. NullReal) FuelS20_LI = 1 &
-     &STANDDATA(61) = RSTANDDATA(61) * TMtoTI / HAtoACR
-   CASE('FUEL_889_1270_S') &
-     &STANDDATA(62) = fsql3_colreal(IinDBref,ColNumber,NullReal) &
-     &F (RSTANDDATA(62) .ne. NullReal) FuelS35_LI = 1 &
-     &STANDDATA(62) = RSTANDDATA(62) * TMtoTI / HAtoACR
-   CASE('FUEL_GT_1270_S') &
-     &STANDDATA(63) = fsql3_colreal(IinDBref,ColNumber,NullReal) &
-     &F (RSTANDDATA(63) .ne. NullReal) FuelS50_LI = 1 &
-     &STANDDATA(63) = RSTANDDATA(63) * TMtoTI / HAtoACR
-   CASE('FUEL_MODEL') &
-     &STANDDATA(51) = fsql3_colint(IinDBref,ColNumber,NullInt) &
-     &F (ISTANDDATA(51) .ne. NullInt) FuelModel_LI = 1
-   CASE('PHOTO_REF') &
-     &STANDDATA(52) = fsql3_colint(IinDBref,ColNumber,NullInt) &
-     &F (ISTANDDATA(52) .ne. NullInt) FotoRef_LI = 1
+   CASE('FUEL_0_25')
+     RSTANDDATA(39) = fsql3_colreal(IinDBref,ColNumber,NullReal)
+     IF (RSTANDDATA(39) .ne. NullReal) Fuel0_LI = 1
+     RSTANDDATA(39) = RSTANDDATA(39) * TMtoTI / HAtoACR
+   CASE('FUEL_25_76','FUEL_25_76_H')
+     RSTANDDATA(40) = fsql3_colreal(IinDBref,ColNumber,NullReal)
+     IF (RSTANDDATA(40) .ne. NullReal) Fuel1_LI = 1
+     RSTANDDATA(40) = RSTANDDATA(40) * TMtoTI / HAtoACR
+   CASE('FUEL_76_152','FUEL_76_152_H')
+     RSTANDDATA(41) = fsql3_colreal(IinDBref,ColNumber,NullReal)
+     IF (RSTANDDATA(41) .ne. NullReal) Fuel3_LI = 1
+     RSTANDDATA(41) = RSTANDDATA(41) * TMtoTI / HAtoACR
+   CASE('FUEL_152_305','FUEL_152_305_H')
+     RSTANDDATA(42) = fsql3_colreal(IinDBref,ColNumber,NullReal)
+     IF (RSTANDDATA(42) .ne. NullReal) Fuel6_LI = 1
+     RSTANDDATA(42) = RSTANDDATA(42) * TMtoTI / HAtoACR
+   CASE('FUEL_GT_305','FUEL_305_508','FUEL_305_508_H')
+     RSTANDDATA(43) = fsql3_colreal(IinDBref,ColNumber,NullReal)
+     IF (RSTANDDATA(43) .ne. NullReal) Fuel12_LI = 1
+     RSTANDDATA(43) = RSTANDDATA(43) * TMtoTI / HAtoACR
+   CASE('FUEL_LITTER')
+     RSTANDDATA(44) = fsql3_colreal(IinDBref,ColNumber,NullReal)
+     IF (RSTANDDATA(44) .ne. NullReal) FuelLt_LI = 1
+     RSTANDDATA(44) = RSTANDDATA(44) * TMtoTI / HAtoACR
+   CASE('FUEL_DUFF')
+     RSTANDDATA(45) = fsql3_colreal(IinDBref,ColNumber,NullReal)
+     IF (RSTANDDATA(45) .ne. NullReal) FuelDf_LI = 1
+     RSTANDDATA(45) = RSTANDDATA(45) * TMtoTI / HAtoACR
+   CASE('FUEL_0_06','FUEL_0_06_H')
+     RSTANDDATA(46) = fsql3_colreal(IinDBref,ColNumber,NullReal)
+     IF (RSTANDDATA(46) .ne. NullReal) Fuel025_LI = 1
+     RSTANDDATA(46) = RSTANDDATA(46) * TMtoTI / HAtoACR
+   CASE('FUEL_06_25','FUEL_06_25_H')
+     RSTANDDATA(47) = fsql3_colreal(IinDBref,ColNumber,NullReal)
+     IF (RSTANDDATA(47) .ne. NullReal) Fuel251_LI = 1
+     RSTANDDATA(47) = RSTANDDATA(47) * TMtoTI / HAtoACR
+   CASE('FUEL_508_889','FUEL_508_889_H')
+     RSTANDDATA(48) = fsql3_colreal(IinDBref,ColNumber,NullReal)
+     IF (RSTANDDATA(48) .ne. NullReal) Fuel20_LI = 1
+     RSTANDDATA(48) = RSTANDDATA(48) * TMtoTI / HAtoACR
+   CASE('FUEL_889_1270','FUEL_889_1270_H')
+     RSTANDDATA(49) = fsql3_colreal(IinDBref,ColNumber,NullReal)
+     IF (RSTANDDATA(49) .ne. NullReal) Fuel35_LI = 1
+     RSTANDDATA(49) = RSTANDDATA(49) * TMtoTI / HAtoACR
+   CASE('FUEL_GT_1270','FUEL_GT_1270_H')
+     RSTANDDATA(50) = fsql3_colreal(IinDBref,ColNumber,NullReal)
+     IF (RSTANDDATA(50) .ne. NullReal) Fuel50_LI = 1
+     RSTANDDATA(50) = RSTANDDATA(50) * TMtoTI / HAtoACR
+   CASE('FUEL_0_06_S')
+     RSTANDDATA(55) = fsql3_colreal(IinDBref,ColNumber,NullReal)
+     IF (RSTANDDATA(55) .ne. NullReal) FuelS025_LI = 1
+     RSTANDDATA(55) = RSTANDDATA(55) * TMtoTI / HAtoACR
+   CASE('FUEL_06_25_S')
+     RSTANDDATA(56) = fsql3_colreal(IinDBref,ColNumber,NullReal)
+     IF (RSTANDDATA(56) .ne. NullReal) FuelS251_LI = 1
+     RSTANDDATA(56) = RSTANDDATA(56) * TMtoTI / HAtoACR
+   CASE('FUEL_25_76_S')
+     RSTANDDATA(57) = fsql3_colreal(IinDBref,ColNumber,NullReal)
+     IF (RSTANDDATA(57) .ne. NullReal) FuelS1_LI = 1
+     RSTANDDATA(57) = RSTANDDATA(57) * TMtoTI / HAtoACR
+   CASE('FUEL_76_152_S')
+     RSTANDDATA(58) = fsql3_colreal(IinDBref,ColNumber,NullReal)
+     IF (RSTANDDATA(58) .ne. NullReal) FuelS3_LI = 1
+     RSTANDDATA(58) = RSTANDDATA(58) * TMtoTI / HAtoACR
+   CASE('FUEL_152_305_S')
+     RSTANDDATA(59) = fsql3_colreal(IinDBref,ColNumber,NullReal)
+     IF (RSTANDDATA(59) .ne. NullReal) FuelS6_LI = 1
+     RSTANDDATA(59) = RSTANDDATA(59) * TMtoTI / HAtoACR
+   CASE('FUEL_305_508_S')
+     RSTANDDATA(60) = fsql3_colreal(IinDBref,ColNumber,NullReal)
+     IF (RSTANDDATA(60) .ne. NullReal) FuelS12_LI = 1
+     RSTANDDATA(60) = RSTANDDATA(60) * TMtoTI / HAtoACR
+   CASE('FUEL_508_889_S')
+     RSTANDDATA(61) = fsql3_colreal(IinDBref,ColNumber,NullReal)
+     IF (RSTANDDATA(61) .ne. NullReal) FuelS20_LI = 1
+     RSTANDDATA(61) = RSTANDDATA(61) * TMtoTI / HAtoACR
+   CASE('FUEL_889_1270_S')
+     RSTANDDATA(62) = fsql3_colreal(IinDBref,ColNumber,NullReal)
+     IF (RSTANDDATA(62) .ne. NullReal) FuelS35_LI = 1
+     RSTANDDATA(62) = RSTANDDATA(62) * TMtoTI / HAtoACR
+   CASE('FUEL_GT_1270_S')
+     RSTANDDATA(63) = fsql3_colreal(IinDBref,ColNumber,NullReal)
+     IF (RSTANDDATA(63) .ne. NullReal) FuelS50_LI = 1
+     RSTANDDATA(63) = RSTANDDATA(63) * TMtoTI / HAtoACR
+   CASE('FUEL_MODEL')
+     ISTANDDATA(51) = fsql3_colint(IinDBref,ColNumber,NullInt)
+     IF (ISTANDDATA(51) .ne. NullInt) FuelModel_LI = 1
+   CASE('PHOTO_REF')
+     ISTANDDATA(52) = fsql3_colint(IinDBref,ColNumber,NullInt)
+     IF (ISTANDDATA(52) .ne. NullInt) FotoRef_LI = 1
    CASE('PHOTO_CODE')
     iRet = fsql3_coltext (IinDBref,ColNumber,CFotoCode, &
                              LEN(CFotoCode),NullChar)
@@ -558,19 +558,19 @@ iRet = fsql3_finalize(IinDBref)
 !     IS HIGHEST PROIORITY. OTHERWISE USE VALUE FROM DATA BASE
 !
 IF(DBCN.EQ.' ')THEN
-  IF(DBCN_LI.GT.0) THEN &
-     &MP_DBCN = ADJUSTL(TMP_DBCN) &
-     &BCN = TMP_DBCN(:LEN(DBCN)) &
-     &F(LKECHO)WRITE(JOSTND,'(T12,''STAND_CN: '',A)') TRIM(DBCN)
+  IF(DBCN_LI.GT.0) THEN
+     TMP_DBCN = ADJUSTL(TMP_DBCN)
+     DBCN = TMP_DBCN(:LEN(DBCN))
+     IF(LKECHO)WRITE(JOSTND,'(T12,''STAND_CN: '',A)') TRIM(DBCN)
   ENDIF
 ELSE
    DBCN=TRIM(ADJUSTL(DBCN))
 ENDIF
 IF(NPLT.EQ.' ')THEN
-  IF(Stand_LI.GT.0) THEN &
-     &STAND=ADJUSTL(CSTAND) &
-     &PLT=CSTAND(:LEN(NPLT)) &
-     &F(LKECHO)WRITE(JOSTND,'(T12,''STAND_ID: '',A)') TRIM(NPLT)
+  IF(Stand_LI.GT.0) THEN
+     CSTAND=ADJUSTL(CSTAND)
+     NPLT=CSTAND(:LEN(NPLT))
+     IF(LKECHO)WRITE(JOSTND,'(T12,''STAND_ID: '',A)') TRIM(NPLT)
   ENDIF
 ELSE
   NPLT=TRIM(ADJUSTL(NPLT))
@@ -656,19 +656,19 @@ IF(Habitat_LI.NE.NullInt) THEN
    KARD2  = ADJUSTL(CHAB(1:10))
    ARRAY2 = ISTANDDATA(5)
    IF((VARACD.EQ.'SN').AND. &
-      (Ecoregion_LI.NE.NullInt)) THEN &
-     &ODTYP=0 &
-     &CL5=0 &
-     &F(LKECHO)WRITE(JOSTND,'(T12,'' HABITAT/PV_CODE IGNORED.'')')
-   ELSEIF(CHAB .NE. ' ') THEN &
-     &ODTYP=IFIX(ARRAY2) &
-     &CL5=KODTYP &
-     &ALL HABTYP (KARD2,ARRAY2) &
-     &F (ICL5.LE.0) ICL5=KODTYP &
-     &F (KODTYP.NE.ICL5) THEN
+      (Ecoregion_LI.NE.NullInt)) THEN
+     KODTYP=0
+     ICL5=0
+     IF(LKECHO)WRITE(JOSTND,'(T12,'' HABITAT/PV_CODE IGNORED.'')')
+   ELSEIF(CHAB .NE. ' ') THEN
+     KODTYP=IFIX(ARRAY2)
+     ICL5=KODTYP
+     CALL HABTYP (KARD2,ARRAY2)
+     IF (ICL5.LE.0) ICL5=KODTYP
+     IF (KODTYP.NE.ICL5) THEN
         IF(LKECHO)WRITE (JOSTND,50) ADJUSTR(CHAB),KODTYP
-        IF(LKECHO)WRITE (JOSTND,62) ADJUSTR(CPVREF) &
-     &LSE
+        IF(LKECHO)WRITE (JOSTND,62) ADJUSTR(CPVREF)
+     ELSE
         IF(LKECHO)WRITE (JOSTND,50) ADJUSTR(CHAB)
         IF(LKECHO )WRITE (JOSTND,62) ADJUSTR(CPVREF)
     ENDIF
@@ -813,8 +813,8 @@ ENDIF
 IF(SiteSp_LI.GT.0) THEN
    CSITECODE=ADJUSTL(CSITECODE)
    NAMELEN=LEN_TRIM(CSITECODE)
-   DO J=1,NAMELEN &
-     &ALL UPCASE(CSITECODE(J:J))
+   DO J=1,NAMELEN
+     CALL UPCASE(CSITECODE(J:J))
    ENDDO
 
    IF(LEN_TRIM(CSITECODE).LE.2)THEN
@@ -884,8 +884,8 @@ IF(MaxB_LI.NE.NullInt) THEN
       T34,F6.1)') BAMAX * FT2pACRtoM2pHA
  ENDIF
 IF(MaxSDI_LI.NE.NullInt) THEN
-   DO I=1,MAXSP &
-     &DIDEF(I) = RSTANDDATA(36)
+   DO I=1,MAXSP
+     SDIDEF(I) = RSTANDDATA(36)
    ENDDO
    IF(LKECHO)WRITE(JOSTND,'(T12,''MAX_SDI: '', &
       T34,F6.1)') SDIDEF(1) / ACRtoHA
@@ -1103,11 +1103,11 @@ IF(FOTOREF_LI.NE.NullInt) THEN
 
    IF ((ISTANDDATA(52) .NE. 4) .AND. (ISTANDDATA(52) .NE. 10) &
       .AND. (ISTANDDATA(52) .GE. 1) .AND. (ISTANDDATA(52) .LE. 32)) &
-      THEN &
-     &EF = PHOTOREF(ISTANDDATA(52))
-   ELSE &
-     &EF = 'UNKNOWN' &
-     &FOTO = .FALSE.
+      THEN
+     REF = PHOTOREF(ISTANDDATA(52))
+   ELSE
+     REF = 'UNKNOWN'
+     LFOTO = .FALSE.
    ENDIF
    IF(LKECHO)WRITE (JOSTND,55) ISTANDDATA(52), REF
 
@@ -1125,15 +1125,15 @@ IF(FotoCode_LI.GT.0) THEN
    LFOTO2 = .TRUE.
    I=INDEX(CFotocode,CHAR(0))
    IF (I.GT.0) CFotoCode(I:)=' '
-   IF (CFotoCode .NE. ' ') THEN &
-     &FotoCode = ADJUSTL(CFotoCode) &
-     &EAD (CFotoCode,'(I10)',ERR=58)  ISTANDDATA(53)
-58      CONTINUE &
-     &ALL FMPHOTOCODE(ISTANDDATA(52),CFotoCode(1:13),FKOD,1) &
-     &F(LKECHO)WRITE (JOSTND,60) ADJUSTR(CFotoCode),FKOD
+   IF (CFotoCode .NE. ' ') THEN
+     CFotoCode = ADJUSTL(CFotoCode)
+     READ (CFotoCode,'(I10)',ERR=58)  ISTANDDATA(53)
+58      CONTINUE
+     CALL FMPHOTOCODE(ISTANDDATA(52),CFotoCode(1:13),FKOD,1)
+     IF(LKECHO)WRITE (JOSTND,60) ADJUSTR(CFotoCode),FKOD
 60      FORMAT (T12,'PHOTO_CODE:',T26,A: &
-                  ' CONVERTED TO CODE: ',I4) &
-     &F (FKOD .EQ. -1) LFOTO2 = .FALSE.
+                  ' CONVERTED TO CODE: ',I4)
+     IF (FKOD .EQ. -1) LFOTO2 = .FALSE.
    ENDIF
 ENDIF
 
@@ -1150,10 +1150,10 @@ IF (LFMLK.AND.LFOTO.AND.LFOTO2) THEN
    CALL OPNEW(I,1,2548,2,FOTODATA(1))
 ELSEIF (LFOTO.AND.LFOTO2.AND. .NOT. LFMLK) THEN
   WRITE(JOSTND, &
-     &(T12,''FIRE MODEL NOT LINKED, FUELS PHOTO DATA IGNORED.'')')
+     '(T12,''FIRE MODEL NOT LINKED, FUELS PHOTO DATA IGNORED.'')')
 ELSEIF ((FOTOREF_LI.GT.0).OR.(FotoCode_LI.GT.0)) THEN
   WRITE(JOSTND,'(T12,''MISSING PHOTO '' &
-     &'REFERENCE OR PHOTO CODE, FUELS PHOTO DATA IGNORED.'')')
+     ''REFERENCE OR PHOTO CODE, FUELS PHOTO DATA IGNORED.'')')
 ENDIF
 
 IF (LFMLK.AND.LFMYES) CALL OPNEW(I,1,2521,12,RSTANDDATA(39))
