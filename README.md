@@ -1,5 +1,8 @@
 # fvs-modern
 
+[![CI](https://github.com/holoros/fvs-modern/actions/workflows/ci.yml/badge.svg)](https://github.com/holoros/fvs-modern/actions/workflows/ci.yml)
+[![Docker](https://github.com/holoros/fvs-modern/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/holoros/fvs-modern/actions/workflows/docker-publish.yml)
+
 A community maintained fork of the USDA Forest Vegetation Simulator, modernized for contemporary computing environments and designed for ease of deployment, variant creation, and calibration.
 
 **Status:** Active development, April 2026

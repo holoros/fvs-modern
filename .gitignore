@@ -205,5 +205,10 @@ calibration/output/bakuzis/
 # Slide decks (not part of the software distribution)
 calibration/slides/*.pptx
 
-# Draft manuscripts at repo root
+# Draft manuscripts and working artifacts at repo root
 /*.docx
+/*.png
+/*.pdf
+
+# Malformed/empty scratch files
+10d}

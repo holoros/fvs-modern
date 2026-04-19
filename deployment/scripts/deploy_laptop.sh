@@ -201,40 +201,47 @@ step "Step 3/8: Building FVS shared libraries"
 
 if [ "$SKIP_BUILD" = true ]; then
     # Check for pre-built libraries
-    PREBUILT=$(ls "$FVS_SRC/bin/"FVS*.so 2>/dev/null | wc -l)
+    PREBUILT=$(ls "$FVS_SRC/bin/"FVS*.so 2>/dev/null || ls "$INSTALL_DIR/bin/"FVS*.so 2>/dev/null | wc -l)
     if [ "$PREBUILT" -gt 0 ]; then
-        cp "$FVS_SRC/bin/"FVS*.so "$INSTALL_DIR/bin/"
-        info "Copied $PREBUILT pre-built libraries."
+        cp "$FVS_SRC/bin/"FVS*.so "$INSTALL_DIR/bin/" 2>/dev/null || true
+        info "Copied pre-built libraries."
     else
         warn "No pre-built .so files found. Use --fvs-src with a built source tree."
     fi
 else
-    cd "$FVS_SRC/bin"
+    # Use fvs-modern's build_fvs_libraries.sh instead of the upstream Makefile.
+    # The upstream CMake/Makefile build system fails on modern Linux because it
+    # treats .inc coefficient files as Makefile targets. Our build script handles
+    # include paths correctly for NVEL volume library and cross-variant source.
+    BUILD_SCRIPT="$SCRIPT_DIR/build_fvs_libraries.sh"
+    if [ ! -f "$BUILD_SCRIPT" ]; then
+        error "build_fvs_libraries.sh not found at $BUILD_SCRIPT"
+        error "Ensure you are running from the fvs-modern deployment directory."
+        exit 1
+    fi
 
     if [ "$VARIANTS" = "all" ]; then
         info "Building all US variants (this takes 10 to 20 minutes)..."
-        OSTYPE=linux-gnu make -j"$NPROC" US 2>&1 | tail -5
+        bash "$BUILD_SCRIPT" "$FVS_SRC" "$INSTALL_DIR/bin" 2>&1 | tail -20
     else
         # Build specific variants
         IFS=',' read -ra VARLIST <<< "$VARIANTS"
+        VARARGS=()
         for v in "${VARLIST[@]}"; do
-            v=$(echo "$v" | tr '[:upper:]' '[:lower:]' | tr -d ' ')
-            info "Building FVS${v}..."
-            OSTYPE=linux-gnu make -j"$NPROC" "FVS${v}.so" "FVS${v}" 2>&1 | tail -2
+            VARARGS+=("$(echo "$v" | tr '[:upper:]' '[:lower:]' | tr -d ' ')")
         done
+        info "Building variants: ${VARARGS[*]}..."
+        bash "$BUILD_SCRIPT" "$FVS_SRC" "$INSTALL_DIR/bin" "${VARARGS[@]}" 2>&1 | tail -20
     fi
 
-    # Copy results
-    BUILT=$(ls "$FVS_SRC/bin/"FVS*.so 2>/dev/null | wc -l)
+    # Verify results
+    BUILT=$(ls "$INSTALL_DIR/bin/"FVS*.so 2>/dev/null | wc -l)
     if [ "$BUILT" -gt 0 ]; then
-        cp "$FVS_SRC/bin/"FVS*.so "$INSTALL_DIR/bin/"
         info "Built and installed $BUILT variant libraries."
     else
         error "Build produced no .so files. Check build output above."
         exit 1
     fi
-
-    cd - > /dev/null
 fi
 
 # List installed libraries
