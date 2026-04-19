@@ -199,11 +199,29 @@ For details on the calibration pipeline, see `CALIBRATION.md`. For the Python pr
 
 ## Related projects
 
-* [USDA FVS](https://github.com/USDAForestService/ForestVegetationSimulator) (original, Fortran 77)
-* [Open-FVS](https://sourceforge.net/projects/open-fvs/) (older community fork on SourceForge)
-* [microFVS](https://github.com/Vibrant-Planet-Open-Science/microfvs) (REST API, Vibrant Planet)
-* [fvs2py](https://github.com/Vibrant-Planet-Open-Science/fvs2py) (Python ctypes wrapper, Vibrant Planet)
-* [docker_fvs](https://github.com/Vibrant-Planet-Open-Science/docker_fvs) (Dockerized FVS builds, Vibrant Planet)
+**Official USDA repositories:**
+
+* [USDA FVS](https://github.com/USDAForestService/ForestVegetationSimulator) — original Fortran 77 source, all variants
+* [FVS Interface](https://github.com/USDAForestService/ForestVegetationSimulator-Interface) — rFVS and fvsOL (R Shiny) interfaces
+* [Open-FVS](https://sourceforge.net/projects/open-fvs/) — earlier community fork on SourceForge (SVN)
+
+**Python interfaces and wrappers:**
+
+* [PyFVS](https://github.com/tharen/PyFVS) — Python package and extension by Tod Haren (USFS), active development
+* [PyFVS2](https://github.com/tharen/PyFVS2) — next generation Python interface for FVS (Tod Haren)
+* [forest-modeling/PyFVS](https://github.com/forest-modeling/PyFVS) — Python wrappers forked from USFS open-dev branch
+* [fvs-python](https://github.com/mihiarc/fvs-python) — pure Python reimplementation of the Southern variant (4 pine species)
+* [microFVS](https://github.com/Vibrant-Planet-Open-Science/microfvs) — REST API wrapper (Vibrant Planet)
+* [fvs2py](https://github.com/Vibrant-Planet-Open-Science/fvs2py) — Python ctypes wrapper (Vibrant Planet)
+* [docker_fvs](https://github.com/Vibrant-Planet-Open-Science/docker_fvs) — Dockerized FVS builds (Vibrant Planet)
+
+**Other forks and tools:**
+
+* [rFVS](https://github.com/SilviaTerra/rFVS) — R interface (SilviaTerra/NCX)
+* [open-fvs-mirror](https://github.com/tharen/open-fvs-mirror) — Git mirror of Open-FVS SVN branches
+* [UT_FVS](https://github.com/clgiebink/UT_FVS) — tree ring calibration for Utah FVS variant
+* [FVSAutomator](https://github.com/mcvittal/FVSAutomator) — batch automation for Ontario variant
+* [orenf/fvs](https://github.com/orenf/fvs) — earlier FVS fork (inactive since 2013)
 
 ## License
 
