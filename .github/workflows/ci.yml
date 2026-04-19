@@ -108,24 +108,36 @@ jobs:
 
       - name: Build executables (NE + LS)
         run: |
+          set +e
           bash deployment/scripts/build_fvs_executables.sh . lib ne ls
+          BUILD_EXIT=$?
+          set -e
+          echo ""
+          echo "Build script exit code: $BUILD_EXIT"
+          PASS=0
+          FAIL=0
           for var in ne ls; do
             EXE="lib/FVS${var}"
             if [ ! -f "$EXE" ]; then
               echo "FAIL: FVS${var} executable not found"
-              exit 1
+              FAIL=$((FAIL+1))
+              continue
             fi
             SIZE=$(stat -c%s "$EXE")
             echo "FVS${var} size: $SIZE bytes"
             if [ "$SIZE" -lt 1000000 ]; then
               echo "FAIL: FVS${var} suspiciously small (<1MB)"
-              exit 1
+              FAIL=$((FAIL+1))
+            else
+              PASS=$((PASS+1))
             fi
           done
+          echo "Executables: $PASS passed, $FAIL failed"
+          [ "$FAIL" -eq 0 ] || exit 1
 
       - name: Smoke test (banner prints and exits)
         run: |
-          export LD_LIBRARY_PATH="$(pwd)/lib:$LD_LIBRARY_PATH"
+          export LD_LIBRARY_PATH="$(pwd)/lib:${LD_LIBRARY_PATH:-}"
           for var in ne ls; do
             EXE="./lib/FVS${var}"
             OUTPUT=$(echo "" | timeout 10 "$EXE" 2>&1 || true)

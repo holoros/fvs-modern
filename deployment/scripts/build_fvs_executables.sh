@@ -139,7 +139,18 @@ for var in "${VARIANTS[@]}"; do
         [ -d "$SRC_ROOT/volume/NVEL" ] && INCDIRS="$INCDIRS -I$SRC_ROOT/volume/NVEL"
         [ -d "$SRC_ROOT/fiavbc" ] && INCDIRS="$INCDIRS -I$SRC_ROOT/fiavbc"
         [ -d "$SRC_ROOT/vbase" ] && INCDIRS="$INCDIRS -I$SRC_ROOT/vbase"
+        [ -d "$SRC_ROOT/vvolume" ] && INCDIRS="$INCDIRS -I$SRC_ROOT/vvolume"
+        [ -d "$SRC_ROOT/vie" ] && INCDIRS="$INCDIRS -I$SRC_ROOT/vie"
+        [ -d "$SRC_ROOT/strp" ] && INCDIRS="$INCDIRS -I$SRC_ROOT/strp"
         [ -d "$SRC_ROOT/clim/base" ] && INCDIRS="$INCDIRS -I$SRC_ROOT/clim/base"
+        [ -d "$SRC_ROOT/clim/$var" ] && INCDIRS="$INCDIRS -I$SRC_ROOT/clim/$var"
+        [ -d "$SRC_ROOT/vdbs" ] && INCDIRS="$INCDIRS -I$SRC_ROOT/vdbs"
+        [ -d "$SRC_ROOT/vdbsqlite" ] && INCDIRS="$INCDIRS -I$SRC_ROOT/vdbsqlite"
+        [ -d "$SRC_ROOT/econ" ] && INCDIRS="$INCDIRS -I$SRC_ROOT/econ"
+        [ -d "$SRC_ROOT/wpbr" ] && INCDIRS="$INCDIRS -I$SRC_ROOT/wpbr"
+        [ -d "$SRC_ROOT/wsbwe" ] && INCDIRS="$INCDIRS -I$SRC_ROOT/wsbwe"
+        [ -d "$SRC_ROOT/pg" ] && INCDIRS="$INCDIRS -I$SRC_ROOT/pg"
+        [ -d "$SRC_ROOT/canada/$var" ] && INCDIRS="$INCDIRS -I$SRC_ROOT/canada/$var"
 
         # Skip duplicate source list entries (same object name)
         if [ -f "$objpath" ]; then
