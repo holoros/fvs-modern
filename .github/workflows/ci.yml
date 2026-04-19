@@ -72,27 +72,26 @@ jobs:
             echo "FAIL: Library suspiciously small (<1MB)"
             exit 1
           fi
-          # Check critical symbols exist (use nm without -D for full symbol table;
-          # gfortran may not export all symbols to the dynamic table)
+          # Check API symbols that fvs2py and rFVS use to drive simulations
           MISSING=0
-          for sym in fvs_ growe_ morts_ vols_ volinit_; do
-            if nm "$SO" 2>/dev/null | grep -qi " [Tt] .*${sym}"; then
-              echo "[OK] $sym found"
+          for sym in fvssetcmdline_ fvssummary_ fvsdimsizes_ fvstreeattr_ volinit_; do
+            if nm "$SO" 2>/dev/null | grep -q " [Tt] ${sym}"; then
+              echo "[OK] $sym"
             else
-              echo "[WARN] $sym not found in symbol table"
+              echo "[WARN] $sym not found"
               MISSING=$((MISSING+1))
             fi
           done
-          # fvs_ and growe_ are essential; volume symbols may vary
-          for sym in fvs_ growe_; do
-            nm "$SO" 2>/dev/null | grep -qi " [Tt] .*${sym}" || {
-              echo "FAIL: critical symbol $sym missing"
+          # fvssetcmdline_ and fvssummary_ are essential API entry points
+          for sym in fvssetcmdline_ fvssummary_; do
+            nm "$SO" 2>/dev/null | grep -q " [Tt] ${sym}" || {
+              echo "FAIL: critical API symbol $sym missing"
               exit 1
             }
           done
           echo ""
-          TOTAL=$(nm "$SO" 2>/dev/null | grep -i " [Tt] " | wc -l)
-          echo "Total symbols in text section: $TOTAL"
+          TOTAL=$(nm "$SO" 2>/dev/null | grep -c " T ")
+          echo "Total exported text symbols: $TOTAL"
 
   nvel-audit:
     name: NVEL coefficient audit
