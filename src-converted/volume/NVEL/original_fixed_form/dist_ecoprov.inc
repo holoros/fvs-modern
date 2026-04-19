@@ -8,7 +8,7 @@ C The column listed as: Districtor number,EcoProv
        INTEGER RegnCnt/9/
        REAL RegnProv(9,2)
        INTEGER I1, J1, I2, J2, I3, J3
-       DATA ((DistProv(I1,J1),J1=1,2),I1=1,50) /
+       DATA ((DistProv(I1,J1),J1=1,2),I1=1,50) / &
      & 10201,1331,
      & 10203,1331,
      & 10204,1331,
@@ -60,7 +60,7 @@ C The column listed as: Districtor number,EcoProv
      & 11801,251,
      & 11806,331/
 
-       DATA ((DistProv(I1,J1),J1=1,2),I1=51,100) /
+       DATA ((DistProv(I1,J1),J1=1,2),I1=51,100) / &
      & 11807,331,
      & 11808,331,
      & 20201,1331,
@@ -112,7 +112,7 @@ C The column listed as: Districtor number,EcoProv
      & 21405,1331,
      & 21501,1331/
 
-       DATA ((DistProv(I1,J1),J1=1,2),I1=101,150) /
+       DATA ((DistProv(I1,J1),J1=1,2),I1=101,150) / &
      & 21502,1331,
      & 21503,1331,
      & 21504,1331,
@@ -164,7 +164,7 @@ C The column listed as: Districtor number,EcoProv
      & 31003,1331,
      & 31005,1331/
 
-       DATA ((DistProv(I1,J1),J1=1,2),I1=151,200) /
+       DATA ((DistProv(I1,J1),J1=1,2),I1=151,200) / &
      & 31006,331,
      & 31201,311,
      & 31202,311,
@@ -216,7 +216,7 @@ C The column listed as: Districtor number,EcoProv
      & 41404,1331,
      & 41405,1331/
 
-       DATA ((DistProv(I1,J1),J1=1,2),I1=201,250) /
+       DATA ((DistProv(I1,J1),J1=1,2),I1=201,250) / &
      & 41551,1331,
      & 41552,1331,
      & 41553,1331,
@@ -268,7 +268,7 @@ C The column listed as: Districtor number,EcoProv
      & 50757,1261,
      & 50853,1261/
 
-       DATA ((DistProv(I1,J1),J1=1,2),I1=251,300) /
+       DATA ((DistProv(I1,J1),J1=1,2),I1=251,300) / &
      & 50854,1261,
      & 50856,1261,
      & 50953,1261,
@@ -320,7 +320,7 @@ C The column listed as: Districtor number,EcoProv
      & 60303,1242,
      & 60305,1242/
 
-       DATA ((DistProv(I1,J1),J1=1,2),I1=301,350) /
+       DATA ((DistProv(I1,J1),J1=1,2),I1=301,350) / &
      & 60401,1331,
      & 60402,1331,
      & 60404,1331,
@@ -372,7 +372,7 @@ C The column listed as: Districtor number,EcoProv
      & 62103,1331,
      & 62104,1331/
 
-       DATA ((DistProv(I1,J1),J1=1,2),I1=351,400) /
+       DATA ((DistProv(I1,J1),J1=1,2),I1=351,400) / &
      & 62105,1331,
      & 62109,1331,
      & 62112,1331,
@@ -424,7 +424,7 @@ C The column listed as: Districtor number,EcoProv
      & 80903,231,
      & 80904,231/
 
-       DATA ((DistProv(I1,J1),J1=1,2),I1=401,450) /
+       DATA ((DistProv(I1,J1),J1=1,2),I1=401,450) / &
      & 80905,1231,
      & 80906,1231,
      & 80907,1231,
@@ -476,7 +476,7 @@ C The column listed as: Districtor number,EcoProv
      & 90523,221,
      & 90701,211/
 
-       DATA ((DistProv(I1,J1),J1=1,2),I1=451,500) /
+       DATA ((DistProv(I1,J1),J1=1,2),I1=451,500) / &
      & 90702,211,
      & 90703,211,
      & 90704,211,
@@ -528,14 +528,14 @@ C The column listed as: Districtor number,EcoProv
      & 100531,1242,
      & 100532,1242/
 
-       DATA ((DistProv(I1,J1),J1=1,2),I1=501,505) /
+       DATA ((DistProv(I1,J1),J1=1,2),I1=501,505) / &
      & 100533,1242,
      & 100534,1242,
      & 100535,1242,
      & 100552,1242,
      & 100554,1242/
 
-       DATA ((ForstProv(I2,J2),J2=1,2),I2=1,50) /
+       DATA ((ForstProv(I2,J2),J2=1,2),I2=1,50) / &
      & 102,1331,
      & 103,1331,
      & 104,1331,
@@ -587,7 +587,7 @@ C The column listed as: Districtor number,EcoProv
      & 505,1261,
      & 506,1261/
 
-       DATA ((ForstProv(I2,J2),J2=1,2),I2=51,100) /
+       DATA ((ForstProv(I2,J2),J2=1,2),I2=51,100) / &
      & 507,1261,
      & 508,1261,
      & 509,1261,
@@ -639,7 +639,7 @@ C The column listed as: Districtor number,EcoProv
      & 910,211,
      & 912,221/
 
-       DATA ((ForstProv(I2,J2),J2=1,2),I2=101,108) /
+       DATA ((ForstProv(I2,J2),J2=1,2),I2=101,108) / &
      & 913,211,
      & 914,221,
      & 919,211,
@@ -649,7 +649,7 @@ C The column listed as: Districtor number,EcoProv
      & 1004,1242,
      & 1005,1242/
 
-       DATA ((RegnProv(I3,J3),J3=1,2),I3=1,9) /
+       DATA ((RegnProv(I3,J3),J3=1,2),I3=1,9) / &
      & 1,1331,
      & 2,1331,
      & 3,1311,

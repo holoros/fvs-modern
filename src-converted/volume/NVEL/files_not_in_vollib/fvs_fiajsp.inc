@@ -24,7 +24,7 @@ C    11 = BLACK COTTONWOOD (CW)       POPULUS TRICHOCARPA
 C    12 = OTHER HARDWOODS (OH)
 C    13 = OTHER SOFTWOODS (OS)
 C----------
-      DATA AK_FIAJSP /
+      DATA AK_FIAJSP / &
      & '094',   '242',   '011',   '264',   '263',   '042',   '108',
      & '098',   '019',   '351',   '747',   '998',   '298'/
 C ======================================================================
@@ -50,7 +50,7 @@ C    16 = BLACK COTTONWOOD     747 CW  POBAT  POPULUS BALSAMIFERA (CW FROM WC)
 C    17 = OTHER SOFTWOODS      298 OS  2TE    (PP FROM BM)
 C    18 = OTHER HARDWOODS      998 OH  2TD    (OT FROM WC)
 C----------
-      DATA BM_FIAJSP /
+      DATA BM_FIAJSP / &
      & '119',   '073',   '202',   '017',   '264',   '064',   '108',
      & '093',   '019',   '122',   '101',   '113',   '231',   '042',
      & '746',   '747',   '298',   '998'/
@@ -108,7 +108,7 @@ C    47 = CALIFORNIA NUTMEG (CN)          TORREYA CALIFORNICA
 C    48 = CALIFORNIA LAUREL (CL)          UMBELLULARIA CALIFORNICA
 C    49 = OTHER HARDWOODS (OH)
 C----------
-      DATA CA_FIAJSP /
+      DATA CA_FIAJSP / &
      & '041',   '081',   '242',   '015',   '020',   '021',   '202',
      & '263',   '264',   '101',   '103',   '108',   '109',   '113',
      & '116',   '117',   '119',   '122',   '124',   '127',   '064',
@@ -153,7 +153,7 @@ C      USE 12(WJ) FOR 14(WJ)
 C      USE 20(MC) FOR 15(MC)             (UT20 = SO30=MC, WHICH IS
 C                                                  REALLY WC39=OT)
 C----------
-      DATA CI_FIAJSP /
+      DATA CI_FIAJSP / &
      & '119',   '073',   '202',   '017',   '263',
      & '242',   '108',   '093',   '019',   '122',
      & '101',   '231',   '746',   '064',   '475',
@@ -216,7 +216,7 @@ C 36 CI CHIHUAHUA PINE          118 PINUS LEIOPHYLLA var. CHIHUAHUANA
 C 37 OS OTHER SOFTWOODS         298
 C 38 OH OTHER HARDWOODS         998
 C----------
-      DATA CR_FIAJSP /
+      DATA CR_FIAJSP / &
      & '019',   '018',   '202',   '017',   '015',   '264',   '242',
      & '073',   '102',   '113',   '108',   '106',   '122',   '101',
      & '114',   '065',   '096',   '093',   '094',   '746',   '749',
@@ -225,7 +225,7 @@ C----------
      & '118',   '298',   '998'/
 C ======================================================================
 C CS
-      DATA CS_FIAJSP /
+      DATA CS_FIAJSP / &
      & '068',   '057',   '110',   '132',   '131',   '298',   '129',
      & '602',   '601',   '690',   '694',   '691',   '693',   '   ',
      & '407',   '405',   '409',   '403',   '400',   '401',   '402',
@@ -282,7 +282,7 @@ C  CODE FOR ROCKY MTN MAPLE (321) WAS APPARENTLY USED IN THE INVENTORY
 C  DATA FOR VINE MAPLE. HOWEVER, IN THIS VARIANT, FIA CODE 321 IS BEING
 C  ASSOCIATED WITH VINE MAPLE IN THE SPECIES TRANSLATOR.
 C
-      DATA EC_FIAJSP /
+      DATA EC_FIAJSP / &
      & '119',   '073',   '202',   '011',   '242',
      & '017',   '108',   '093',   '019',   '122',
      & '263',   '264',   '231',   '101',   '022',
@@ -327,7 +327,7 @@ C 17 PB PAPER BIRCH           375 BETULA PAPYRIFERA (AS FROM UT)
 C 18 OS OTHER SOFTWOODS       298                   (WB FROM EM11)
 C 19 OH OTHER HARDWOODS       998                   (CO FROM CR)
 C----------
-      DATA EM_FIAJSP /
+      DATA EM_FIAJSP / &
      & '101',   '073',   '202',   '113',   '072',   '066',   '108',
      & '093',   '019',   '122',   '544',   '746',   '747',   '741',
      & '745',   '749',   '375',   '298',   '998'/
@@ -359,7 +359,7 @@ C    21 = PAPER BIRCH (PB)               BETULA PAPYRIFERA (AS FROM UT)
 C    22 = OTHER HARDWOODS (OH)           (OH FR0M CR)
 C    23 = OTHER SOFTWOODS (OS)           (FR0M NI)
 C----------
-      DATA IE_FIAJSP /
+      DATA IE_FIAJSP / &
      & '119',   '073',   '202',   '017',   '263',   '242',   '108',
      & '093',   '019',   '122',   '264',   '101',   '113',   '072',
      & '106',   '066',   '231',   '746',   '740',   '321',   '375',
@@ -380,7 +380,7 @@ C     9 = SUBALPINE FIR (AF)             ABIES LASIOCARPA
 C    10 = PONDEROSA PINE (PP)            PINUS PONDEROSA
 C    11 = OTHER (OT)  grown as MOUNTAIN HEMLOCK   TSUGA MERTENSIANA
 C----------
-      DATA KT_FIAJSP /
+      DATA KT_FIAJSP / &
      & '119',   '073',   '202',   '017',   '263',   '242',   '108',
      & '093',   '019',   '122',   '999'/
 C ======================================================================
@@ -457,7 +457,7 @@ C    66 = DIAMOND WILLOW (DM)
 C    67 = SASSAFRAS (SS)
 C    68 = AMERICAN MOUNTAIN ASH (MA)
 C----------
-      DATA LS_FIAJSP /
+      DATA LS_FIAJSP / &
      & '105',   '130',   '125',   '125',   '129',   '094',   '091',
      & '012',   '095',   '071',   '241',   '261',   '298',   '068',
      & '543',   '544',   '742',   '317',   '316',   '762',   '972',
@@ -484,7 +484,7 @@ C     9 = RED FIR (RF)                   ABIES MAGNIFICA
 C    10 = PONDEROSA PINE (PP)            PINUS PONDEROSA
 C    11 = OTHER HARDWOOD (OH)
 C----------
-      DATA NC_FIAJSP /
+      DATA NC_FIAJSP / &
      & '298',   '117',   '202',   '015',   '361',   '081',   '818',
      & '631',   '020',   '122',   '998'/
 C ======================================================================
@@ -601,7 +601,7 @@ C   106 = EASTERN HOPHORNBEAM (HH)
 C   107 = PLUMS, CHERRIES (PL)
 C   108 = PIN CHERRY (PR)
 C----------
-      DATA NE_FIAJSP /
+      DATA NE_FIAJSP / &
      & '012',   '071',   '094',   '097',   '091',   '095',   '090',
      & '125',   '129',   '131',   '132',   '241',   '043',   '068',
      & '057',   '261',   '260',   '100',   '105',   '110',   '123',
@@ -634,7 +634,7 @@ C     9 = SUBALPINE FIR (AF)             ABIES LASIOCARPA
 C    10 = PONDEROSA PINE (PP)            PINUS PONDEROSA
 C    11 = OTHER (OT)  grown as MOUNTAIN HEMLOCK   TSUGA MERTENSIANA
 C----------
-      DATA NI_FIAJSP /
+      DATA NI_FIAJSP / &
      & '119',   '073',   '202',   '017',   '263',   '242',   '108',
      & '093',   '019',   '122',   '999'/
 C ======================================================================
@@ -686,7 +686,7 @@ C    37 = WILLOW (WI)                  SALIX sp.
 C    38 = ---
 C    39 = OTHER (OT)
 C----------
-      DATA PN_FIAJSP /
+      DATA PN_FIAJSP / &
      & '011',   '015',   '017',   '019',   '020',   '098',   '022',
      & '042',   '081',   '093',   '108',   '116',   '117',   '119',
      & '122',   '202',   '211',   '242',   '263',   '264',   '312',
@@ -788,7 +788,7 @@ C    88 = OTHER SOFTWOOD SPECIES (OS)
 C    89 = OTHER HARDWOOD SPECIES (OH)
 C    90 = OTHER SPECIES(OT)
 C----------
-      DATA SN_FIAJSP /
+      DATA SN_FIAJSP / &
      & '010',   '057',   '090',   '107',   '110',   '111',   '115',
      & '121',   '123',   '126',   '128',   '129',   '131',   '132',
      & '221',   '222',   '260',   '311',   '313',   '316',   '317',
@@ -841,7 +841,7 @@ C    32 = OTHER SOFTWOODS (OS)               DOUGLAS-FIR (DF) (FROM SO)
 C    33 = OTHER HARDWOODS (OH)               MISCELLANEOUS HARDWOOD (FROM WC)
 
 C----------
-      DATA SO_FIAJSP /
+      DATA SO_FIAJSP / &
      &'119','117','202','015','264','081','108','093','021','122',
      &'064','017','019','011','022','101','073','242','263','231',
      &'352','351','312','746','747','768','815','920','431','475',
@@ -868,7 +868,7 @@ C 16 = CURLLEAF MOUNTAIN-MAHOGANY  MC   CERCOCARPUS LEDIFOLIUS
 C 17 = OTHER SOFTWOODS             OS 
 C 18 = OTHER HARDWOODS             OH
 C----------
-      DATA TT_FIAJSP /
+      DATA TT_FIAJSP / &
      & '101',   '113',   '202',   '133',   '096',
      & '746',   '108',   '093',   '019',   '122',
      & '065',   '066',   '322',   '321',   '749',   
@@ -917,7 +917,7 @@ C    23 = OTHER SOFTWOODS              OS
 C    24 = OTHER HARDWOODS              OH
 C
 C----------
-      DATA UT_FIAJSP /
+      DATA UT_FIAJSP / &
      & '101',   '113',   '202',   '015',   '096',   '746',   '108',
      & '093',   '019',   '122',   '106',   '064',   '814',   '133',
      & '066',   '065',   '142',   '749',   '748',   '475',   '322',
@@ -972,7 +972,7 @@ C    37 = WILLOW (WI)                  SALIX sp.
 C    38 =    
 C    39 = OTHER (OT)
 C----------
-      DATA WC_FIAJSP /
+      DATA WC_FIAJSP / &
      & '011',   '015',   '017',   '019',   '020',   '   ',   '022',
      & '042',   '081',   '093',   '108',   '116',   '117',   '119',
      & '122',   '202',   '211',   '242',   '263',   '264',   '312',
@@ -1029,7 +1029,7 @@ C    41 = CURLLEAF MOUNTAIN-MAHOGANY (MC)   CERCOCARPUS LEDIFOLIUS
 C    42 = OTHER SOFTWOODS (OS)
 C    43 = OTHER HARDWOODS (OH)
 C
-      DATA WS_FIAJSP /
+      DATA WS_FIAJSP / &
      & '117',   '202',   '015',   '212',   '081',   
      & '116',   '020',   '122',   '108',   '101',   
      & '119',   '133',   '011',   '103',   '104',   

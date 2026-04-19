@@ -10,7 +10,7 @@ C Last modified on 3/29/2023
        TYPE(EQINFO) BIOMSEQ(6059)
        INTEGER I5
 C      EQINFO(BEQ, DiaUnit, HtUnit, DiaType, HtType, BioUnit)
-       DATA (BIOMSEQ(I5),I5=1,500) /
+       DATA (BIOMSEQ(I5),I5=1,500) / &
      + EQINFO('JEN000AGT01D','CM','NA','DBH','NON','KG'),
      + EQINFO('JEN001AGT01D','CM','NA','DBH','NON','KG'),
      + EQINFO('JEN002AGT01D','CM','NA','DBH','NON','KG'),
@@ -511,7 +511,7 @@ C      EQINFO(BEQ, DiaUnit, HtUnit, DiaType, HtType, BioUnit)
      + EQINFO('CLK691SBL01G','IN','NA','D2','NON','LB'),
      + EQINFO('CLK693AST01D','IN','NA','DBH','NON','LB'),
      + EQINFO('CLK693AST01G','IN','NA','DBH','NON','LB')/
-       DATA (BIOMSEQ(I5),I5=501,1000) /
+       DATA (BIOMSEQ(I5),I5=501,1000) / &
      + EQINFO('CLK693STW01D','IN','NA','DBH','NON','LB'),
      + EQINFO('CLK693STW01G','IN','NA','DBH','NON','LB'),
      + EQINFO('CLK693STT01D','IN','NA','DBH','NON','LB'),
@@ -1012,7 +1012,7 @@ C      EQINFO(BEQ, DiaUnit, HtUnit, DiaType, HtType, BioUnit)
      + EQINFO('FER202BRL01D','CM','NA','DBH','NON','KG'),
      + EQINFO('FER202BRL02D','CM','NA','DBH','NON','KG'),
      + EQINFO('FER202BRL03D','CM','NA','DBH','NON','KG')/
-       DATA (BIOMSEQ(I5),I5=1001,1500) /
+       DATA (BIOMSEQ(I5),I5=1001,1500) / &
      + EQINFO('FER202BRL04D','CM','NA','DBH','NON','KG'),
      + EQINFO('FER202BRD01D','CM','NA','DBH','NON','KG'),
      + EQINFO('FER202BRD02D','CM','NA','DBH','NON','KG'),
@@ -1513,7 +1513,7 @@ C      EQINFO(BEQ, DiaUnit, HtUnit, DiaType, HtType, BioUnit)
      + EQINFO('KEB746BRT01D','CM','NA','DBH','NON','KG'),
      + EQINFO('KEB746FOT01D','CM','NA','DBH','NON','KG'),
      + EQINFO('KEB746CRW01D','CM','NA','DBH','NON','KG')/
-       DATA (BIOMSEQ(I5),I5=1501,2000) /
+       DATA (BIOMSEQ(I5),I5=1501,2000) / &
      + EQINFO('KER012AST01D','CM','NA','DBH','NON','KG'),
      + EQINFO('KER012STW01D','CM','NA','DBH','NON','KG'),
      + EQINFO('KER012STT01D','CM','NA','DBH','NON','KG'),
@@ -2014,7 +2014,7 @@ C      EQINFO(BEQ, DiaUnit, HtUnit, DiaType, HtType, BioUnit)
      + EQINFO('NEL131FOT01D','IN','NA','DBH','NON','LB'),
      + EQINFO('NEL131FOT02D','IN','NA','DBH','NON','LB'),
      + EQINFO('NEL131FOT03D','IN','NA','DBH','NON','LB')/
-       DATA (BIOMSEQ(I5),I5=2001,2500) /
+       DATA (BIOMSEQ(I5),I5=2001,2500) / &
      + EQINFO('NEL131FOT04D','IN','NA','DBH','NON','LB'),
      + EQINFO('NEL131FOT05D','IN','NA','DBH','NON','LB'),
      + EQINFO('OUE095AGT01D','CM','NA','DBH','NON','KG'),
@@ -2515,7 +2515,7 @@ C      EQINFO(BEQ, DiaUnit, HtUnit, DiaType, HtType, BioUnit)
      + EQINFO('WES015FOT01D','CM','NA','DBH','NON','G'),
      + EQINFO('WES015FTG01D','CM','NA','DBH','NON','G'),
      + EQINFO('WES020AGT01D','CM','NA','DBH','NON','G')/
-       DATA (BIOMSEQ(I5),I5=2501,3000) /
+       DATA (BIOMSEQ(I5),I5=2501,3000) / &
      + EQINFO('WES020STW01D','CM','NA','DBH','NON','G'),
      + EQINFO('WES020STB01D','CM','NA','DBH','NON','G'),
      + EQINFO('WES020BRL01D','CM','NA','DBH','NON','G'),
@@ -3016,7 +3016,7 @@ C      EQINFO(BEQ, DiaUnit, HtUnit, DiaType, HtType, BioUnit)
      + EQINFO('ELI999STT01D','CM','NA','DBH','NON','G'),
      + EQINFO('SAT261FOT01D','CM','NA','DBH','NON','KG'),
      + EQINFO('SAT261BRT01D','CM','NA','DBH','NON','KG')/
-       DATA (BIOMSEQ(I5),I5=3001,3500) /
+       DATA (BIOMSEQ(I5),I5=3001,3500) / &
      + EQINFO('SAT261STT01D','CM','NA','DBH','NON','KG'),
      + EQINFO('SMI404RTT01D','CM','NA','DBH','NON','KG'),
      + EQINFO('SMI404FOT01D','CM','NA','DBH','NON','KG'),
@@ -3517,7 +3517,7 @@ C      EQINFO(BEQ, DiaUnit, HtUnit, DiaType, HtType, BioUnit)
      + EQINFO('CLK611MST91G','IN','FT','D2','HT1','LB'),
      + EQINFO('CLK611MSW91D','IN','FT','D2','HT1','LB'),
      + EQINFO('CLK611MSW91G','IN','FT','D2','HT1','LB')/
-       DATA (BIOMSEQ(I5),I5=3501,4000) /
+       DATA (BIOMSEQ(I5),I5=3501,4000) / &
      + EQINFO('CLK693AST91D','IN','FT','D2','HT1','LB'),
      + EQINFO('CLK693AST91G','IN','FT','D2','HT1','LB'),
      + EQINFO('CLK693STW91D','IN','FT','D2','HT1','LB'),
@@ -4018,7 +4018,7 @@ C      EQINFO(BEQ, DiaUnit, HtUnit, DiaType, HtType, BioUnit)
      + EQINFO('CLB799AGW11G','IN','FT','DBH','THT','LB'),
      + EQINFO('CLB799SBL11D','IN','FT','DBH','THT','LB'),
      + EQINFO('CLB799SBL11G','IN','FT','DBH','THT','LB')/
-       DATA (BIOMSEQ(I5),I5=4001,4500) /
+       DATA (BIOMSEQ(I5),I5=4001,4500) / &
      + EQINFO('CLB899AST11D','IN','FT','DBH','THT','LB'),
      + EQINFO('CLB899AST11G','IN','FT','DBH','THT','LB'),
      + EQINFO('CLB899STW11D','IN','FT','DBH','THT','LB'),
@@ -4519,7 +4519,7 @@ C      EQINFO(BEQ, DiaUnit, HtUnit, DiaType, HtType, BioUnit)
      + EQINFO('CLS802MSW91G','IN','FT','D2','HT1','LB'),
      + EQINFO('CLS998MSW91D','IN','FT','D2','HT1','LB'),
      + EQINFO('CLS998MSW91G','IN','FT','D2','HT1','LB')/
-       DATA (BIOMSEQ(I5),I5=4501,5000) /
+       DATA (BIOMSEQ(I5),I5=4501,5000) / &
      + EQINFO('CLS799MSW91D','IN','FT','D2','HT1','LB'),
      + EQINFO('CLS799MSW91G','IN','FT','D2','HT1','LB'),
      + EQINFO('CLS899MSW91D','IN','FT','D2','HT1','LB'),
@@ -5020,7 +5020,7 @@ C      EQINFO(BEQ, DiaUnit, HtUnit, DiaType, HtType, BioUnit)
      + EQINFO('ALB105CRW11D','CM','M','DBH','THT','KG'),
      + EQINFO('ALB105STT11D','CM','M','DBH','THT','KG'),
      + EQINFO('ALB105AST11D','CM','M','DBH','THT','KG')/
-       DATA (BIOMSEQ(I5),I5=5001,5500) /
+       DATA (BIOMSEQ(I5),I5=5001,5500) / &
      + EQINFO('ALB125FOT11D','CM','M','DBH','THT','KG'),
      + EQINFO('ALB125BRL11D','CM','M','DBH','THT','KG'),
      + EQINFO('ALB125BRD11D','CM','M','DBH','THT','KG'),
@@ -5521,7 +5521,7 @@ C      EQINFO(BEQ, DiaUnit, HtUnit, DiaType, HtType, BioUnit)
      + EQINFO('ALM701FTG01D','CM','M','DBH','THT','KG'),
      + EQINFO('ALM701AGT01D','CM','M','DBH','THT','KG'),
      + EQINFO('ALM701BRD01D','CM','M','DBH','THT','KG')/
-       DATA (BIOMSEQ(I5),I5=5501,6000) /
+       DATA (BIOMSEQ(I5),I5=5501,6000) / &
      + EQINFO('ALM701STW01G','CM','M','DBH','THT','KG'),
      + EQINFO('ALM701STB01G','CM','M','DBH','THT','KG'),
      + EQINFO('ALM701STT01G','CM','M','DBH','THT','KG'),
@@ -6022,7 +6022,7 @@ C      EQINFO(BEQ, DiaUnit, HtUnit, DiaType, HtType, BioUnit)
      + EQINFO('GHZ264BRL01D','CM','M','DBH','THT','KG'),
      + EQINFO('GHZ264BRD01D','CM','M','DBH','THT','KG'),
      + EQINFO('GHZ264STW01D','CM','M','DBH','THT','KG')/
-       DATA (BIOMSEQ(I5),I5=6001,6059) /
+       DATA (BIOMSEQ(I5),I5=6001,6059) / &
      + EQINFO('GHZ264STB01D','CM','M','DBH','THT','KG'),
      + EQINFO('HAN017STB01D','CM','FT','DBH','THT','G'),
      + EQINFO('HAN020STB01D','CM','FT','DBH','THT','G'),

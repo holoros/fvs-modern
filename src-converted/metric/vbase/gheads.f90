@@ -44,30 +44,30 @@ SELECT CASE (VARACD)
 !  EASTERN TWIGS AND CANADIAN ONTARIO VARIANTS
 !----------
 CASE ('CS','LS','NE','ON')
-  WRITE (KOSTND,10)
-10   FORMAT(/T41, &
-     'STAND COMPOSITION (BASED ON STOCKABLE AREA)'/ &
-     122('-')/T29,'PERCENTILE POINTS IN THE'/ &
-     T22,'DISTRIBUTION OF STAND ATTRIBUTES BY DBH       TOTAL/HA'/ &
-     T9,'STAND',7X,41('-'),6X,'OF STAND',9X, &
-     'DISTRIBUTION OF STAND ATTRIBUTES BY'/'YEAR  ATTRIBUTES', &
-     6X,'10     30     50     70     90    100',7X,'ATTRIBUTES',7X, &
-     'SPECIES AND 3 USER-DEFINED SUBCLASSES'/,4('-'),2X,11('-'),3X, &
-     6(6('-'),1X),2X,14('-'),2X,42('-')/T34,'(DBH IN CM)')
+  WRITE (KOSTND,10) &
+     &ORMAT(/T41, &
+     &STAND COMPOSITION (BASED ON STOCKABLE AREA)'/ &
+     &22('-')/T29,'PERCENTILE POINTS IN THE'/ &
+     &22,'DISTRIBUTION OF STAND ATTRIBUTES BY DBH       TOTAL/HA'/ &
+     &9,'STAND',7X,41('-'),6X,'OF STAND',9X, &
+     &DISTRIBUTION OF STAND ATTRIBUTES BY'/'YEAR  ATTRIBUTES', &
+     &X,'10     30     50     70     90    100',7X,'ATTRIBUTES',7X, &
+     &SPECIES AND 3 USER-DEFINED SUBCLASSES'/,4('-'),2X,11('-'),3X, &
+     &(6('-'),1X),2X,14('-'),2X,42('-')/T34,'(DBH IN CM)')
 !----------
 !  WESTERN, SOUTHERN, AND CANADIAN BRITISH COLUMBIA VARIANTS
 !----------
 CASE DEFAULT
-  WRITE (KOSTND,20)
-20   FORMAT(/T41, &
-     'STAND COMPOSITION (BASED ON STOCKABLE AREA)'/ &
-     122('-')/T29,'PERCENTILE POINTS IN THE'/ &
-     T22,'DISTRIBUTION OF STAND ATTRIBUTES BY DBH       TOTAL/HA'/ &
-     T9,'STAND',7X,41('-'),6X,'OF STAND',9X, &
-     'DISTRIBUTION OF STAND ATTRIBUTES BY'/'YEAR  ATTRIBUTES', &
-     6X,'10     30     50     70     90    100',7X,'ATTRIBUTES',7X, &
-     'SPECIES AND 3 USER-DEFINED SUBCLASSES'/,4('-'),2X,11('-'),3X, &
-     6(6('-'),1X),2X,14('-'),2X,42('-')/T34,'(DBH IN CM)')
+  WRITE (KOSTND,20) &
+     &ORMAT(/T41, &
+     &STAND COMPOSITION (BASED ON STOCKABLE AREA)'/ &
+     &22('-')/T29,'PERCENTILE POINTS IN THE'/ &
+     &22,'DISTRIBUTION OF STAND ATTRIBUTES BY DBH       TOTAL/HA'/ &
+     &9,'STAND',7X,41('-'),6X,'OF STAND',9X, &
+     &DISTRIBUTION OF STAND ATTRIBUTES BY'/'YEAR  ATTRIBUTES', &
+     &X,'10     30     50     70     90    100',7X,'ATTRIBUTES',7X, &
+     &SPECIES AND 3 USER-DEFINED SUBCLASSES'/,4('-'),2X,11('-'),3X, &
+     &(6('-'),1X),2X,14('-'),2X,42('-')/T34,'(DBH IN CM)')
 END SELECT
 !
 30 CONTINUE
@@ -86,40 +86,40 @@ SELECT CASE (VARACD)
 !  EASTERN TWIGS AND CANADIAN ONTARIO VARIANTS
 !----------
 CASE ('CS','LS','NE','ON')
-  WRITE (KOTREE,35)
-35   FORMAT( &
-     /126('-') &
-     /T22,'ATTRIBUTES OF SELECTED SAMPLE TREES',16X, &
-     ' ADDITIONAL STAND ATTRIBUTES (BASED ON STOCKABLE AREA)'/ &
-     6X,65('-'),2X,53('-')/6X,'INITIAL', &
-     27X,'  LIVE  PAST DBH   BASAL  TREES',9X,'QUADRATIC    TREES', &
-     4X,' BASAL    TOP HT       '/6X,'TREE/HA',12X, &
-     '  DBH   HEIGHT', &
-     2X,'CROWN    GROWTH    AREA    PER  STAND   MEAN DBH      PER', &
-     5X,' AREA   LARGEST        '/'YEAR    %TILE SPECIES     (CM)  ', &
-     '    (M)  RATIO      (CM)   %TILE     HA    AGE       (CM)', &
-     6X,' HA   (M2/HA)     40/HA            '/'----',2X,2(7('-'),1X), &
-     2(8('-'),1X),6('-'),1X,9('-'),1X,7('-'),1X,6('-'),2X,5('-'),2X, &
-     9('-'),3X,6('-'),1X,2(9('-'),1X),7('-'))
+  WRITE (KOTREE,35) &
+     &ORMAT( &
+     &126('-') &
+     &T22,'ATTRIBUTES OF SELECTED SAMPLE TREES',16X, &
+     & ADDITIONAL STAND ATTRIBUTES (BASED ON STOCKABLE AREA)'/ &
+     &X,65('-'),2X,53('-')/6X,'INITIAL', &
+     &7X,'  LIVE  PAST DBH   BASAL  TREES',9X,'QUADRATIC    TREES', &
+     &X,' BASAL    TOP HT       '/6X,'TREE/HA',12X, &
+     &  DBH   HEIGHT', &
+     &X,'CROWN    GROWTH    AREA    PER  STAND   MEAN DBH      PER', &
+     &X,' AREA   LARGEST        '/'YEAR    %TILE SPECIES     (CM)  ', &
+     &    (M)  RATIO      (CM)   %TILE     HA    AGE       (CM)', &
+     &X,' HA   (M2/HA)     40/HA            '/'----',2X,2(7('-'),1X), &
+     &(8('-'),1X),6('-'),1X,9('-'),1X,7('-'),1X,6('-'),2X,5('-'),2X, &
+     &('-'),3X,6('-'),1X,2(9('-'),1X),7('-'))
 !----------
 !  WESTERN, SOUTHERN, AND CANADIAN BRITISH COLUMBIA VARIANTS
 !----------
 CASE DEFAULT
-  WRITE (KOTREE,40)
-40   FORMAT( &
-     /126('-') &
-     /T22,'ATTRIBUTES OF SELECTED SAMPLE TREES',16X, &
-     ' ADDITIONAL STAND ATTRIBUTES (BASED ON STOCKABLE AREA)'/ &
-     6X,65('-'),2X,53('-')/6X,'INITIAL', &
-     27X,'  LIVE  PAST DBH   BASAL  TREES',9X,'QUADRATIC    TREES', &
-     4X,' BASAL     TOPHT   CROWN'/5X,' TREE/HA',12X, &
-     '  DBH   HEIGHT', &
-     2X,'CROWN    GROWTH    AREA    PER  STAND   MEAN DBH      PER', &
-     5X,' AREA   LARGEST    COMP'/'YEAR    %TILE SPECIES     (CM) ', &
-     '     (M)  RATIO      (CM)   %TILE     HA    AGE       (CM)', &
-     4X,'   HA   (M2/HA)     40/HA  FACTOR'/'----',2X,2(7('-'),1X), &
-     2(8('-'),1X),6('-'),1X,9('-'),1X,7('-'),1X,6('-'),2X,5('-'),2X, &
-     9('-'),3X,6('-'),1X,2(9('-'),1X),7('-'))
+  WRITE (KOTREE,40) &
+     &ORMAT( &
+     &126('-') &
+     &T22,'ATTRIBUTES OF SELECTED SAMPLE TREES',16X, &
+     & ADDITIONAL STAND ATTRIBUTES (BASED ON STOCKABLE AREA)'/ &
+     &X,65('-'),2X,53('-')/6X,'INITIAL', &
+     &7X,'  LIVE  PAST DBH   BASAL  TREES',9X,'QUADRATIC    TREES', &
+     &X,' BASAL     TOPHT   CROWN'/5X,' TREE/HA',12X, &
+     &  DBH   HEIGHT', &
+     &X,'CROWN    GROWTH    AREA    PER  STAND   MEAN DBH      PER', &
+     &X,' AREA   LARGEST    COMP'/'YEAR    %TILE SPECIES     (CM) ', &
+     &     (M)  RATIO      (CM)   %TILE     HA    AGE       (CM)', &
+     &X,'   HA   (M2/HA)     40/HA  FACTOR'/'----',2X,2(7('-'),1X), &
+     &(8('-'),1X),6('-'),1X,9('-'),1X,7('-'),1X,6('-'),2X,5('-'),2X, &
+     &('-'),3X,6('-'),1X,2(9('-'),1X),7('-'))
 END SELECT
 !
 50 CONTINUE
@@ -142,7 +142,7 @@ WRITE(KOSTND,220)
 220 FORMAT(/T35,'NATIONAL VOLUME ESTIMATOR LIBRARY EQUATION NUMBERS', &
    /,4('SPECIES CUBIC FOOT BOARD FOOT ')/ &
 !     & 4('          EQ. NO.    EQ. NO.  ')/
-     4('------- ---------- ---------- '))
+     &('------- ---------- ---------- '))
 !
 RETURN
 END

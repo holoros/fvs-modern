@@ -11,7 +11,7 @@ C
       INTEGER I, J
       REAL FIASPSG(455, 8)
 C    FIASPN,   WSG,   BSG,  WMC,  BMC,   BVP,JSP,   SAPADJ
-      DATA (FIASPSG(J, I), I=1,8), J=1,50)/
+      DATA (FIASPSG(J, I), I=1,8), J=1,50)/ &
      &   10,  0.36,  0.49,   84,   62,  11.8,  3,  0.60817,  
      &   11,  0.40,  0.44,   70,   64,  14.0,  3,  0.60193,  
      &   12,  0.33,  0.40,  119,  100,  12.0,  3,  0.60817,  

@@ -9,10 +9,10 @@ IMPLICIT NONE
 !OMMONS
 !
 !
-!      INCLUDE 'PRGPRM.F77'
+!      INCLUDE 'PRGPRM.f90'
 !
 !
-!      INCLUDE 'CONTRL.F77'
+!      INCLUDE 'CONTRL.f90'
 !
 !
 !OMMONS

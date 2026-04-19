@@ -2,7 +2,7 @@ C     R8 Clark coef for estimating DOB at 17.3 ft from DBH and total, 4", 7/9" H
       INTEGER I1,J1
       REAL R8CFO(182,9)
       
-      DATA ((R8CFO(I1,J1),J1=1,9),I1= 1, 182)/
+      DATA ((R8CFO(I1,J1),J1=1,9),I1= 1, 182)/ &
 C     geocd,fiacd,spgrp,a_h0,b_h0,a_h4,b_h4,a_h79,b_h79
      >1,100,100,0.90439,-0.64356,0.89655,-0.27541,0.88235,-0.1192,
      >1,107,100,0.94744,-1.02854,0.89177,-0.23376,0.89851,-0.14541,

@@ -1,7 +1,7 @@
 C Brown's biomass equation for crown components
         INTEGER II,BRNEQTOT /77/
         CHARACTER*12 BRNEQN(77)
-        DATA (BRNEQN(II),II=1,77)/
+        DATA (BRNEQN(II),II=1,77)/ &
         'BRN017LCR00D',
         'BRN019LCR00D',
         'BRN093LCR00D',

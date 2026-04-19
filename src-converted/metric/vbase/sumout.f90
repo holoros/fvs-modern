@@ -130,18 +130,18 @@ CASE ('CS','LS','NE','SN')
 WRITE (JSTND2,12)
 12 FORMAT(//32X,'SUMMARY STATISTICS (PER HA OR STAND BASED ON TOTAL &
     STAND AREA)',/, &
-     134(1H-),/15X,'START OF SIMULATION PERIOD',21X,'REMOVALS',13X, &
-     'AFTER TREATMENT',4X,'GROWTH THIS PERIOD',/9X,45(1H-),1X, &
-     23(1H-),1X,21(1H-),2X,18(1H-),3X,'MAI  ------',/9X, &
-     'NO OF',14X,'TOP', &
-     6X,'MERCH SAWLG SAWLG NO OF MERCH SAWLG SAWLG',14X,'TOP  RES  ', &
-     'PERIOD ACCRE MORT   MERCH FOR SS',/, &
-     'YEAR AGE TREES  BA  SDI CCF ', &
-     'HT  QMD  CU M  CU M  BD FT TREES CU M  CU M  BD FT  BA  SDI ', &
-     'CCF HT   QMD  YEARS   PER  YEAR   CU M  TYP ZT', &
-     /'---- --- ----- ', &
-     '--- ---- --- --- ---- ',7('----- '),'--- ---- --- --- ----  ', &
-     '------ ---- -----   ----- ------')
+     &34(1H-),/15X,'START OF SIMULATION PERIOD',21X,'REMOVALS',13X, &
+     &AFTER TREATMENT',4X,'GROWTH THIS PERIOD',/9X,45(1H-),1X, &
+     &3(1H-),1X,21(1H-),2X,18(1H-),3X,'MAI  ------',/9X, &
+     &NO OF',14X,'TOP', &
+     &X,'MERCH SAWLG SAWLG NO OF MERCH SAWLG SAWLG',14X,'TOP  RES  ', &
+     &PERIOD ACCRE MORT   MERCH FOR SS',/, &
+     &YEAR AGE TREES  BA  SDI CCF ', &
+     &HT  QMD  CU M  CU M  BD FT TREES CU M  CU M  BD FT  BA  SDI ', &
+     &CCF HT   QMD  YEARS   PER  YEAR   CU M  TYP ZT', &
+     &'---- --- ----- ', &
+     &--- ---- --- --- ---- ',7('----- '),'--- ---- --- --- ----  ', &
+     &------ ---- -----   ----- ------')
 !----------
 !  WRITE HEADER FOR BC, ON
 !----------
@@ -149,35 +149,35 @@ CASE ('ON')
 WRITE (JSTND2,15)
 15 FORMAT(//32X,'SUMMARY STATISTICS (PER HA OR STAND BASED ON TOTAL &
     STAND AREA)',/, &
-     134(1H-),/15X,'START OF SIMULATION PERIOD',21X,'REMOVALS',13X, &
-     'AFTER TREATMENT',4X,'GROWTH THIS PERIOD',/9X,45(1H-),1X, &
-     23(1H-),1X,21(1H-),2X,18(1H-),3X,' MAI ------',/9X, &
-     'NO OF',14X,'TOP', &
-     6X,'  GTV   GMV   NMV NO OF   GTV   GMV   NMV',14X,'TOP  RES ', &
-     'PERIOD  ACCRE MORT     GTV FOR SS',/, &
-     'YEAR AGE TREES  BA  SDI CCF  ', &
-     'HT  QMD  CU M  CU M  CU M TREES  CU M  CU M  CU M  BA  SDI ', &
-     'CCF  HT  QMD  YEARS   PER  YEAR    CU M TYP ZT', &
-     /'---- --- ----- ', &
-     '--- ---- --- --- ---- ',7('----- '),'--- ---- --- --- ----  ', &
-     '------ ---- -----   ----- ------')
+     &34(1H-),/15X,'START OF SIMULATION PERIOD',21X,'REMOVALS',13X, &
+     &AFTER TREATMENT',4X,'GROWTH THIS PERIOD',/9X,45(1H-),1X, &
+     &3(1H-),1X,21(1H-),2X,18(1H-),3X,' MAI ------',/9X, &
+     &NO OF',14X,'TOP', &
+     &X,'  GTV   GMV   NMV NO OF   GTV   GMV   NMV',14X,'TOP  RES ', &
+     &PERIOD  ACCRE MORT     GTV FOR SS',/, &
+     &YEAR AGE TREES  BA  SDI CCF  ', &
+     &HT  QMD  CU M  CU M  CU M TREES  CU M  CU M  CU M  BA  SDI ', &
+     &CCF  HT  QMD  YEARS   PER  YEAR    CU M TYP ZT', &
+     &'---- --- ----- ', &
+     &--- ---- --- --- ---- ',7('----- '),'--- ---- --- --- ----  ', &
+     &------ ---- -----   ----- ------')
 
 CASE ('BC')
 WRITE (JSTND2,13)
 13 FORMAT(//32X,'SUMMARY STATISTICS (PER HA OR STAND BASED ON TOTAL &
     STAND AREA)',/, &
-     134(1H-),/15X,'START OF SIMULATION PERIOD',21X,'REMOVALS',12X, &
-     'AFTER TREATMENT',5X,'GROWTH THIS PERIOD',/9X,45(1H-),1X, &
-     23(1H-),1X,21(1H-),2X,18(1H-),2X,'  MAI ------',/9X, &
-     'NO OF',14X,'TOP', &
-     6X,'TOTAL MERCH   N/A NO OF TOTAL MERCH   N/A',14X, &
-     'TOP  RES ',' PERIOD ACCRE MORT   TOTAL FOR SS',/, &
-     'YEAR AGE TREES  BA  SDI CCF ', &
-     ' HT  QMD  CU M  CU M       TREES  CU M  CU M        BA  SDI ', &
-     'CCF  HT  QMD   YEARS  PER  YEAR    CU M TYP ZT', &
-     /'---- --- ----- ', &
-     '--- ---- --- --- ---- ',7('----- '),'--- ---- --- --- ----  ', &
-     '------ ---- -----   ----- ------')
+     &34(1H-),/15X,'START OF SIMULATION PERIOD',21X,'REMOVALS',12X, &
+     &AFTER TREATMENT',5X,'GROWTH THIS PERIOD',/9X,45(1H-),1X, &
+     &3(1H-),1X,21(1H-),2X,18(1H-),2X,'  MAI ------',/9X, &
+     &NO OF',14X,'TOP', &
+     &X,'TOTAL MERCH   N/A NO OF TOTAL MERCH   N/A',14X, &
+     &TOP  RES ',' PERIOD ACCRE MORT   TOTAL FOR SS',/, &
+     &YEAR AGE TREES  BA  SDI CCF ', &
+     & HT  QMD  CU M  CU M       TREES  CU M  CU M        BA  SDI ', &
+     &CCF  HT  QMD   YEARS  PER  YEAR    CU M TYP ZT', &
+     &'---- --- ----- ', &
+     &--- ---- --- --- ---- ',7('----- '),'--- ---- --- --- ----  ', &
+     &------ ---- -----   ----- ------')
 
 !----------
 !  WRITE HEADER FOR ALL OTHER VARIANTS
@@ -186,18 +186,18 @@ CASE DEFAULT
 WRITE (JSTND2,14)
 14 FORMAT(//32X,'SUMMARY STATISTICS (PER HA OR STAND BASED ON TOTAL &
     STAND AREA)',/, &
-     134(1H-),/15X,'START OF SIMULATION PERIOD',21X,'REMOVALS',13X, &
-     'AFTER TREATMENT',4X,'GROWTH THIS PERIOD',/9X,45(1H-),1X, &
-     23(1H-),1X,21(1H-),2X,18(1H-),3X,'MAI  ------',/9X, &
-     'NO OF',14X,'TOP', &
-     6X,'TOTAL MERCH MERCH NO OF TOTAL MERCH MERCH',14X,'TOP  RES  ', &
-     'PERIOD ACCRE MORT   MERCH FOR SS',/, &
-     'YEAR AGE TREES  BA  SDI CCF ', &
-     'HT  QMD  CU M  CU M  BD FT TREES CU M  CU M  BD FT  BA  SDI ', &
-     'CCF HT   QMD  YEARS   PER  YEAR   CU M  TYP ZT', &
-     /'---- --- ----- ', &
-     '--- ---- --- --- ---- ',7('----- '),'--- ---- --- --- ----  ', &
-     '------ ---- -----   ----- ------')
+     &34(1H-),/15X,'START OF SIMULATION PERIOD',21X,'REMOVALS',13X, &
+     &AFTER TREATMENT',4X,'GROWTH THIS PERIOD',/9X,45(1H-),1X, &
+     &3(1H-),1X,21(1H-),2X,18(1H-),3X,'MAI  ------',/9X, &
+     &NO OF',14X,'TOP', &
+     &X,'TOTAL MERCH MERCH NO OF TOTAL MERCH MERCH',14X,'TOP  RES  ', &
+     &PERIOD ACCRE MORT   MERCH FOR SS',/, &
+     &YEAR AGE TREES  BA  SDI CCF ', &
+     &HT  QMD  CU M  CU M  BD FT TREES CU M  CU M  BD FT  BA  SDI ', &
+     &CCF HT   QMD  YEARS   PER  YEAR   CU M  TYP ZT', &
+     &'---- --- ----- ', &
+     &--- ---- --- --- ---- ',7('----- '),'--- ---- --- --- ----  ', &
+     &------ ---- -----   ----- ------')
 END SELECT
 ENDIF
 !----------
@@ -354,7 +354,7 @@ END SELECT
 20 FORMAT(2I4,I6,I4,I5,2I4,F5.1,7I6,I4,I5,2I4,F5.1,2X,I6, &
           I5,I6,2X,F6.1,1X,I3,1X,2I1)
 !
-9014 FORMAT(2I4,I6,I4,I5,2I4,F5.1,7I6,I4,I5,2I4,F5.1,2X,I6, &
+     &ORMAT(2I4,I6,I4,I5,2I4,F5.1,7I6,I4,I5,2I4,F5.1,2X,I6, &
           I5,I6,2X,F6.1,1X,I3,1X,2I1)
 50 CONTINUE
 !

@@ -79,48 +79,48 @@ SELECT CASE (VARACD)
 !  EASTERN VARIANTS
 !----------
 CASE ('CS','LS','NE','SN')
-  WRITE (JOSCRN,10)
-10   FORMAT (/T16,'SUMMARY STATISTICS (BASED ON TOTAL STAND AREA)' &
-     /,76('-')/ &
-     T8,'START OF SIMULATION PERIOD    REMOVALS/HA  ',5X, &
-     'AFTER TREATMENT  GROWTH',/,T6,28('-'),1X,17('-'),1X,16('-'), &
-     '  CU M',/, T6,'TREES',9X,'TOP',6X,'MERCH TREES MERCH SAWLG', &
-     9X,'TOP',6X,'PER YR',/,'YEAR  /HA  BA  SDI HT  QMD', &
-     'CU  M  /HA  CU  M BD  M  BA SDI  HT  QMD ACC MOR',/, &
-     '---- ----- --- --- --- ---- ----- ----- ----- ----- ', &
-     '--- --- --- ---- --- ---')
+  WRITE (JOSCRN,10) &
+     &ORMAT (/T16,'SUMMARY STATISTICS (BASED ON TOTAL STAND AREA)' &
+     &,76('-')/ &
+     &8,'START OF SIMULATION PERIOD    REMOVALS/HA  ',5X, &
+     &AFTER TREATMENT  GROWTH',/,T6,28('-'),1X,17('-'),1X,16('-'), &
+     &  CU M',/, T6,'TREES',9X,'TOP',6X,'MERCH TREES MERCH SAWLG', &
+     &X,'TOP',6X,'PER YR',/,'YEAR  /HA  BA  SDI HT  QMD', &
+     &CU  M  /HA  CU  M BD  M  BA SDI  HT  QMD ACC MOR',/, &
+     &---- ----- --- --- --- ---- ----- ----- ----- ----- ', &
+     &--- --- --- ---- --- ---')
 !----------
 !  CANADIAN VARIANTS
 !----------
 CASE ('BC','ON')
-  WRITE (JOSCRN,15)
-15   FORMAT (/T16,'SUMMARY STATISTICS (BASED ON TOTAL STAND AREA)' &
-     /,76('-')/ &
-     T7,'START OF SIMULATION PERIOD    REMOVALS/HA  ',3X, &
-     'AFTER TREATMENT   GROWTH',/,T6,28('-'),1X,17('-'),1X,16('-'), &
-     '    CU M',/, T6,'TREES',9X,'TOP',6X,'  GTV TREES   GTV   GMV', &
-     9X,'TOP',6X,' PER YR',/,'YEAR   /HA  BA SDI  HT  QMD ', &
-     ' CU M   /HA  CU M  CU M  BA SDI  HT  QMD ACC MOR',/, &
-     '---- ----- --- --- --- ---- ----- ----- ----- ----- ', &
-     '--- --- --- ---- --- ---')
+  WRITE (JOSCRN,15) &
+     &ORMAT (/T16,'SUMMARY STATISTICS (BASED ON TOTAL STAND AREA)' &
+     &,76('-')/ &
+     &7,'START OF SIMULATION PERIOD    REMOVALS/HA  ',3X, &
+     &AFTER TREATMENT   GROWTH',/,T6,28('-'),1X,17('-'),1X,16('-'), &
+     &    CU M',/, T6,'TREES',9X,'TOP',6X,'  GTV TREES   GTV   GMV', &
+     &X,'TOP',6X,' PER YR',/,'YEAR   /HA  BA SDI  HT  QMD ', &
+     & CU M   /HA  CU M  CU M  BA SDI  HT  QMD ACC MOR',/, &
+     &---- ----- --- --- --- ---- ----- ----- ----- ----- ', &
+     &--- --- --- ---- --- ---')
 !----------
 !  WESTERN AND SOUTHERN VARIANTS
 !----------
 CASE DEFAULT
-  WRITE (JOSCRN,20)
-20   FORMAT (/T16,'SUMMARY STATISTICS (BASED ON TOTAL STAND AREA)' &
-     /,76('-')/ &
-     T8,'START OF SIMULATION PERIOD    REMOVALS/HA  ',4X, &
-     'AFTER TREATMENT GROWTH',/,T6,28('-'),1X,17('-'),1X,16('-'), &
-     '  CU M',/, T6,'TREES',9X,'TOP',6X,'TOTAL TREES TOTAL MERCH', &
-     9X,'TOP',6X,'PER YR',/,'YEAR /HA    BA SDI  HT  QMD ', &
-     '  CU M/HA    CU M  CU M  BA SDI  HT  QMD ACC MOR',/, &
-     '---- ----- --- --- --- ---- ----- ----- ----- ----- ', &
-     '--- --- --- ---- --- ---')
+  WRITE (JOSCRN,20) &
+     &ORMAT (/T16,'SUMMARY STATISTICS (BASED ON TOTAL STAND AREA)' &
+     &,76('-')/ &
+     &8,'START OF SIMULATION PERIOD    REMOVALS/HA  ',4X, &
+     &AFTER TREATMENT GROWTH',/,T6,28('-'),1X,17('-'),1X,16('-'), &
+     &  CU M',/, T6,'TREES',9X,'TOP',6X,'TOTAL TREES TOTAL MERCH', &
+     &X,'TOP',6X,'PER YR',/,'YEAR /HA    BA SDI  HT  QMD ', &
+     &  CU M/HA    CU M  CU M  BA SDI  HT  QMD ACC MOR',/, &
+     &---- ----- --- --- --- ---- ----- ----- ----- ----- ', &
+     &--- --- --- ---- --- ---')
 !
 END SELECT
 !
-1000 CONTINUE
+     &ONTINUE
 !
 RETURN
 END

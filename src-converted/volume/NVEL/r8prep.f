@@ -101,7 +101,7 @@ c       R8 uses ht1Prd pulpwood broken HT
       ELSEIF  (SPEC.EQ.268) THEN       
          SPEC = 261                     
       ELSEIF  (SPEC.EQ.313 .OR. SPEC.EQ.314 .OR. SPEC.EQ.317 .OR.
-     >          SPEC.EQ.650 .OR. SPEC.EQ.651. OR.
+     >          SPEC.EQ.650 .OR. SPEC.EQ.651 .OR.
      >          SPEC.EQ.691 .OR. SPEC.EQ.711 .OR. SPEC.EQ.742 .OR.
      >          SPEC.EQ.762 .OR. SPEC.EQ.920 .OR. SPEC.EQ.930 .OR.
      >          SPEC.EQ.545 .OR. SPEC.EQ.546) THEN
@@ -110,7 +110,7 @@ c       R8 uses ht1Prd pulpwood broken HT
      >          SPEC.EQ.601 .OR. SPEC.EQ.602 .OR. SPEC.EQ.318) THEN
          SPEC = 500
       ELSEIF  (SPEC.EQ.804 .OR. SPEC.EQ.817 .OR. SPEC.EQ.820 .OR.
-     >          SPEC.EQ.823 .OR. SPEC.EQ.825. OR.
+     >          SPEC.EQ.823 .OR. SPEC.EQ.825 .OR.
      >          SPEC.EQ.826 .OR. SPEC.EQ.830 .OR. SPEC.EQ.834) THEN
          SPEC = 800
       ENDIF

@@ -421,9 +421,9 @@ IF ((D .EQ. 0.0) .OR. (H .EQ. 0.0) .OR. (C .EQ. 0.0)) GOTO 999
       CTKFDUM=0
       BTKDUM=0
 
-      CALL NATCRS (V,VM,SCFDUM,BFDUM,SPI,D,H,.FALSE.,
-     & CRDUM,BRKDUM,ITRNC,VMDUM,BFVDUM,
-     & RCDUM,DCYDUM,WDSTDUM,BIODUM,
+      CALL NATCRS (V,VM,SCFDUM,BFDUM,SPI,D,H,.FALSE., &
+     & CRDUM,BRKDUM,ITRNC,VMDUM,BFVDUM, &
+     & RCDUM,DCYDUM,WDSTDUM,BIODUM, &
      & LDDUM,CTKFDUM,BTKDUM,-1)
 
 !           INPUT   D (IN) CONVERTED TO (M)
@@ -1001,7 +1001,7 @@ IF ((D .EQ. 0.0) .OR. (H .EQ. 0.0) .OR. (C .EQ. 0.0)) GOTO 999
       IF (X .LE. X0) THEN
         V = -0.0534 + (2.3077 * X) + (0.0467 * X**2)
       ELSE
-        V = -0.0534 + (2.3077 * X) +
+        V = -0.0534 + (2.3077 * X) + &
      & (0.0467 * 3.0 * (X0**2 - X0**3/X))
       ENDIF
 !
@@ -1064,7 +1064,7 @@ IF ((D .EQ. 0.0) .OR. (H .EQ. 0.0) .OR. (C .EQ. 0.0)) GOTO 999
 !         partitioning from western hemlock
     CASE (24)
       LDM = LOG(D * 2.54)
-      LIVEWT = EXP(-3.8169 + 1.9756 * LDM) +  ! foliage
+      LIVEWT = EXP(-3.8169 + 1.9756 * LDM) +  ! foliage &
      & EXP(-5.2581 + 2.6045 * LDM)    ! live branches
       DEADWT = EXP(-9.9449 + 3.2845 * LDM)
 
@@ -1228,9 +1228,9 @@ IF ((D .EQ. 0.0) .OR. (H .EQ. 0.0) .OR. (C .EQ. 0.0)) GOTO 999
       XV(0) = XV(0) + MAX(0.0,DFOL*2.2046)  ! modified
       XV(1) = XV(1) + MAX(0.0,DFOL*0.75*2.2046)
       XV(2) = XV(2) + MAX(0.0,(DBR3*0.139+DFOL*2.0)*2.2046)
-      XV(3) = XV(3) +
+      XV(3) = XV(3) + &
      & MAX(0.0,(DBR3*0.861+DBR2*0.405)*2.2046)
-      XV(4) = XV(4) +
+      XV(4) = XV(4) + &
      & MAX(0.0,(DBR1+DBR2*0.595)*2.2046)
 
 !            XV(0) = XV(0) + MAX(0.0,DFOL*2.2046)  ! original

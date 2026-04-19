@@ -6,7 +6,7 @@ C Last modified on 3/29/2023
        END TYPE REFINFO
        TYPE(REFINFO) BEQREF(203)
        INTEGER I6, REFCNT /203/
-       DATA (BEQREF(I6),I6=1,203) /
+       DATA (BEQREF(I6),I6=1,203) / &
 C      REFINFO(ABRV, AUTH)
      + REFINFO('BAL','Baldwin 1989'),
      + REFINFO('BAR','Barclay et al. 1986'),

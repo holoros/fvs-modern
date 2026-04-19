@@ -1,11 +1,11 @@
 ! Last modified on 2/21/2023
 ! NVBC average crown cratio for hardwood and softwood by division from Table S11
 ! The column listed as: DIVISION,CR(crown ratio in %)
- INTEGER Tbl11Cnt/43/
- INTEGER I1, J1
- REAL DIVCRh(43,2),DIVCRs(43,2),DIVCR(43,2)
+      INTEGER Tbl11Cnt/43/
+      INTEGER I1, J1
+      REAL DIVCRh(43,2),DIVCRs(43,2),DIVCR(43,2)
 
- DATA ((DIVCRh(I1,J1),J1=1,2),I1=1,43) / &
+      DATA ((DIVCRh(I1,J1),J1=1,2),I1=1,43) / &
     132,41.6, &
     133,41.5, &
     211,39.2, &
@@ -50,7 +50,7 @@
     1341,40.9, &
     0000,38/
 
- DATA ((DIVCRs(I1,J1),J1=1,2),I1=1,43) / &
+      DATA ((DIVCRs(I1,J1),J1=1,2),I1=1,43) / &
     132,43.9, &
     133,49.6, &
     211,42.6, &

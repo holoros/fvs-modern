@@ -4,7 +4,7 @@ C Last modified on 7/17/2015
        CHARACTER*40 BEQREF(84)
        INTEGER TOTEQ/84/
        INTEGER I3, J3
-       DATA (BEQN(I3),I3=1,15) /
+       DATA (BEQN(I3),I3=1,15) / &
      + 'BRN017DCR01D',
      + 'BRN017DCR02D',
      + 'BRN017DCR03D',
@@ -20,7 +20,7 @@ C Last modified on 7/17/2015
      + 'BRN019LCR02D',
      + 'BRN019STT01D',
      + 'BRN019STT02D'/
-       DATA (BEQN(I3),I3=16,30) /
+       DATA (BEQN(I3),I3=16,30) / &
      + 'BRN073LCR01D',
      + 'BRN073LCR02D',
      + 'BRN073STT01D',
@@ -36,7 +36,7 @@ C Last modified on 7/17/2015
      + 'BRN101LCR02D',
      + 'BRN101STT01D',
      + 'BRN101STT02D'/
-       DATA (BEQN(I3),I3=31,45) /
+       DATA (BEQN(I3),I3=31,45) / &
      + 'BRN108LCR01D',
      + 'BRN108LCR02D',
      + 'BRN108STT01D',
@@ -52,7 +52,7 @@ C Last modified on 7/17/2015
      + 'BRN122LCR03D',
      + 'BRN122LCR04D',
      + 'BRN122STT01D'/
-       DATA (BEQN(I3),I3=46,60) /
+       DATA (BEQN(I3),I3=46,60) / &
      + 'BRN122STT02D',
      + 'BRN122STT03D',
      + 'BRN122STT04D',
@@ -68,7 +68,7 @@ C Last modified on 7/17/2015
      + 'BRN202STT02D',
      + 'BRN242DCR01D',
      + 'BRN242DCR02D'/
-       DATA (BEQN(I3),I3=61,75) /
+       DATA (BEQN(I3),I3=61,75) / &
      + 'BRN242LCR01D',
      + 'BRN242LCR02D',
      + 'BRN242LCR03D',
@@ -84,7 +84,7 @@ C Last modified on 7/17/2015
      + 'BRN263STT01D',
      + 'BRN263STT02D',
      + 'STD122AST01D'/
-       DATA (BEQN(I3),I3=76,84) /
+       DATA (BEQN(I3),I3=76,84) / &
      + 'TNK122AGT01D',
      + 'WY2015CRW01G',
      + 'WY2015TIP01G',
@@ -95,7 +95,7 @@ C Last modified on 7/17/2015
      + 'WY2202CRW01G',
      + 'WY2202TIP01G'/
  
-       DATA (BEQREF(J3),J3=1,15) /
+       DATA (BEQREF(J3),J3=1,15) / &
      + 'Brown 1978',
      + 'Brown 1978',
      + 'Brown 1978',
@@ -111,7 +111,7 @@ C Last modified on 7/17/2015
      + 'Brown 1978',
      + 'Brown 1978',
      + 'Brown 1978'/
-       DATA (BEQREF(J3),J3=16,30) /
+       DATA (BEQREF(J3),J3=16,30) / &
      + 'Brown 1978',
      + 'Brown 1978',
      + 'Brown 1978',
@@ -127,7 +127,7 @@ C Last modified on 7/17/2015
      + 'Brown 1978',
      + 'Brown 1978',
      + 'Brown 1978'/
-       DATA (BEQREF(J3),J3=31,45) /
+       DATA (BEQREF(J3),J3=31,45) / &
      + 'Brown 1978',
      + 'Brown 1978',
      + 'Brown 1978',
@@ -143,7 +143,7 @@ C Last modified on 7/17/2015
      + 'Brown 1978',
      + 'Brown 1978',
      + 'Brown 1978'/
-       DATA (BEQREF(J3),J3=46,60) /
+       DATA (BEQREF(J3),J3=46,60) / &
      + 'Brown 1978',
      + 'Brown 1978',
      + 'Brown 1978',
@@ -159,7 +159,7 @@ C Last modified on 7/17/2015
      + 'Brown 1978',
      + 'Brown 1978',
      + 'Brown 1978'/
-       DATA (BEQREF(J3),J3=61,75) /
+       DATA (BEQREF(J3),J3=61,75) / &
      + 'Brown 1978',
      + 'Brown 1978',
      + 'Brown 1978',
@@ -175,7 +175,7 @@ C Last modified on 7/17/2015
      + 'Brown 1978',
      + 'Brown 1978',
      + 'Standish et al. 1985'/
-       DATA (BEQREF(J3),J3=76,84) /
+       DATA (BEQREF(J3),J3=76,84) / &
      + 'Tinker et al 2010',
      + 'Wang 2012a',
      + 'Wang 2012a',
