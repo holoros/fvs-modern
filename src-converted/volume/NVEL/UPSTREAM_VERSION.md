@@ -19,7 +19,7 @@ directory, not from the submodule.
 
 | Date       | Upstream Commit | Release Tag         | Notes |
 |------------|-----------------|---------------------|-------|
-| 2026-04-19 | 4fa39a00        | vollib 20260415     | Initial provenance documentation. Submodule added. All 26 .inc coefficient files audited numerically against upstream master: 23/26 match exactly, regndftdata.inc updated from upstream (species count 146→149). Three files show value-level differences: r9coeff.inc (56 diffs), wdbkwtdata.inc (408 diffs), wdbkwtdata_20190807.inc (411 diffs, archived). See audit script output for details. |
+| 2026-04-19 | 4fa39a00        | vollib 20260415     | Initial provenance documentation. Submodule added. All 26 .inc coefficient files updated and audited numerically against upstream master: 26/26 match exactly. Updated files: regndftdata.inc (species 146→149), r9coeff.inc (56 coefficient updates), wdbkwtdata.inc (408 weight/density updates), wdbkwtdata_20190807.inc (archived, synced). |
 
 ## Conversion Notes
 

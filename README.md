@@ -52,6 +52,8 @@ fvs-modern/
 
 ## Quick start
 
+For a detailed walkthrough from clone to first projection, see **[docs/getting_started.md](docs/getting_started.md)**.
+
 ### Option A: Docker (recommended for servers)
 
 ```bash
@@ -90,7 +92,18 @@ packer build fvs-online.pkr.hcl
 
 ## Upstream synchronization
 
-This fork tracks the USFS GitHub repositories and provides automated tooling for integration:
+One of the persistent challenges with FVS forks is keeping up with USFS releases. fvs-modern solves this with automated upstream tracking at three levels:
+
+**Automated weekly checks:** A GitHub Actions workflow (`.github/workflows/upstream-sync.yml`) runs every Monday and compares fvs-modern against the USFS repositories. When new commits are detected, it automatically opens a pull request with the changes for review.
+
+**NVEL volume library tracking:** The upstream [FMSC VolumeLibrary](https://github.com/FMSC-Measurements/VolumeLibrary) is tracked as a git submodule at `upstream/VolumeLibrary/`. An automated audit script numerically compares all 26 coefficient tables against upstream, ignoring F77/F90 formatting differences:
+
+```bash
+python3 scripts/audit_nvel_upstream.py
+# Current status: 26/26 .inc files match upstream (vollib 20260415)
+```
+
+**Manual sync tools:** For immediate updates or when you need to pull specific changes:
 
 ```bash
 # Check for new upstream commits
@@ -100,7 +113,7 @@ This fork tracks the USFS GitHub repositories and provides automated tooling for
 ./deployment/scripts/sync_upstream.sh --all
 ```
 
-A GitHub Actions workflow (`.github/workflows/upstream-sync.yml`) runs weekly and opens a PR when new USFS commits are detected. See `docs/update_lifecycle.md` for the full process.
+See `docs/update_lifecycle.md` for the full update process and `docs/nvel_integration_recommendations.md` for the NVEL tracking strategy.
 
 ## Creating a new variant
 
@@ -110,6 +123,46 @@ A GitHub Actions workflow (`.github/workflows/upstream-sync.yml`) runs weekly an
 ```
 
 This scaffolds the directory structure, species mapping template, and calibration parameter files. For runtime calibration without recompilation, use FVS keywords (READCORR, MORTMULT, SITEINDEX) in keyword files.
+
+## Python interfaces
+
+fvs-modern includes two Python interfaces that make FVS accessible without touching Fortran or R.
+
+### fvs2py (ctypes wrapper)
+
+Load any variant as a shared library and drive projections from Python with full access to tree lists, summary tables, and calibrated parameters:
+
+```python
+from fvs2py import FVS
+
+fvs = FVS("lib/FVSne.so", config_version="calibrated")
+fvs.set_cmdline("--keywordfile=stand.key")
+fvs.run()
+
+summary = fvs.summary          # pandas DataFrame: year, TPA, BA, volume
+trees   = fvs.tree_attributes  # per-tree DBH, height, crown ratio
+```
+
+Uncertainty estimation is built in. Pass `uncertainty=True` to sample from the Bayesian posterior and produce ensemble projections with credible intervals. See `deployment/fvs2py/` for the full API.
+
+### microfvs (REST API)
+
+A FastAPI service that wraps FVS as HTTP endpoints with Swagger documentation:
+
+```bash
+cd deployment/microfvs
+uvicorn microfvs.main:app --reload
+# Swagger docs at http://localhost:8000/docs
+```
+
+```bash
+# Run a projection via curl
+curl -X POST http://localhost:8000/run \
+  -H "Content-Type: application/json" \
+  -d '{"variant": "ne", "num_cycles": 10, "stand_init": [...]}'
+```
+
+The API supports all 24 variants, returns JSON results, and can be deployed behind nginx for multi-user access. See `deployment/microfvs/` for setup.
 
 ## Bayesian calibration
 
