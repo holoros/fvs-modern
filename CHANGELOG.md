@@ -6,14 +6,50 @@ project adheres to calendar-based versioning (YYYY.MM).
 
 ## [Unreleased]
 
+### Added
+- Standalone executable builder (`deployment/scripts/build_fvs_executables.sh`)
+  for subprocess based projection pipelines. Supports all 25 variants with
+  fallback linking against the shared library for unresolved symbols.
+- F77 continuation fixer utility (`scripts/fix_f77_continuations.py`) for
+  incremental cleanup of column 6 continuation markers remaining in .f90 files.
+  Handles pure F77, half converted, and double operator patterns.
+- CI expanded from 2 to 5 jobs: Fortran syntax check, NE shared library build
+  with API symbol verification, executable build with smoke test (informational),
+  NVEL coefficient audit, and script linting (shellcheck + ruff).
+- NVEL upstream audit script (`scripts/audit_nvel_upstream.py`) comparing volume
+  coefficients against the Open-FVS submodule to detect drift.
+- Getting Started walkthrough (`docs/getting_started.md`) covering library build,
+  ctypes verification, and keyword file simulation.
+- Comprehensive FVS ecosystem landscape scan in README Related Projects section.
+
+### Changed
+- Executable builder includes 11 additional include directories (vvolume, vie,
+  strp, clim, vdbs, vdbsqlite, econ, wpbr, wsbwe, pg, canada) for broader
+  variant coverage beyond NE.
+- Nine NVEL volume library files converted from fixed form to free form .f90,
+  eliminating compilation stubs (volinit2, volinitnvb, fmatv, fmppget, etc.).
+- Five previously stubbed subroutines (SUMOUT, OPADD, OPCSET, OPGET3, FILOPN)
+  restored to full implementations.
+- ACD variant .so now builds successfully on Cardinal (NVEL include path fix).
+
+### Fixed
+- FILOPN double open: JOTREE unit was opened twice when running via keyword file
+  path, causing gfortran runtime errors on some platforms.
+- NVEL include path ordering in build scripts so volume coefficients resolve
+  correctly for all variants.
+- CI symbol verification updated to check actual API entry points
+  (fvssetcmdline_, fvssummary_) rather than the PROGRAM symbol.
+
+### Removed
+- Stale CI workflow snapshot and internal process documents (email drafts,
+  Cardinal handoff notes, release runbook) from docs/.
+
 ### Planned
-- Resolve ACD variant build state on cardinal.osc.edu using
-  `deployment/scripts/diagnose_acd_cardinal.sh` and promote ACD from
-  advisory to supported in the next tag.
-- Root-cause the `iet03` FFE segfault under gdb and, if reproducible
-  upstream, file an Open-FVS issue.
+- Root cause the `iet03` FFE segfault under gdb and file an Open-FVS issue.
 - Add CONUS unified variant based on ORGANON growth forms
   (`conus-variant` branch with Greg Johnson).
+- Incrementally apply F77 continuation fixes to expand exe build coverage
+  beyond the current 4 variants (NE, ACD, CS, LS) that build cleanly.
 - Ingrowth submodel and crown ratio revision for the next calendar tag.
 
 ## [2026.04.5] — 2026-04-13

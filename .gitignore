@@ -123,6 +123,12 @@ docs/*_verification_report.md
 docs/fvs_*.docx
 docs/fvs_update_lifecycle.md
 
+# Internal process docs (email drafts, handoff notes, Cardinal logs)
+docs/email_*.md
+docs/cardinal_runs/
+docs/*_runbook.md
+docs/*_handoff.md
+
 # OS artifacts
 .DS_Store
 *.swp
@@ -212,3 +218,18 @@ calibration/slides/*.pptx
 
 # Malformed/empty scratch files
 10d}
+
+# IDE and editor files
+.vscode/
+.idea/
+*.kate-swp
+.Rproj.user/
+*.Rproj
+
+# Fortran build temporaries
+*.a
+*.dSYM/
+
+# R package artifacts
+.Rcheck/
+*.tar.gz

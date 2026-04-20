@@ -6,19 +6,31 @@
 # Targets the ORIGINAL fixed-form source (ForestVegetationSimulator-main).
 #
 # Usage:
-#   ./build_fvs_libraries.sh [SOURCE_DIR] [OUTPUT_DIR] [VARIANTS...]
+#   ./build_fvs_libraries.sh [--verbose] SOURCE_DIR OUTPUT_DIR [VARIANTS...]
 #
 # Examples:
-#   ./build_fvs_libraries.sh /path/to/ForestVegetationSimulator-main /srv/fvs/bin
-#   ./build_fvs_libraries.sh /path/to/source /srv/fvs/bin ne ak ie
+#   ./build_fvs_libraries.sh . ./lib                    # all variants
+#   ./build_fvs_libraries.sh . ./lib ne ak ie           # subset
+#   ./build_fvs_libraries.sh --verbose . ./lib ne       # show compile errors
 #
-# If no variants specified, builds all US variants.
+# If no variants specified, builds all US + Canadian variants.
 # =============================================================================
 
 set -euo pipefail
 
-SOURCE_DIR="${1:?Usage: $0 SOURCE_DIR OUTPUT_DIR [VARIANTS...]}"
-OUTPUT_DIR="${2:?Usage: $0 SOURCE_DIR OUTPUT_DIR [VARIANTS...]}"
+# Parse flags
+VERBOSE=0
+ARGS=()
+for arg in "$@"; do
+    case "$arg" in
+        --verbose|-v) VERBOSE=1 ;;
+        *) ARGS+=("$arg") ;;
+    esac
+done
+set -- "${ARGS[@]+"${ARGS[@]}"}"
+
+SOURCE_DIR="${1:?Usage: $0 [--verbose] SOURCE_DIR OUTPUT_DIR [VARIANTS...]}"
+OUTPUT_DIR="${2:?Usage: $0 [--verbose] SOURCE_DIR OUTPUT_DIR [VARIANTS...]}"
 shift 2
 VARIANTS=("$@")
 
@@ -149,10 +161,15 @@ for var in "${VARIANTS[@]}"; do
         [ -d "$SOURCE_DIR/ie/common" ] && INCDIRS="$INCDIRS -I$SOURCE_DIR/ie/common"
         [ -d "$SOURCE_DIR/ls/common" ] && INCDIRS="$INCDIRS -I$SOURCE_DIR/ls/common"
 
-        if compile_file "$srcfile" "$objpath" "$INCDIRS" 2>/dev/null && [ -f "$objpath" ]; then
+        if compile_file "$srcfile" "$objpath" "$INCDIRS" 2>"$VARDIR/err_$(basename "$objpath" .o).log" && [ -f "$objpath" ]; then
             OBJECTS+=("$objpath")
         else
             COMPILE_ERRORS=$((COMPILE_ERRORS + 1))
+            if [ "$VERBOSE" -eq 1 ]; then
+                echo ""
+                echo "  COMPILE FAIL: $srcfile"
+                tail -3 "$VARDIR/err_$(basename "$objpath" .o).log" 2>/dev/null | sed 's/^/    /'
+            fi
         fi
 
     done < "$SRCLIST"
@@ -168,12 +185,16 @@ for var in "${VARIANTS[@]}"; do
 
     # Link shared library
     if [ ${#SHLIB_OBJECTS[@]} -gt 0 ]; then
-        if $FC -shared -o "$OUTPUT_DIR/FVS${var}.so" "${SHLIB_OBJECTS[@]}" 2>/dev/null; then
+        if $FC -shared -o "$OUTPUT_DIR/FVS${var}.so" "${SHLIB_OBJECTS[@]}" 2>"$VARDIR/link.err"; then
             NOBJ=${#SHLIB_OBJECTS[@]}
-            echo "DONE ($NOBJ objects, $COMPILE_ERRORS skipped)"
+            SIZE=$(ls -lh "$OUTPUT_DIR/FVS${var}.so" | awk '{print $5}')
+            echo "DONE ($NOBJ objects, $COMPILE_ERRORS skipped, $SIZE)"
             BUILT=$((BUILT + 1))
         else
             echo "LINK FAILED"
+            if [ "$VERBOSE" -eq 1 ]; then
+                tail -5 "$VARDIR/link.err" 2>/dev/null | sed 's/^/    /'
+            fi
             FAILED=$((FAILED + 1))
         fi
     else

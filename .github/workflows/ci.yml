@@ -93,6 +93,48 @@ jobs:
           TOTAL=$(nm "$SO" 2>/dev/null | grep -c " T ")
           echo "Total exported text symbols: $TOTAL"
 
+      - name: Python ctypes load test
+        run: |
+          python3 << 'PYEOF'
+          import ctypes, ctypes.util, os, sys
+
+          so_path = os.path.abspath('lib/FVSne.so')
+          print(f'Loading {so_path} via ctypes...')
+
+          # FVS .so files have some unresolved internal symbols (e.g., debug_mod
+          # from NVEL) that are harmless at runtime but cause RTLD_NOW to fail
+          # on some Python/glibc combinations. Use RTLD_LAZY (0x1 on Linux).
+          RTLD_LAZY = 0x1
+          try:
+              lib = ctypes.CDLL(so_path, mode=RTLD_LAZY)
+          except OSError:
+              # Fallback: try default mode (works on some Python versions)
+              try:
+                  lib = ctypes.CDLL(so_path)
+              except OSError as e:
+                  print(f'FAIL: Could not load library: {e}')
+                  sys.exit(1)
+          print(f'  Loaded successfully: {lib._name}')
+
+          # Verify key API functions are callable
+          api_funcs = ['fvssetcmdline_', 'fvssummary_', 'fvsdimsizes_']
+          for fname in api_funcs:
+              try:
+                  fn = getattr(lib, fname)
+                  print(f'  [OK] {fname} -> {fn}')
+              except AttributeError:
+                  print(f'  [WARN] {fname} not found')
+
+          # Verify fvssetcmdline_ is present (critical for any simulation)
+          try:
+              _ = lib.fvssetcmdline_
+              print()
+              print('PASS: FVSne.so loads and API entry points are accessible')
+          except AttributeError:
+              print('FAIL: fvssetcmdline_ missing from loaded library')
+              sys.exit(1)
+          PYEOF
+
   build-executables:
     name: Build FVS executables (NE, LS)
     needs: build-ne-variant
