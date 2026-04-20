@@ -124,7 +124,16 @@ for var in "${VARIANTS[@]}"; do
         # Resolve path relative to bin/
         srcfile="$SOURCE_DIR/bin/$line"
         if [ ! -f "$srcfile" ]; then
-            continue
+            # Source lists often reference .f90 for files that haven't been
+            # converted from fixed-form yet. Fall back to .f or .for.
+            stem="${srcfile%.*}"
+            if [ -f "${stem}.f" ]; then
+                srcfile="${stem}.f"
+            elif [ -f "${stem}.for" ]; then
+                srcfile="${stem}.for"
+            else
+                continue
+            fi
         fi
 
         # Build include path from source directory
