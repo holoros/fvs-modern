@@ -72,7 +72,7 @@
 !DETERMINE WHERE TO CHECK
           HALF=((LAST-FIRST+1)/2) + FIRST
           READ (ATMP1(HALF),'(I3,4I4)') SPEC, &
-     &         (COEFEQ(J),J=1,4)
+               (COEFEQ(J),J=1,4)
 !FOUND THE COEFFECIENTS
           IF(VSPEC.EQ.SPEC)THEN
              DONEFLAG=1
@@ -90,38 +90,38 @@
 !     END BINARY SEARCH
       IF (PROD.EQ.'01') THEN
          VOL(2) = VEQ (DBHOB,HTONE,COFARR(COEFEQ(1),1), &
-     &      COFARR(COEFEQ(1),2),COFARR(COEFEQ(1),3), &
-     &      COFARR(COEFEQ(1),4),COFARR(COEFEQ(1),5), &
-     &      COFARR(COEFEQ(1),6),COFARR(COEFEQ(1),7), &
-     &      COFARR(COEFEQ(1),8),COFARR(COEFEQ(1),9), &
-     &      COFARR(COEFEQ(1),10),ERRFLAG)
+            COFARR(COEFEQ(1),2),COFARR(COEFEQ(1),3), &
+            COFARR(COEFEQ(1),4),COFARR(COEFEQ(1),5), &
+            COFARR(COEFEQ(1),6),COFARR(COEFEQ(1),7), &
+            COFARR(COEFEQ(1),8),COFARR(COEFEQ(1),9), &
+            COFARR(COEFEQ(1),10),ERRFLAG)
          IF (VOL(2).LT.10.0) VOL(2) = 10.0
          VOL(3) = VOL(2)
 
          VOL(4) = VEQ (DBHOB,HTONE,COFARR(COEFEQ(2),1), &
-     &      COFARR(COEFEQ(2),2),COFARR(COEFEQ(2),3), &
-     &      COFARR(COEFEQ(2),4),COFARR(COEFEQ(2),5), &
-     &      COFARR(COEFEQ(2),6),COFARR(COEFEQ(2),7), &
-     &      COFARR(COEFEQ(2),8),COFARR(COEFEQ(2),9), &
-     &      COFARR(COEFEQ(2),10),ERRFLAG)
+            COFARR(COEFEQ(2),2),COFARR(COEFEQ(2),3), &
+            COFARR(COEFEQ(2),4),COFARR(COEFEQ(2),5), &
+            COFARR(COEFEQ(2),6),COFARR(COEFEQ(2),7), &
+            COFARR(COEFEQ(2),8),COFARR(COEFEQ(2),9), &
+            COFARR(COEFEQ(2),10),ERRFLAG)
          VOL(5) = VOL (4)
 
          VOL(7) = VOL(4) *(VEQ (DBHOB,HTONE,COFARR(COEFEQ(4),1), &
-     &      COFARR(COEFEQ(4),2),COFARR(COEFEQ(4),3), &
-     &      COFARR(COEFEQ(4),4),COFARR(COEFEQ(4),5), &
-     &      COFARR(COEFEQ(4),6),COFARR(COEFEQ(4),7), &
-     &      COFARR(COEFEQ(4),8),COFARR(COEFEQ(4),9), &
-     &      COFARR(COEFEQ(4),10),ERRFLAG) - 1.0)
+            COFARR(COEFEQ(4),2),COFARR(COEFEQ(4),3), &
+            COFARR(COEFEQ(4),4),COFARR(COEFEQ(4),5), &
+            COFARR(COEFEQ(4),6),COFARR(COEFEQ(4),7), &
+            COFARR(COEFEQ(4),8),COFARR(COEFEQ(4),9), &
+            COFARR(COEFEQ(4),10),ERRFLAG) - 1.0)
         VOL(8) = VOL (7)
 
       ELSEIF (PROD.EQ.'02') THEN
 
          VOL(4) = VEQ (DBHOB,HTTWO, COFARR(COEFEQ(3),1), &
-     &      COFARR(COEFEQ(3),2),COFARR(COEFEQ(3),3), &
-     &      COFARR(COEFEQ(3),4),COFARR(COEFEQ(3),5), &
-     &      COFARR(COEFEQ(3),6),COFARR(COEFEQ(3),7), &
-     &      COFARR(COEFEQ(3),8),COFARR(COEFEQ(3),9), &
-     &      COFARR(COEFEQ(3),10),ERRFLAG)
+            COFARR(COEFEQ(3),2),COFARR(COEFEQ(3),3), &
+            COFARR(COEFEQ(3),4),COFARR(COEFEQ(3),5), &
+            COFARR(COEFEQ(3),6),COFARR(COEFEQ(3),7), &
+            COFARR(COEFEQ(3),8),COFARR(COEFEQ(3),9), &
+            COFARR(COEFEQ(3),10),ERRFLAG)
          VOL(5) = VOL (4)
          GO TO 999
       ELSE
@@ -158,19 +158,19 @@
 
       IF (MODEL.EQ.1) VTEMP = B0 + B1*D2H
       IF (MODEL.EQ.2) VTEMP = B0 + B1/D + B2*D*HT + &
-     &                            B3*D2H
+                                  B3*D2H
       IF (MODEL.EQ.3) VTEMP = B0 + B1*D*D + B2*D*HT*HT + &
-     &                            B3*D2H + B4*HT*HT*HT
+                                  B3*D2H + B4*HT*HT*HT
       IF (MODEL.EQ.5) VTEMP = B0 + B1*D + B2*D*D + B3*HT*HT + &
-     &                            B4*D2H + B5*D*D2H
+                                  B4*D2H + B5*D*D2H
       IF (MODEL.EQ.6) VTEMP = B0 + B1*D*D + &
-     &                            B2*HT + B3*D2H
+                                  B2*HT + B3*D2H
       IF (MODEL.EQ.7) VTEMP = EXP (B0 * (HT ** B1) * &
-     &         ((1.0 - (4.0 / (0.78 * D)) ** 2.0) ** 2.0) ** B2)
+               ((1.0 - (4.0 / (0.78 * D)) ** 2.0) ** 2.0) ** B2)
       IF (MODEL.EQ.9) VTEMP = B0 + B1*D2H/1000.0 + &
-     &         B2*D*HT*HT/1000.0 + B3*D*D + B4*HT*HT*HT/10000.0 + &
-     &         B5*D*D/HT + B6*D*D*HT*HT/100000.0 + &
-     &         B7*D2H*HT*HT/100000000 + B8*D*HT/100.0
+               B2*D*HT*HT/1000.0 + B3*D*D + B4*HT*HT*HT/10000.0 + &
+               B5*D*D/HT + B6*D*D*HT*HT/100000.0 + &
+               B7*D2H*HT*HT/100000000 + B8*D*HT/100.0
 
       VEQ = VTEMP
 

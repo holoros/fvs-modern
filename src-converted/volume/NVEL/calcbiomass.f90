@@ -9,7 +9,7 @@
        BMS = 0
 
        CALL BiomassLibrary(BEQ,DBH,THT,CR,HT1PRD, &
-     & HT2PRD,TOPD, STEMS, VOL, BMS, ERRFLG)
+       HT2PRD,TOPD, STEMS, VOL, BMS, ERRFLG)
 
        RETURN
        END
@@ -35,19 +35,19 @@
 !        17 - secondary prod height is required
 !        18 - stem cubic volume is required for FIA biomass equation
        SUBROUTINE BiomassLibrary(BIOEQ,DBHOB,HTTOT,CR,HT1PRD, &
-     & HT2PRD,TOPD,STEMS,VOL,BIOMS,ERRFLG)
+       HT2PRD,TOPD,STEMS,VOL,BIOMS,ERRFLG)
        CHARACTER*12 BIOEQ,GEOSUB
        REAL DBHOB,HTTOT,HT1PRD,HT2PRD,TOPD,CR,VOL(15),BIOMS
        INTEGER STEMS,ERRFLG,SPN
        SPN = 0
        GEOSUB = '0'
        CALL BiomassLibrary2(BIOEQ,DBHOB,HTTOT,CR,HT1PRD, &
-     & HT2PRD,TOPD,STEMS,VOL,BIOMS,ERRFLG,SPN,GEOSUB)
+       HT2PRD,TOPD,STEMS,VOL,BIOMS,ERRFLG,SPN,GEOSUB)
        RETURN
        END
 ! ---------------------------------------------------------------------       
        SUBROUTINE BiomassLibrary2(BIOEQ,DBHOB,HTTOT,CR,HT1PRD, &
-     & HT2PRD,TOPD,STEMS,VOL,BIOMS,ERRFLG,SPN,GEOSUB)
+       HT2PRD,TOPD,STEMS,VOL,BIOMS,ERRFLG,SPN,GEOSUB)
        INCLUDE 'fiabioeq.inc'
 !       INCLUDE 'bioeqinfo.inc'
 !       INCLUDE 'bioeqcoef.inc'
@@ -133,8 +133,8 @@
          ENDIF
 
        ELSEIF(MDL.EQ.'FNW'.OR.MDL.EQ.'FRM'.OR.MDL.EQ.'FNC' &
-     &    .OR.MDL.EQ.'FNE'.OR.MDL.EQ.'FSE'.OR.MDL.EQ.'FPI' &
-     &    .OR.MDL.EQ.'CAB'.OR.MDL.EQ.'CHV'.OR.MDL.EQ.'ASN')THEN
+          .OR.MDL.EQ.'FNE'.OR.MDL.EQ.'FSE'.OR.MDL.EQ.'FPI' &
+          .OR.MDL.EQ.'CAB'.OR.MDL.EQ.'CHV'.OR.MDL.EQ.'ASN')THEN
 !      Check if the equation is a valid 
          IDX = 0
 ! No need to check equation number for FNW***STW01D and FNW***MSW01D
@@ -193,7 +193,7 @@
 !C      For equations saved in the SQLite database, calculate biomass with its equation formula
 !       Affleck 2019 component sum equations
          IF(MDL.EQ.'AFF'.AND.(COMP.EQ.'LCR'.OR. &
-     &     COMP.EQ.'MST'.OR.COMP.EQ.'AST'.OR.COMP.EQ.'B0Q'))THEN
+           COMP.EQ.'MST'.OR.COMP.EQ.'AST'.OR.COMP.EQ.'B0Q'))THEN
            BIOEQTMP = NVELBEQ
            IF(COMP.EQ.'MST')THEN
 !           MAIN STEM TOTAL (BARK + WOOD)
@@ -202,14 +202,14 @@
             HTMP = HT
             BIOMSTMP = 0.0
             CALL BIOEQDB(BIOEQTMP,DTMP,HTMP,HT1,HT2,CR,TOPD, &
-     &       BIOMSTMP,ERRFLG)
+             BIOMSTMP,ERRFLG)
             BIOMS = BIOMS+BIOMSTMP
             BIOEQTMP(7:9)='MSW'
             DTMP = DIA
             HTMP = HT
             BIOMSTMP = 0.0
             CALL BIOEQDB(BIOEQTMP,DTMP,HTMP,HT1,HT2,CR,TOPD, &
-     &       BIOMSTMP,ERRFLG)
+             BIOMSTMP,ERRFLG)
             BIOMS = BIOMS+BIOMSTMP
            ELSEIF(COMP.EQ.'LCR')THEN
 !          LIVE CROWN (LiveBranches + Foliage)
@@ -218,14 +218,14 @@
             HTMP = HT
             BIOMSTMP = 0.0
             CALL BIOEQDB(BIOEQTMP,DTMP,HTMP,HT1,HT2,CR,TOPD, &
-     &       BIOMSTMP,ERRFLG)
+             BIOMSTMP,ERRFLG)
             BIOMS = BIOMS+BIOMSTMP
             BIOEQTMP(7:9)='FOT'
             DTMP = DIA
             HTMP = HT
             BIOMSTMP = 0.0
             CALL BIOEQDB(BIOEQTMP,DTMP,HTMP,HT1,HT2,CR,TOPD, &
-     &       BIOMSTMP,ERRFLG)
+             BIOMSTMP,ERRFLG)
             BIOMS = BIOMS+BIOMSTMP
            ELSEIF(COMP.EQ.'AST')THEN
 !          ABOVE STUMP TOTAL (DeadBranched + LiveBranches + Foliage + StemBARK + StemWOOD)
@@ -234,35 +234,35 @@
             HTMP = HT
             BIOMSTMP = 0.0
             CALL BIOEQDB(BIOEQTMP,DTMP,HTMP,HT1,HT2,CR,TOPD, &
-     &       BIOMSTMP,ERRFLG)
+             BIOMSTMP,ERRFLG)
             BIOMS = BIOMS+BIOMSTMP
             BIOEQTMP(7:9)='BRL'
             DTMP = DIA
             HTMP = HT
             BIOMSTMP = 0.0
             CALL BIOEQDB(BIOEQTMP,DTMP,HTMP,HT1,HT2,CR,TOPD, &
-     &       BIOMSTMP,ERRFLG)
+             BIOMSTMP,ERRFLG)
             BIOMS = BIOMS+BIOMSTMP
             BIOEQTMP(7:9)='FOT'
             DTMP = DIA
             HTMP = HT
             BIOMSTMP = 0.0
             CALL BIOEQDB(BIOEQTMP,DTMP,HTMP,HT1,HT2,CR,TOPD, &
-     &       BIOMSTMP,ERRFLG)
+             BIOMSTMP,ERRFLG)
             BIOMS = BIOMS+BIOMSTMP
             BIOEQTMP(7:9)='MSB'
             DTMP = DIA
             HTMP = HT
             BIOMSTMP = 0.0
             CALL BIOEQDB(BIOEQTMP,DTMP,HTMP,HT1,HT2,CR,TOPD, &
-     &       BIOMSTMP,ERRFLG)
+             BIOMSTMP,ERRFLG)
             BIOMS = BIOMS+BIOMSTMP
             BIOEQTMP(7:9)='MSW'
             DTMP = DIA
             HTMP = HT
             BIOMSTMP = 0.0
             CALL BIOEQDB(BIOEQTMP,DTMP,HTMP,HT1,HT2,CR,TOPD, &
-     &       BIOMSTMP,ERRFLG)
+             BIOMSTMP,ERRFLG)
             BIOMS = BIOMS+BIOMSTMP
            ELSEIF(COMP.EQ.'B0Q')THEN
 !          BRANCHES < 1/4 INCHES
@@ -270,12 +270,12 @@
             DTMP = DIA
             HTMP = HT
             CALL BIOEQDB(BIOEQTMP,DTMP,HTMP,HT1,HT2,CR,TOPD, &
-     &       BIOMS,ERRFLG)
+             BIOMS,ERRFLG)
             DTMP = DIA
             HTMP = HT
             BIOMSTMP = 0.0
             CALL BIOEQDB(BIOEQ,DTMP,HTMP,HT1,HT2,CR,TOPD, &
-     &       BIOMSTMP,ERRFLG)
+             BIOMSTMP,ERRFLG)
             BIOMS = BIOMS*BIOMSTMP
            ENDIF
          ELSEIF(MDL.EQ.'SNE'.AND.COMP.EQ.'BRL')THEN
@@ -286,18 +286,18 @@
            HTMP = HT
            BIOMSTMP = 0.0
            CALL BIOEQDB(BIOEQTMP,DTMP,HTMP,HT1,HT2,CR,TOPD, &
-     &       BIOMSTMP,ERRFLG)
+             BIOMSTMP,ERRFLG)
            BIOMS = BIOMSTMP
            BIOEQTMP(7:9)='FOT'
            DTMP = DIA
            HTMP = HT
            BIOMSTMP = 0.0
            CALL BIOEQDB(BIOEQTMP,DTMP,HTMP,HT1,HT2,CR,TOPD, &
-     &       BIOMSTMP,ERRFLG)
+             BIOMSTMP,ERRFLG)
            BIOMS = BIOMS - BIOMSTMP
          ELSE
            CALL BIOEQDB(NVELBEQ,DIA,HT,HT1PRD,HT2PRD,CR,TOPD, &
-     &      BIOMS,ERRFLG)
+            BIOMS,ERRFLG)
          ENDIF
        ENDIF
        RETURN
@@ -353,7 +353,7 @@
       END
 ! **********************************************************************
       SUBROUTINE BIOEQDB(BIOEQ,DIA,HT,HT1PRD,HT2PRD,CR,TOPD, &
-     & BIOMS,ERRFLG)
+       BIOMS,ERRFLG)
 !    The BIOMS returned from this subroutine is DRY or GREEN based the BIOEQ (2022/04/13)      
       INCLUDE 'bioeqinfo.inc'
       INCLUDE 'bioeqcoef.inc'
@@ -479,7 +479,7 @@
       END
 ! ********************************************************************
       subroutine biomasslib_r(BIOEQ,DBH_d,THT_d,CL_d,HT1_d,HT2_d,CV4_d, &
-     & TOPD_d,STEMS,DRYBIOMAS_d,GRNBIOMAS_d,ERRFLAG,SPN,GEOSUB)
+       TOPD_d,STEMS,DRYBIOMAS_d,GRNBIOMAS_d,ERRFLAG,SPN,GEOSUB)
 ! This subroutine is for R user to calculate biomass      !
 ! YW 05/09/2019
 ! YW 2019/08/05 Added input variables SPN and GEOSUB and also make BIOEQ
@@ -512,7 +512,7 @@
       GRNBIOMAS = 0.0
       IF(HTTOT.GT.1.0.AND.CL.GT.1.0) CR = CL/HTTOT
       CALL BiomassLibrary2(BIOEQ,DBHOB,HTTOT,CR,HT1PRD, &
-     & HT2PRD,TOPD,STEMS,VOL,BIOMASS, ERRFLAG,SPN,GEOSUB)
+       HT2PRD,TOPD,STEMS,VOL,BIOMASS, ERRFLAG,SPN,GEOSUB)
       IF(SPN.EQ.0)THEN
         READ(BIOEQ(4:6),'(I3)') SPEC
       ELSE

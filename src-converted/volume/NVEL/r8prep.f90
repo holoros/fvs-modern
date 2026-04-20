@@ -1,10 +1,10 @@
 !_______________________________________________________________________
 !
       subroutine r8Prep(volEq,dbhOb,topDib,topHt,ht1Prd,ht2Prd,htTot, &
-     &                  spp,geog,COEFFS,forst,maxLen, &
-     &                  minLen,merchL,mTopP,mTopS,stump,trim,minBfD, &
-     &                  prod,iProd,sawDib,plpDib,short,shrtHt,errFlg, &
-     &                  upsHt1,COEFFSO)
+                        spp,geog,COEFFS,forst,maxLen, &
+                        minLen,merchL,mTopP,mTopS,stump,trim,minBfD, &
+                        prod,iProd,sawDib,plpDib,short,shrtHt,errFlg, &
+                        upsHt1,COEFFSO)
 !_______________________________________________________________________
 !
 !  Parse out the info in the volume equation (volEq).  Check to see if 
@@ -75,23 +75,23 @@
       elseif(htTot.lt.0.0) then
         errFlg=10
       elseif(ht1Prd.le.0.01 .and. ht2Prd.le.0.01 &
-     &  .and. htTot.le.0.01 .and. upsHt1.le.0.01) then
+        .and. htTot.le.0.01 .and. upsHt1.le.0.01) then
         errFlg=10
       elseif(htTot.gt.0.0 .and. ht1Prd.gt.0.0 &
-     &  .and. htTot.lt.ht1Prd) then
+        .and. htTot.lt.ht1Prd) then
         errFlg=7
       elseif(htTot.gt.0.0 .and. ht2Prd.gt.0.0 &
-     &  .and. htTot.lt.ht2Prd) then
+        .and. htTot.lt.ht2Prd) then
         errFlg=8
       elseif(ht2Prd.gt.0.0 .and. ht1Prd.gt.0.0 &
-     &  .and. ht2Prd.lt.ht1Prd) then
+        .and. ht2Prd.lt.ht1Prd) then
         errFlg=7
       ELSEIF(prod.NE.'01'.AND.ht1Prd.GT.0.0)THEN
 !        errFlg=7
 !       R8 uses ht1Prd pulpwood broken HT
         ht2Prd = ht1Prd
       elseif(upsHt1.gt.0 .and. ht1Prd.gt.0 &
-     &  .and. upsHt1.lt.ht1Prd) then
+        .and. upsHt1.lt.ht1Prd) then
         errFlg=10
       endif
       if(errFlg.ne.0) return
@@ -101,17 +101,17 @@
       ELSEIF  (SPEC.EQ.268) THEN
          SPEC = 261
       ELSEIF  (SPEC.EQ.313 .OR. SPEC.EQ.314 .OR. SPEC.EQ.317 .OR. &
-     &          SPEC.EQ.650 .OR. SPEC.EQ.651 .OR. &
-     &          SPEC.EQ.691 .OR. SPEC.EQ.711 .OR. SPEC.EQ.742 .OR. &
-     &          SPEC.EQ.762 .OR. SPEC.EQ.920 .OR. SPEC.EQ.930 .OR. &
-     &          SPEC.EQ.545 .OR. SPEC.EQ.546) THEN
+                SPEC.EQ.650 .OR. SPEC.EQ.651 .OR. &
+                SPEC.EQ.691 .OR. SPEC.EQ.711 .OR. SPEC.EQ.742 .OR. &
+                SPEC.EQ.762 .OR. SPEC.EQ.920 .OR. SPEC.EQ.930 .OR. &
+                SPEC.EQ.545 .OR. SPEC.EQ.546) THEN
          SPEC = 300
       ELSEIF  (SPEC.EQ.521 .OR. SPEC.EQ.550 .OR. SPEC.EQ.580 .OR. &
-     &          SPEC.EQ.601 .OR. SPEC.EQ.602 .OR. SPEC.EQ.318) THEN
+                SPEC.EQ.601 .OR. SPEC.EQ.602 .OR. SPEC.EQ.318) THEN
          SPEC = 500
       ELSEIF  (SPEC.EQ.804 .OR. SPEC.EQ.817 .OR. SPEC.EQ.820 .OR. &
-     &          SPEC.EQ.823 .OR. SPEC.EQ.825 .OR. &
-     &          SPEC.EQ.826 .OR. SPEC.EQ.830 .OR. SPEC.EQ.834) THEN
+                SPEC.EQ.823 .OR. SPEC.EQ.825 .OR. &
+                SPEC.EQ.826 .OR. SPEC.EQ.830 .OR. SPEC.EQ.834) THEN
          SPEC = 800
       ENDIF
 
@@ -295,12 +295,12 @@
 
 !-----Get merchantability rules
        CALL MRULES(REGN,FORST,VOLEQ,DBHOB,COR,EVOD,OPT,MAXLEN,MINLEN, &
-     &           MERCHL,MINLENT,MTOPP,MTOPS,STUMP,TRIM,BTR,DBTBH,MINBFD, &
-     &           PROD)
+                 MERCHL,MINLENT,MTOPP,MTOPS,STUMP,TRIM,BTR,DBTBH,MINBFD, &
+                 PROD)
 !     R8 use UPSHT1 for HT2PRD in the old Clark equation   
 !     we need to put UPSHT1 to HT2PRD for the new Clark eq
       IF(prod.NE.'01'.AND.UPSHT1.GT.0.AND. &
-     &  HT2PRD.LE.0.AND.MTOPS.EQ.4.0)THEN
+        HT2PRD.LE.0.AND.MTOPS.EQ.4.0)THEN
         HT2PRD = UPSHT1
       ENDIF
 

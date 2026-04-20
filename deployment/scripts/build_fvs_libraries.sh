@@ -173,11 +173,35 @@ for var in "${VARIANTS[@]}"; do
         if compile_file "$srcfile" "$objpath" "$INCDIRS" 2>"$VARDIR/err_$(basename "$objpath" .o).log" && [ -f "$objpath" ]; then
             OBJECTS+=("$objpath")
         else
-            COMPILE_ERRORS=$((COMPILE_ERRORS + 1))
-            if [ "$VERBOSE" -eq 1 ]; then
-                echo ""
-                echo "  COMPILE FAIL: $srcfile"
-                tail -3 "$VARDIR/err_$(basename "$objpath" .o).log" 2>/dev/null | sed 's/^/    /'
+            # If .f90 failed, try .f fixed-form fallback (common when .f90
+            # has unconverted INCLUDE references but .f compiles cleanly)
+            stem="${srcfile%.*}"
+            fallback=""
+            if [[ "$srcfile" == *.f90 ]] && [ -f "${stem}.f" ]; then
+                fallback="${stem}.f"
+            elif [[ "$srcfile" == *.f90 ]] && [ -f "${stem}.for" ]; then
+                fallback="${stem}.for"
+            fi
+            if [ -n "$fallback" ]; then
+                fb_objname="${fallback##*/}"
+                fb_objpath="$VARDIR/fb_${fb_objname%.*}.o"
+                if compile_file "$fallback" "$fb_objpath" "$INCDIRS" 2>/dev/null && [ -f "$fb_objpath" ]; then
+                    OBJECTS+=("$fb_objpath")
+                else
+                    COMPILE_ERRORS=$((COMPILE_ERRORS + 1))
+                    if [ "$VERBOSE" -eq 1 ]; then
+                        echo ""
+                        echo "  COMPILE FAIL: $srcfile (and fallback $fallback)"
+                        tail -3 "$VARDIR/err_$(basename "$objpath" .o).log" 2>/dev/null | sed 's/^/    /'
+                    fi
+                fi
+            else
+                COMPILE_ERRORS=$((COMPILE_ERRORS + 1))
+                if [ "$VERBOSE" -eq 1 ]; then
+                    echo ""
+                    echo "  COMPILE FAIL: $srcfile"
+                    tail -3 "$VARDIR/err_$(basename "$objpath" .o).log" 2>/dev/null | sed 's/^/    /'
+                fi
             fi
         fi
 

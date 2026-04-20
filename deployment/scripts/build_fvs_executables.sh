@@ -116,8 +116,17 @@ for var in "${VARIANTS[@]}"; do
         fi
 
         if [ ! -f "$srcfile" ]; then
-            COMPILE_ERRORS=$((COMPILE_ERRORS + 1))
-            continue
+            # Source lists reference .f90 for files not yet converted from
+            # fixed-form. Fall back to .f or .for.
+            stem="${srcfile%.*}"
+            if [ -f "${stem}.f" ]; then
+                srcfile="${stem}.f"
+            elif [ -f "${stem}.for" ]; then
+                srcfile="${stem}.for"
+            else
+                COMPILE_ERRORS=$((COMPILE_ERRORS + 1))
+                continue
+            fi
         fi
 
         # Use unique object names to avoid collisions from different directories
@@ -160,7 +169,26 @@ for var in "${VARIANTS[@]}"; do
         if compile_file "$srcfile" "$objpath" "$INCDIRS" 2>"$VARDIR/compile_${objname%.o}.err" && [ -f "$objpath" ]; then
             OBJECTS+=("$objpath")
         else
-            COMPILE_ERRORS=$((COMPILE_ERRORS + 1))
+            # If .f90 failed to compile, try the .f fixed-form version
+            # (common when .f90 has unconverted INCLUDE references)
+            stem="${srcfile%.*}"
+            fallback=""
+            if [[ "$srcfile" == *.f90 ]] && [ -f "${stem}.f" ]; then
+                fallback="${stem}.f"
+            elif [[ "$srcfile" == *.f90 ]] && [ -f "${stem}.for" ]; then
+                fallback="${stem}.for"
+            fi
+            if [ -n "$fallback" ]; then
+                fb_objname=$(echo "$fallback" | sed "s|$SRC_ROOT/||" | tr '/' '_' | sed 's/\.[^.]*$/.o/')
+                fb_objpath="$VARDIR/$fb_objname"
+                if compile_file "$fallback" "$fb_objpath" "$INCDIRS" 2>/dev/null && [ -f "$fb_objpath" ]; then
+                    OBJECTS+=("$fb_objpath")
+                else
+                    COMPILE_ERRORS=$((COMPILE_ERRORS + 1))
+                fi
+            else
+                COMPILE_ERRORS=$((COMPILE_ERRORS + 1))
+            fi
         fi
 
     done < "$SRCLIST"
@@ -185,6 +213,9 @@ for var in "${VARIANTS[@]}"; do
             [ -f "$mod_src" ] || continue
             mod_base=$(basename "$mod_src")
             mod_obj="$VARDIR/extra_${mod_base%.*}.o"
+            # Skip if already compiled from source list
+            srclist_objname=$(echo "$mod_src" | sed "s|$SRC_ROOT/||" | tr '/' '_' | sed 's/\.[^.]*$/.o/')
+            [ -f "$VARDIR/$srclist_objname" ] && continue
             if compile_file "$mod_src" "$mod_obj" "$MODULE_INCDIRS" 2>/dev/null && [ -f "$mod_obj" ]; then
                 OBJECTS+=("$mod_obj")
             fi
@@ -231,6 +262,22 @@ for var in "${VARIANTS[@]}"; do
             OBJECTS+=("$stub_obj")
         fi
     done
+
+    # Conditional stubs: only compile if the real implementation wasn't
+    # successfully compiled from the source list. This handles cases like
+    # fire/*/fmcfmd.f90 which uses LOC() that GCC rejects for some variants.
+    HAS_FMCFMD=0
+    for obj in "${OBJECTS[@]}"; do
+        bobj=$(basename "$obj" .o)
+        # Match fmcfmd but NOT fmcfmd2, fmcfmd3, fmcfmd_stub etc.
+        case "$bobj" in *fmcfmd) HAS_FMCFMD=1; break;; esac
+    done
+    if [ "$HAS_FMCFMD" -eq 0 ] && [ -f "$SRC_ROOT/fire/vbase/fmcfmd_stub.f90" ]; then
+        stub_obj="$VARDIR/fmcfmd_stub.o"
+        if compile_file "$SRC_ROOT/fire/vbase/fmcfmd_stub.f90" "$stub_obj" "$INCDIRS" 2>/dev/null && [ -f "$stub_obj" ]; then
+            OBJECTS+=("$stub_obj")
+        fi
+    fi
 
     # Link executable (INCLUDING main.o, unlike the .so build)
     if [ ${#OBJECTS[@]} -gt 0 ]; then

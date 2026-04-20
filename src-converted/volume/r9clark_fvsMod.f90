@@ -539,22 +539,22 @@ elseif(htTot.lt.0.0) then
   errFlg=10
 !      elseif(ht2Prd.eq.0.0 .and. htTot.eq.0.0) then
 elseif(ht1Prd.le.0.01 .and. ht2Prd.le.0.01 &
-     .and. htTot.le.0.01 .and. upsHt1.le.0.01) then
+      .and. htTot.le.0.01 .and. upsHt1.le.0.01) then
   errFlg=10
 ! YW removed the following check to let small tree calc using short tree logic(02/12/2016)
 !      elseif(htTot.gt.0.0.and.htTot.le.17.3) then
 !        errFlg=10
 elseif(htTot.gt.0.0 .and. ht1Prd.gt.0.0 &
-     .and. htTot.lt.ht1Prd) then
+      .and. htTot.lt.ht1Prd) then
   errFlg=7
 elseif(htTot.gt.0.0 .and. ht2Prd.gt.0.0 &
-     .and. htTot.lt.ht2Prd) then
+      .and. htTot.lt.ht2Prd) then
   errFlg=8
 elseif(ht2Prd.gt.0.0 .and. ht1Prd.gt.0.0 &
-     .and. ht2Prd.lt.ht1Prd) then
+      .and. ht2Prd.lt.ht1Prd) then
   errFlg=7
 ELSEIF(prod.NE.'01'.AND.ht1Prd.GT.0.0.and. ht2Prd.le.0.01 &
-     .and. htTot.le.0.01 .and. upsHt1.le.0.01)THEN
+      .and. htTot.le.0.01 .and. upsHt1.le.0.01)THEN
   errFlg=7
 !      elseif(htTot.gt.35.0*sqrt(dbhOb+3.0)) then
 !        errFlg=5
@@ -564,7 +564,7 @@ ELSEIF(prod.NE.'01'.AND.ht1Prd.GT.0.0.and. ht2Prd.le.0.01 &
 !        errFlg=5
 !     check sawtimber reference height (upsHt1) and saw height ht1Prd
 elseif(upsHt1.gt.0 .and. ht1Prd.gt.0 &
-     .and. upsHt1.lt.ht1Prd) then
+      .and. upsHt1.lt.ht1Prd) then
   errFlg=10
 endif
 if(errFlg.ne.0) return
@@ -761,7 +761,7 @@ elseif(abs(topDib-4) .lt. 0.00001) then
   COEFFS%A17 = coef4(sppIdx,2)
   COEFFS%B17 = coef4(sppIdx,3)
 elseif((abs(topDib-7) .lt. 0.00001) &
-     .or. (abs(topDib-9) .lt. 0.00001)) then
+      .or. (abs(topDib-9) .lt. 0.00001)) then
   COEFFS%A17 = coef79(sppIdx,2)
   COEFFS%B17 = coef79(sppIdx,3)
 else
@@ -852,7 +852,7 @@ END IF
 
 
 if((topDib.gt.dbhIb .and. topHt.gt.4.5) &
-     .or. (topDib.lt.dbhIb .and. topHt.lt.4.5)) then
+      .or. (topDib.lt.dbhIb .and. topHt.lt.4.5)) then
   errFlg=11
   return
 endif

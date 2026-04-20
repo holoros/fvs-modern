@@ -19,4 +19,9 @@
 !
 ! All stubs have been eliminated. This file is kept for documentation
 ! and as a placeholder for any future stubs that may be needed.
+!
+! Note: DBSSTANDIN (vdbs/) requires ODBC modules but vdbsqlite/dbsstandin.f90
+! provides the implementation used by the build. FMCFMD is variant-specific
+! (fire/{variant}/fmcfmd.f90) and compiles for most variants; ca/nc use
+! non-standard LOC() which GCC rejects but the .f fallback compiles OK.
 ! -----------------------------------------------------------------------

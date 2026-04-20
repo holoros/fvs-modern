@@ -271,7 +271,7 @@ DO ColNumber = 0,ColumnCount-1
      LEN(CECOREG),NullChar)
     if (iRet.LT.LEN(CECOREG)) CECOREG((iRet+1):) = ' '
     IF (CECOREG .ne. NullChar &
-     .and. LEN_TRIM(ADJUSTL(CECOREG)) .GT. 0) Ecoregion_LI = 1
+      .and. LEN_TRIM(ADJUSTL(CECOREG)) .GT. 0) Ecoregion_LI = 1
 
    CASE('LOCATION')
      ISTANDDATA(4) = fsql3_colint(IinDBref,ColNumber,NullInt)
@@ -1013,7 +1013,7 @@ IF(FOTOREF_LI.NE.NullInt) THEN
    LFOTO = .TRUE.
 
    IF ((ISTANDDATA(52) .NE. 4) .AND. (ISTANDDATA(52) .NE. 10) &
-     .AND. (ISTANDDATA(52) .GE. 1) .AND. (ISTANDDATA(52) .LE. 32)) &
+      .AND. (ISTANDDATA(52) .GE. 1) .AND. (ISTANDDATA(52) .LE. 32)) &
      THEN
      REF = PHOTOREF(ISTANDDATA(52))
    ELSE

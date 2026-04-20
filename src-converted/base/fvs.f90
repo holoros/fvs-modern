@@ -80,7 +80,7 @@ call fvsRestart (IRSTRTCD)
 call fvsGetRtnCode(IRTNCD)
 
 IF (DEBUG) WRITE(JOSTND,*) "In FVS, IRSTRTCD=",IRSTRTCD, &
-     & " IRTNCD=",IRTNCD
+       " IRTNCD=",IRTNCD
 if (IRTNCD.ne.0) return
 if (IRSTRTCD.lt.0) return
 if (IRSTRTCD.eq.7) goto 19

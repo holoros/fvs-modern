@@ -56,14 +56,54 @@ def strip_inline_comment(code_line):
 
 
 def is_f77_continuation(line):
-    """Check if a line has an F77 column-6 continuation marker."""
+    """Check if a line has an F77 column-6 continuation marker.
+
+    In fixed-form Fortran, column 6 holds a continuation character (any
+    non-zero, non-space character). However, DATA statement continuation
+    lines may have numeric values that happen to start at column 6.  To
+    avoid false positives we require that when the marker is a digit, the
+    rest of the line must not look like a data value list (digit followed
+    by comma or period-digit).
+    """
     if len(line) < 6:
         return False
     if line[:5].strip() != '':
         return False
     col6 = line[5]
-    return col6 in ('&', '+', '.', '*', '$',
-                     '1', '2', '3', '4', '5', '6', '7', '8', '9')
+    if col6 in ('&', '+', '$'):
+        return True
+    if col6 in ('.', '*'):
+        # '.' or '*' at column 6 is continuation only if the rest of the
+        # line is not a data value (e.g. ".278," would be a value)
+        rest = line[6:].lstrip()
+        if rest and rest[0].isdigit():
+            return False
+        return True
+    if col6 in ('1', '2', '3', '4', '5', '6', '7', '8', '9'):
+        # Digits at column 6 are ambiguous: could be a continuation marker
+        # OR the start of a numeric value/FORMAT descriptor.  We reject
+        # (i.e., NOT continuation) in these cases:
+        #   - Followed immediately by digit, comma, period, asterisk
+        #     (DATA value like 4*32.794 or list like 9, 8, 7)
+        #   - Followed immediately by a letter (FORMAT descriptor like
+        #     6X, 4(, 2X, 5H — or any alphanumeric expression)
+        #   - After whitespace: starts with digit, comma, period, asterisk
+        rest = line[6:]
+        if not rest.strip():
+            return True  # bare digit on otherwise blank line => continuation
+        next_ch = rest[0] if rest else ''
+        # Direct adjacency: digit followed by *, digit, comma, period, or letter
+        if next_ch in ('*', ',', '.') or next_ch.isdigit() or next_ch.isalpha():
+            return False
+        # Check for parenthesis right after digit (e.g., 4('---'))
+        if next_ch == '(':
+            return False
+        # After stripping whitespace: if rest starts with digit/comma/period
+        rest_stripped = rest.lstrip()
+        if rest_stripped and (rest_stripped[0] in (',', '.', '*') or rest_stripped[0].isdigit()):
+            return False
+        return True
+    return False
 
 
 def fix_file(filepath, dry_run=False):
@@ -96,11 +136,20 @@ def fix_file(filepath, dry_run=False):
             else:
                 result.append(line)
 
-            # Process continuation line: remove column-6 marker
+            # Process continuation line: remove column-6 marker but
+            # preserve operator characters (+, -, .) that are both the
+            # continuation marker AND part of the expression.
             i += 1
             cont = new_lines[i]
             if len(cont) > 6:
-                result.append('      ' + cont[6:])
+                marker = cont[5]
+                if marker in ('+', '-', '.', '*'):
+                    # Keep the operator character as part of the code.
+                    # Use 6 spaces so the operator lands at column 7,
+                    # preventing re-detection as a column-6 marker.
+                    result.append('      ' + cont[5:])
+                else:
+                    result.append('      ' + cont[6:])
             else:
                 result.append(cont)
             n_fixes += 1
@@ -128,9 +177,13 @@ def fix_file(filepath, dry_run=False):
             if not is_f77_continuation(curr):
                 continue
 
-            # Remove the column-6 marker
+            # Remove the column-6 marker but preserve operator characters
             if len(curr) > 6:
-                new_lines[i] = '      ' + curr[6:]
+                marker = curr[5]
+                if marker in ('+', '-', '.', '*'):
+                    new_lines[i] = '      ' + curr[5:]
+                else:
+                    new_lines[i] = '      ' + curr[6:]
             n_fixes += 1
             changed_pass2 = True
 

@@ -165,7 +165,7 @@ SHTM   = AVH * FTtoM
 KSP = OSPMAP_SP(ISPC)
 IF (ICYC.GT.1 .AND. KSP.NE.0) THEN  ! Sharma-Parton height model
 HTM = 1.3 + (ALPHA(KSP)*(SHTM**DELTA(KSP))) &
-     * (1.0-EXP(-BETA(KSP)*((TPHM/BAM)**PHI(KSP))* DBHM))**GAMMA(KSP)
+      * (1.0-EXP(-BETA(KSP)*((TPHM/BAM)**PHI(KSP))* DBHM))**GAMMA(KSP)
     HT_FT = HTM  * MtoFT
 ELSE ! Penner height model
   KSP = OSPMAP_P(ISPC)

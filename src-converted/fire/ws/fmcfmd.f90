@@ -117,16 +117,16 @@ REAL      CWHR_WT(4), CWXPTS(4,2), CCBP(3), DBHBP(4)
 !     STRUCTURAL STAGES
 
 DATA     FTLABL / &
-     & "? ", "E ","P ","R ","W ","F ","D ","G ","J ", &
-     & "H ","X ","MP","MC" /
+       "? ", "E ","P ","R ","W ","F ","D ","G ","J ", &
+       "H ","X ","MP","MC" /
 DATA     SSLABL / &
-     & "? ", &
-     & "1 ", &
-     & "2S", "2P", "2M", "2D", &
-     & "3S", "3P", "3M", "3D", &
-     & "4S", "4P", "4M", "4D", &
-     & "5S", "5P", "5M", "5D", &
-     & "6 " /
+       "? ", &
+       "1 ", &
+       "2S", "2P", "2M", "2D", &
+       "3S", "3P", "3M", "3D", &
+       "4S", "4P", "4M", "4D", &
+       "5S", "5P", "5M", "5D", &
+       "6 " /
 
 !     CWHR FUEL MODEL CLASSIFICATION: ROWS ARE FOREST TYPE; COLUMNS ARE STRUCTURAL
 !     STAGE DENSITY GROUPS:
@@ -136,17 +136,17 @@ DATA     SSLABL / &
 !                 so that there is some duplication
 
 DATA ((CWHRFMD(I,J), J=1,CWHRC), I=1,CWHRR) / &
-     & 9, 2, 2, 9, 9, 2, 2, 2, 9, 2, 2, 8, 8, 2, 2, 8, 8,10, ! 1 pine E &
-     & 9, 5, 5, 9, 9,26,26,25, 9,26,26, 8, 8,26,26, 8, 8,10, ! 2 pine W &
-     & 8, 8, 8, 8, 8,11,11, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,10, ! 3 red fir &
-     & 8, 8, 8, 8, 8,11,11,11, 8, 8, 8, 8, 8, 8, 8, 8, 8,10, ! 4 wh fir E &
-     & 8, 5, 5, 8, 8,11,11, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,10, ! 5 wh fir W &
-     & 8, 5, 5, 8, 8, 5, 5, 8, 8,11,11, 9, 8,11,11, 9, 8,10, ! 6 Douglas-fir &
-     & 8, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,10, ! 7 giant sequoia &
-     & 9, 9, 9, 9, 9, 2, 2, 2, 9, 2, 2, 2, 9, 2, 2, 2, 9,10, ! 8 Jeffrey pine &
-     & 8, 5, 5, 9, 9,11,11,11, 9, 9, 9, 9, 9, 9, 9, 9, 9,10, ! 9 hardwoods &
-     & 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,10, !10 lodgepole pine &
-     & 9, 5, 5, 9, 9,26,26,25, 9,26,26, 8, 8,26,26, 8, 8,10, !11 mixed pine &
+       9, 2, 2, 9, 9, 2, 2, 2, 9, 2, 2, 8, 8, 2, 2, 8, 8,10, ! 1 pine E &
+     & 9, 5, 5, 9, 9,26,26,25, 9,26,26, 8, 8,26,26, 8, 8,10, & ! 2 pine W &
+       8, 8, 8, 8, 8,11,11, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,10, ! 3 red fir &
+     & 8, 8, 8, 8, 8,11,11,11, 8, 8, 8, 8, 8, 8, 8, 8, 8,10, & ! 4 wh fir E &
+       8, 5, 5, 8, 8,11,11, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,10, ! 5 wh fir W &
+     & 8, 5, 5, 8, 8, 5, 5, 8, 8,11,11, 9, 8,11,11, 9, 8,10, & ! 6 Douglas-fir &
+       8, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,10, ! 7 giant sequoia &
+     & 9, 9, 9, 9, 9, 2, 2, 2, 9, 2, 2, 2, 9, 2, 2, 2, 9,10, & ! 8 Jeffrey pine &
+       8, 5, 5, 9, 9,11,11,11, 9, 9, 9, 9, 9, 9, 9, 9, 9,10, ! 9 hardwoods &
+     & 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,10, & !10 lodgepole pine &
+       9, 5, 5, 9, 9,26,26,25, 9,26,26, 8, 8,26,26, 8, 8,10, !11 mixed pine &
      & 8, 9, 9, 8, 8,26,26,11, 8, 5, 5, 8, 8, 5, 5, 8, 8,10/ !12 mixed conifer
 
 !     CWXPTS, CCBP & DBHBP ARE ALL USED BY **CWHR** AND ARE NOT UNDER
@@ -183,21 +183,21 @@ DATA ITYP / ICLSS * 0 /
 !       SMALL FUEL=0 (I.E. THE Y-INTERCEPT OF THE LINE).
 
 DATA ((XPTS(I,J), J=1,2), I=1,ICLSS) / &
-     & 5., 15.,   ! FMD   1 &
-     & 5., 15.,   ! FMD   2 &
-     & 5., 15.,   ! FMD   3 &
-     & 5., 15.,   ! FMD   4 &
-     & 5., 15.,   ! FMD   5 &
-     & 5., 15.,   ! FMD   6 &
-     & 5., 15.,   ! FMD   7 &
-     & 5., 15.,   ! FMD   8 &
-     & 5., 15.,   ! FMD   9 &
-     & 15., 30.,   ! FMD  10 ! shares with 11 &
-     & 15., 30.,   ! FMD  11 &
-     & 30., 60.,   ! FMD  12 &
-     & 45.,100.,   ! FMD  13 &
-     & 5., 15.,   ! FMD  25 &
-     & 5., 15. /  ! FMD  26
+       5., 15.,   ! FMD   1 &
+     & 5., 15., & ! FMD   2 &
+       5., 15.,   ! FMD   3 &
+     & 5., 15., & ! FMD   4 &
+       5., 15.,   ! FMD   5 &
+     & 5., 15., & ! FMD   6 &
+       5., 15.,   ! FMD   7 &
+     & 5., 15., & ! FMD   8 &
+       5., 15.,   ! FMD   9 &
+     & 15., 30., & ! FMD  10 ! shares with 11 &
+       15., 30.,   ! FMD  11 &
+     & 30., 60., & ! FMD  12 &
+       45.,100.,   ! FMD  13 &
+     & 5., 15., & ! FMD  25 &
+       5., 15. /  ! FMD  26
 !----------
 !     INITIALLY SET ALL MODELS OFF; NO TWO CANDIDATE MODELS ARE COLINEAR, AND COLINEARITY
 !     WEIGHTS ARE ZERO. IF TWO CANDIDATE MODELS ARE COLINEAR, THE WEIGHTS MUST BE SET, AND
@@ -217,10 +217,10 @@ IF (DEBUG) WRITE(JOSTND,1) ICYC,IYR,LUSRFM
 IF (LUSRFM) RETURN
 
 IF (DEBUG) WRITE(JOSTND,7) ICYC,IYR,HARVYR,LDYNFM,PERCOV,FMKOD, &
-     & SMALL,LARGE
+       SMALL,LARGE
 7 FORMAT(' FMCFMD CYCLE= ',I2,' IYR=',I5,' HARVYR=',I5, &
-     & ' LDYNFM=',L2,' PERCOV=',F7.2,' FMKOD=',I4, &
-     & ' SMALL=',F7.2,' LARGE=',F7.2)
+       ' LDYNFM=',L2,' PERCOV=',F7.2,' FMKOD=',I4, &
+       ' SMALL=',F7.2,' LARGE=',F7.2)
 
 !     ** BEGIN ROUTINE **
 
@@ -246,8 +246,8 @@ ENDIF
 !     TABLE
 
 CALL CWHR(ISP,DBH,HT,FMICR,FMPROB,CRWDTH,ITRN, &
-     & CWXPTS,CCBP,DBHBP, &
-     & SZDN,CWHR_MOD,CWHR_WT)
+       CWXPTS,CCBP,DBHBP, &
+       SZDN,CWHR_MOD,CWHR_WT)
 
 JSS = FINDJSS(SZDN)
 !----------
@@ -313,15 +313,15 @@ ELSE
 ENDIF
 
 IF (DEBUG) WRITE(JOSTND,2) ICYC,IYR, &
-     & FTLABL(IFT),IFT,SSLABL(JSS),JSS
+       FTLABL(IFT),IFT,SSLABL(JSS),JSS
 2 FORMAT(' FMCFMD CYCLE= ',I2,' IYR=',I4, ' IFT= ',A3,'(',I2,')', &
-     & ' JSS= ',A3,'(',I2,')')
+       ' JSS= ',A3,'(',I2,')')
 
 !     TAKE FUEL MODEL FROM ROW (IFT) AND COLUMN (JSS) INDEX
 !     FAILURE TO FIND A VALID ENTRY: SET FMD=8 AND EXIT CODE
 
 IF (IFT .GT. 0 .AND. IFT .LE. CWHRR.AND. &
-     & JSS .GT. 0 .AND. JSS .LE. CWHRC) THEN
+       JSS .GT. 0 .AND. JSS .LE. CWHRC) THEN
   EQWT(FINDMOD(CWHRFMD(IFT, JSS),IPTR,ICLSS)) = 1.0
 ELSE
   EQWT(8) = 1.0
@@ -365,7 +365,7 @@ IF (LDYNFM) THEN
         EQWT(8) = 1.0
         CALL RCDSET (2,.TRUE.)
       ELSEIF (IMD(1) .NE. 0 .AND. IMD(2) .NE. 0 .AND. &
-     & (IMD(1) .NE. IMD(2)) ) THEN
+       (IMD(1) .NE. IMD(2)) ) THEN
         IF (IMD(1) .NE. IMD(2)) THEN
           DO I=1,2
             EQWT(IMD(I))= CWHR_WT(I)

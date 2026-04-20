@@ -128,7 +128,7 @@ IF(G.LT.0.0.OR.R.LE.0.0) R=BAGR
 WK3(I)=SQRT(D*D*R)
 IF(DEBUG) WRITE(JOSTND,9005) I,IS,G,R,D,WK3(I)
 9005 FORMAT(' IN DENSE: I = ',I4,';  IS = ',I2,';  G = ', &
-     & F6.2,';  R = ',F8.5,';  D = ',F6.2,';  WK3 = ',F6.2)
+       F6.2,';  R = ',F8.5,';  D = ',F6.2,';  WK3 = ',F6.2)
 5 CONTINUE
 6 CONTINUE
 !----------
@@ -264,7 +264,7 @@ BA=OLDBA
 OLDBA=TEMP2
 IF(DEBUG) WRITE(JOSTND,9003) BA,OLDBA,RELDEN,RELDM1
 9003 FORMAT(' IN DENSE:  BA = ',F8.2,', OLDBA = ',F8.2, &
-     & ', RELDEN = ',F8.2,', RELDM1 = ',F8.2/)
+       ', RELDEN = ',F8.2,', RELDM1 = ',F8.2/)
 54 CONTINUE
 !----------
 !   IF NOT BACKDATING, COMPUTE BASAL AREA PCT DISTRIBUTION.
@@ -297,11 +297,11 @@ IF(SSUMN.GE.40.0) GO TO 65
 IF (SSUMN .GT. 0.) AVH = AVH/SSUMN
 70 CONTINUE
 IF(DEBUG) WRITE(JOSTND,9002) GROSPC,TPROB,TSUMD2,RELDEN,BA, &
-     & RMSQD,AVH,DR016
+       RMSQD,AVH,DR016
 9002 FORMAT(' IN DENSE, GROSPC = ',F10.4,', TPROB = ',F10.4, &
-     & ', TSUMD2 = ',F10.2,', RELDEN = ',F10.4,', BA = ', &
-     & F10.4/'     RMSQD = ',F10.4,', AVH = ',F10.4, &
-     & ' DR016= ',F10.4)
+       ', TSUMD2 = ',F10.2,', RELDEN = ',F10.4,', BA = ', &
+       F10.4/'     RMSQD = ',F10.4,', AVH = ',F10.4, &
+       ' DR016= ',F10.4)
 RETURN
 END
 

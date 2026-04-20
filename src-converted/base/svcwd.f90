@@ -70,15 +70,15 @@ INCLUDE 'FMSVCM.f90'
 !OMMONS
 !
 INTEGER CWDDL1, CWDDL2, I, IBP, ICWD, ID, IH, IP, IPC, IPCNT, &
-     & IPS, IPUT, IOBJ, ISVOBJ, ISZCLS, IYEAR, J, JBP, KSP, &
-     & NSVCHG(2,4), NSVCWD(2,4), NSVNEW(2,4), &
-     & NUM2DEL, SP
+       IPS, IPUT, IOBJ, ISVOBJ, ISZCLS, IYEAR, J, JBP, KSP, &
+       NSVCHG(2,4), NSVCWD(2,4), NSVNEW(2,4), &
+       NUM2DEL, SP
 LOGICAL DEBUG
 REAL    AVGDIA, AVGLEN, AVGV2T, DIAM, HTD, RHRAT, DIAM2, HTD2
 REAL    BP(0:4), BPH(0:4)
 REAL    DIF, HICUT, HIHT, LGRNUM, LGRTIO, LOCUT, LOHT, &
-     & PCOUNT(2,4), PCSIZE(2,4), SNGVOL(4), TOTBA, TCWD3(3,4), &
-     & TREEBA, VHI, VLO, X, XTRACW, XX, Y
+       PCOUNT(2,4), PCSIZE(2,4), SNGVOL(4), TOTBA, TCWD3(3,4), &
+       TREEBA, VHI, VLO, X, XTRACW, XX, Y
 DOUBLE PRECISION SAVESO, SAVESVSO
 
 !
@@ -94,7 +94,7 @@ CALL DBCHK (DEBUG,'SVCWD',5,ICYC)
 IF (DEBUG) THEN
   WRITE(JOSTND,1010) ICYC, IYEAR, LFMON
 1010   FORMAT (' ','ENTERING SVCWD, ICYC=',I2,', IYEAR=',I4, &
-     & ', LFMON=',L1,'.', / )
+       ', LFMON=',L1,'.', / )
 ENDIF
 
 !----------
@@ -141,7 +141,7 @@ DO IP=1,3
       TCWD3(IP,2) = TCWD3(IP,2) + CWD(IP,4,IH,ID)
       TCWD3(IP,3) = TCWD3(IP,3) + CWD(IP,5,IH,ID)
       TCWD3(IP,4) = TCWD3(IP,4) + CWD(IP,6,IH,ID) +CWD(IP,7,IH,ID) &
-     & + CWD(IP,8,IH,ID) +CWD(IP,9,IH,ID)
+       + CWD(IP,8,IH,ID) +CWD(IP,9,IH,ID)
     ENDDO
   ENDDO
 ENDDO
@@ -158,7 +158,7 @@ IF ( NSVOBJ .GT. 0 ) THEN
     IF (IOBJTP(IOBJ).NE.2) CYCLE
     IF (ODIA(IS2F(IOBJ)).GE.6. ) THEN
       RHRAT = ((OLEN(IS2F(IOBJ)) * 12.) - 54.) / &
-     & (0.5 * ODIA(IS2F(IOBJ)))
+       (0.5 * ODIA(IS2F(IOBJ)))
       LGRTIO = LGRTIO + RHRAT
       LGRNUM = LGRNUM + 1
     ENDIF
@@ -180,12 +180,12 @@ ENDDO
 
 IF (DEBUG) THEN
   WRITE(JOSTND,1020) ICYC, IYEAR, &
-     & (TCWD3(3,I),I=1,4)
+       (TCWD3(3,I),I=1,4)
 1020   FORMAT (' ','IN SVCWD, ICYC=',I2,', IYEAR=',I4,':', / , &
-     & ' ',T5,'TCWD3 ARRAY (PILED & UNPILED):',/, &
-     & ' ',T5,' 0-3in   3-6in   6-12in  12+in ',/, &
-     & ' ',T5,'------- ------- ------- -------',/, &
-     & ' ',T5,4(F7.3,1X),'BEFORE SNAG REMOVAL')
+       ' ',T5,'TCWD3 ARRAY (PILED & UNPILED):',/, &
+       ' ',T5,' 0-3in   3-6in   6-12in  12+in ',/, &
+       ' ',T5,'------- ------- ------- -------',/, &
+       ' ',T5,4(F7.3,1X),'BEFORE SNAG REMOVAL')
 !                       XXX.XXX XXX.XXX XXX.XXX XXX.XXX
 ENDIF
 
@@ -208,8 +208,8 @@ IF ( NSVOBJ .GT. 0 ) THEN
   DO 100 IOBJ=1,NSVOBJ
     IF (IOBJTP(IOBJ).NE.2) CYCLE
     IF (FALLDIR(IS2F(IOBJ)).EQ.-1 .OR. &
-     & ISTATUS(IS2F(IOBJ)).LE. 0 ) &
-     & GOTO 100
+       ISTATUS(IS2F(IOBJ)).LE. 0 ) &
+       GOTO 100
 
 !----------
 !  The boles of fallen snags were previously split apart and tallied
@@ -301,9 +301,9 @@ IF ( NSVOBJ .GT. 0 ) THEN
       DIAM2 = SNGDIA(IS2F(IOBJ))
       HTD2  = SNGLEN(IS2F(IOBJ))
       CALL FMSVL2(SP,DIAM2,HTD2,HICUT,VHI,0, &
-     & 'D',.FALSE.,.FALSE.,JOSTND)
+       'D',.FALSE.,.FALSE.,JOSTND)
       CALL FMSVL2(SP,DIAM2,HTD2,LOCUT,VLO,0, &
-     & 'D',.FALSE.,.FALSE.,JOSTND)
+       'D',.FALSE.,.FALSE.,JOSTND)
       DIF = VHI - VLO
 
 !----------
@@ -366,7 +366,7 @@ IF ( NSVOBJ .GT. 0 ) THEN
   IF (DEBUG) THEN
     WRITE(JOSTND,1035) (SNGVOL(I),I=1,4)
 1035     FORMAT (' ',T5,4(F7.3,1X),'FALLEN SNAG PARECELIZED TONS, ', &
-     & 'ADJUSTED')
+       'ADJUSTED')
   ENDIF
 
 !----------
@@ -379,7 +379,7 @@ IF ( NSVOBJ .GT. 0 ) THEN
     DO IP=1,3
       IF ( TCWD3(3,IBP) .GT. 0.0 ) THEN
         TCWD3(IP,IBP) = TCWD3(IP,IBP) - &
-     & ( SNGVOL(IBP)*(TCWD3(IP,IBP)/TCWD3(3,IBP)) )
+       ( SNGVOL(IBP)*(TCWD3(IP,IBP)/TCWD3(3,IBP)) )
       ELSE
         TCWD3(IP,IBP) = 0.0
       ENDIF
@@ -502,8 +502,8 @@ DO IPS=1,2
     DO ISVOBJ=1,MXSVOB
       IF (IOBJTP(ISVOBJ).NE.4) CYCLE
       IF ( CWDPIL(IS2F(ISVOBJ)) .EQ. (IPS-1) .AND. &
-     & CWDDIA(IS2F(ISVOBJ)) .LE. BP(ISZCLS) .AND. &
-     & CWDDIA(IS2F(ISVOBJ)) .GT. BP(ISZCLS-1) ) THEN
+       CWDDIA(IS2F(ISVOBJ)) .LE. BP(ISZCLS) .AND. &
+       CWDDIA(IS2F(ISVOBJ)) .GT. BP(ISZCLS-1) ) THEN
         NSVCWD(IPS,ISZCLS) = NSVCWD(IPS,ISZCLS) + 1
       ENDIF
     ENDDO
@@ -530,24 +530,24 @@ DO IPS=1,2
       NUM2DEL = NSVCHG(IPS,ISZCLS)*(-1)
       IF (DEBUG) THEN
         WRITE(JOSTND,1070) ISZCLS, BP(ISZCLS-1), BP(ISZCLS), &
-     & NUM2DEL
+       NUM2DEL
 1070         FORMAT(/,' ',T5,'DELETING CWD OBJECTS FOR ISZCLS=', &
-     & I1,':',/, &
-     & ' ',T5,'   MIN DIAMETER FOR SIZECLASS=',F7.3,/, &
-     & ' ',T5,'   MAX DIAMETER FOR SIZECLASS=',F7.3,/, &
-     & ' ',T5,'   OBJECT DELETIONS SCHEDULED=',I4)
+       I1,':',/, &
+       ' ',T5,'   MIN DIAMETER FOR SIZECLASS=',F7.3,/, &
+       ' ',T5,'   MAX DIAMETER FOR SIZECLASS=',F7.3,/, &
+       ' ',T5,'   OBJECT DELETIONS SCHEDULED=',I4)
       ENDIF
       CWDDL1 = 0
       CWDDL2 = 0
       DO 200 ICWD=1,NCWD
         IF ( CWDPIL(ICWD) .EQ. (IPS-1) .AND. &
-     & CWDDIA(ICWD) .LE. BP(ISZCLS) .AND. &
-     & CWDDIA(ICWD) .GT. BP(ISZCLS-1) ) THEN
+       CWDDIA(ICWD) .LE. BP(ISZCLS) .AND. &
+       CWDDIA(ICWD) .GT. BP(ISZCLS-1) ) THEN
           CWDDIA(ICWD) = 0.0
           CWDDL1 = CWDDL1 + 1
           DO ISVOBJ=1,NSVOBJ
             IF (IOBJTP(ISVOBJ).EQ.4 .AND. &
-     & IS2F(ISVOBJ).EQ.ICWD) THEN
+       IS2F(ISVOBJ).EQ.ICWD) THEN
               IOBJTP(ISVOBJ) = 0
               IS2F(ISVOBJ) = 0
               IOBJTPTMP(ISVOBJ) = 0
@@ -563,7 +563,7 @@ DO IPS=1,2
       IF (DEBUG) THEN
         WRITE(JOSTND,1080) CWDDL1, CWDDL2
 1080         FORMAT(' ',T5,'   CWD DELETIONS DONE        =',I4,/, &
-     & ' ',T5,'   OBJECT DELETIONS DONE     =',I4)
+       ' ',T5,'   OBJECT DELETIONS DONE     =',I4)
       ENDIF
     ENDIF
   ENDDO
@@ -614,7 +614,7 @@ DO 300 ICWD=1,NCWD
       CWDDIA(ICWD) = 0
       DO 260 ISVOBJ=1,NSVOBJ
         IF (IOBJTP(ISVOBJ).EQ.4 .AND. &
-     & IS2F(ISVOBJ).EQ.ICWD) THEN
+       IS2F(ISVOBJ).EQ.ICWD) THEN
            IS2F(ISVOBJ) = IPUT
            IS2FTMP(ISVOBJ) = IPUT
            EXIT
@@ -733,8 +733,8 @@ DO ISZCLS=1,4
   DO ISVOBJ=1,MXSVOB
     IF (IOBJTP(ISVOBJ).NE.4) CYCLE
     IF ( CWDPIL(IS2F(ISVOBJ)) .EQ. (IPS-1) .AND. &
-     & CWDDIA(IS2F(ISVOBJ)) .LE. BP(ISZCLS) .AND. &
-     & CWDDIA(IS2F(ISVOBJ)) .GT. BP(ISZCLS-1) ) THEN
+       CWDDIA(IS2F(ISVOBJ)) .LE. BP(ISZCLS) .AND. &
+       CWDDIA(IS2F(ISVOBJ)) .GT. BP(ISZCLS-1) ) THEN
       NSVNEW(IPS,ISZCLS) = NSVNEW(IPS,ISZCLS) + 1
     ENDIF
   ENDDO
@@ -742,18 +742,18 @@ ENDDO
 
 IF (DEBUG) THEN
   WRITE(JOSTND,1110) (PCSIZE(IPS,I),I=1,4), &
-     & (PCOUNT(IPS,I),I=1,4), &
-     & (NSVCWD(IPS,I),I=1,4), &
-     & (NSVCHG(IPS,I),I=1,4), &
-     & (NSVNEW(IPS,I),I=1,4)
+       (PCOUNT(IPS,I),I=1,4), &
+       (NSVCWD(IPS,I),I=1,4), &
+       (NSVCHG(IPS,I),I=1,4), &
+       (NSVNEW(IPS,I),I=1,4)
 1110   FORMAT(/,' ',T5,'TCWD3 ARRAY, UNPILED ONLY:',/, &
-     & ' ',T5,' 1-3in   3-6in   6-12in  12+in ',/, &
-     & ' ',T5,'------- ------- ------- -------',/, &
-     & ' ',T5,F7.3,1X,3(F7.2,1X),'AVERAGE PIECESIZE',/, &
-     & ' ',T5,4(F7.1,1X),'EXPECTED PIECECOUNT',/, &
-     & ' ',T5,4(I7,1X),'EXISING SVS CWD OBJECTS',/, &
-     & ' ',T5,4(I7,1X),'SVS OBJECT CHANGE',/, &
-     & ' ',T5,4(I7,1X),'NEW SVS CWD COUNT',/)
+       ' ',T5,' 1-3in   3-6in   6-12in  12+in ',/, &
+       ' ',T5,'------- ------- ------- -------',/, &
+       ' ',T5,F7.3,1X,3(F7.2,1X),'AVERAGE PIECESIZE',/, &
+       ' ',T5,4(F7.1,1X),'EXPECTED PIECECOUNT',/, &
+       ' ',T5,4(I7,1X),'EXISING SVS CWD OBJECTS',/, &
+       ' ',T5,4(I7,1X),'SVS OBJECT CHANGE',/, &
+       ' ',T5,4(I7,1X),'NEW SVS CWD COUNT',/)
 !                        XXX.XXX XXX.XXX XXX.XXX XXX.XXX
 ENDIF
 

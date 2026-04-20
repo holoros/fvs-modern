@@ -59,9 +59,9 @@
 !_______________________________________________________________________
 !
       subroutine r9clark (volEq,stump,mTopP,mTopS,dbhOb, &
-     &                    ht1Prd,ht2Prd,htTot,logDia,bolHt,Loglen, &
-     &                    logVol,vol,cutFlg,bfpFlg,cupFlg,cdpFlg, &
-     &             spFlg,prod,errFlg,cType,upsHt1,TLOGS,NUMLOGP,NUMLOGS)
+                          ht1Prd,ht2Prd,htTot,logDia,bolHt,Loglen, &
+                          logVol,vol,cutFlg,bfpFlg,cupFlg,cdpFlg, &
+                   spFlg,prod,errFlg,cType,upsHt1,TLOGS,NUMLOGP,NUMLOGS)
 !_______________________________________________________________________
 !
 
@@ -159,16 +159,16 @@
       if (prod .eq. '14') prod = '01'
       IF(VOLEQ(1:1).EQ.'9')THEN
       call r9Prep(volEq,dbhOb,topDib,topHt,ht1Prd,ht2Prd,htTot, &
-     &            spp,geog,COEFFS,forst,maxLen, &
-     &            minLen,merchL,mTopP,mTopS,stump,trim,minBfD, &
-     &            prod,iProd,sawDib,plpDib,short,shrtHt,errFlg, &
-     &            upsHt1)
+                  spp,geog,COEFFS,forst,maxLen, &
+                  minLen,merchL,mTopP,mTopS,stump,trim,minBfD, &
+                  prod,iProd,sawDib,plpDib,short,shrtHt,errFlg, &
+                  upsHt1)
       ELSEIF(VOLEQ(1:1).EQ.'8')THEN
       call r8Prep(volEq,dbhOb,topDib,topHt,ht1Prd,ht2Prd,htTot, &
-     &            spp,geog,COEFFS,forst,maxLen, &
-     &            minLen,merchL,mTopP,mTopS,stump,trim,minBfD, &
-     &            prod,iProd,sawDib,plpDib,short,shrtHt,errFlg, &
-     &            upsHt1,COEFFSO)
+                  spp,geog,COEFFS,forst,maxLen, &
+                  minLen,merchL,mTopP,mTopS,stump,trim,minBfD, &
+                  prod,iProd,sawDib,plpDib,short,shrtHt,errFlg, &
+                  upsHt1,COEFFSO)
 !Treat prod 08 to be same as 01   
 !if(iProd.eq.8) iProd = 1  
       ELSE
@@ -179,7 +179,7 @@
       IF(VOLEQ(1:1).EQ.'9')THEN
 !-----Get DIBs at heights of 4.5' and 17.3'
       call r9dia417(COEFFS,topDib,dbhOb,topHt,ht1Prd,ht2Prd, &
-     &               htTot,sawDib,plpDib,errFlg,upsHt1,volEq)
+                     htTot,sawDib,plpDib,errFlg,upsHt1,volEq)
       ENDIF
       if(errFlg.ne.0) return
       IF (DEBUG%MODEL) THEN
@@ -193,10 +193,10 @@
 !    R9 uses inside bark coef, R8 using outside bark coef
       IF(VOLEQ(1:1).EQ.'9')THEN
       call r9totHt(COEFFS%totHt,htTot,COEFFS%dbhIb,COEFFS%dib17,topHt, &
-     &             topDib,COEFFS%a, COEFFS%b,errFlg)
+                   topDib,COEFFS%a, COEFFS%b,errFlg)
       ELSE
       call r9totHt(COEFFS%totHt,htTot,dbhOb,COEFFSO%dib17,topHt, &
-     &             topDib,COEFFSO%a, COEFFSO%b,errFlg)
+                   topDib,COEFFSO%a, COEFFSO%b,errFlg)
       COEFFSO%totHt = COEFFS%totHt
       ENDIF
       if(COEFFS%totHt.le.17.3) errFlg=8
@@ -216,7 +216,7 @@
 !-----Get total volume to the tip
       if(cutFlg.eq.1) then
         IF(VOLEQ(1:1).EQ.'8'.AND. &
-     &    (VOLEQ(7:7).EQ.'O'.OR.VOLEQ(7:7).EQ.'0'))THEN
+          (VOLEQ(7:7).EQ.'O'.OR.VOLEQ(7:7).EQ.'0'))THEN
 !        R8 OUTSIDE BARK VOLUME (EQ 8*1CLKO***)
           CALL r9cuft(cfVol,COEFFSO,STUMP, COEFFS%TOTHT, errFlg)
         ELSE
@@ -263,7 +263,7 @@
 !-----Get total merchantable product volumes
         if(plpHt-stump.ge.minLen) then
           IF(VOLEQ(1:1).EQ.'8'.AND. &
-     &      (VOLEQ(7:7).EQ.'O'.OR.VOLEQ(7:7).EQ.'0'))THEN
+            (VOLEQ(7:7).EQ.'O'.OR.VOLEQ(7:7).EQ.'0'))THEN
 !        R8 OUTSIDE BARK VOLUME (EQ 8*1CLKO***)
             CALL r9cuft(cfVol,COEFFSO,STUMP,PLPHT,errFlg)
           ELSE
@@ -294,7 +294,7 @@
             sawHt=ht1Prd
           else
             IF(VOLEQ(1:1).EQ.'9' &
-     &       .OR.(VOLEQ(1:1).EQ.'8'.AND.iprod.EQ.8))THEN
+             .OR.(VOLEQ(1:1).EQ.'8'.AND.iprod.EQ.8))THEN
               call r9ht(sawHt,COEFFS, sawDib,errFlg)
             ELSE
 !R8 uses outside bark to calc HT
@@ -307,7 +307,7 @@
           elseif(ht1prd.le.0.01) then
 !         Saw height calc is requested by having 1 < ht1prd < 4.5'
             IF(VOLEQ(1:1).EQ.'9' &
-     &       .OR.(VOLEQ(1:1).EQ.'8'.AND.iprod.EQ.8))THEN
+             .OR.(VOLEQ(1:1).EQ.'8'.AND.iprod.EQ.8))THEN
               call r9ht(sawHt,COEFFS, sawDib,errFlg)
             ELSE
               call r9ht(sawHt,COEFFSO, sawDib,errFlg)
@@ -324,7 +324,7 @@
 !-----Get sawtimber cubic volumes
         if(cupFlg.eq.1 .or. spFlg.eq.1) then
           IF(VOLEQ(1:1).EQ.'8'.AND. &
-     &      (VOLEQ(7:7).EQ.'O'.OR.VOLEQ(7:7).EQ.'0'))THEN
+            (VOLEQ(7:7).EQ.'O'.OR.VOLEQ(7:7).EQ.'0'))THEN
 !        R8 OUTSIDE BARK VOLUME (EQ 8*1CLKO***)
             CALL r9cuft(cfVol,COEFFSO,STUMP,SAWHT,errFlg)
           ELSE
@@ -340,10 +340,10 @@
                 ENDIF
               ENDIF
               CALL PROD8(TEMPVOL,DBHOB,HTTOT,COEFFS%FIXDI,SPP, &
-     &        COEFFS%SPGRP,COEFFS%R,COEFFS%C,COEFFS%E,COEFFS%P,COEFFS%B, &
-     &        COEFFS%A,COEFFS%A4,COEFFS%B4,COEFFS%A17,COEFFS%B17, &
-     &        COEFFSO%R,COEFFSO%C,COEFFSO%E,COEFFSO%P,COEFFSO%B, &
-     &        COEFFSO%A,COEFFS%AFI,COEFFS%BFI,MTOPP)
+              COEFFS%SPGRP,COEFFS%R,COEFFS%C,COEFFS%E,COEFFS%P,COEFFS%B, &
+              COEFFS%A,COEFFS%A4,COEFFS%B4,COEFFS%A17,COEFFS%B17, &
+              COEFFSO%R,COEFFSO%C,COEFFSO%E,COEFFSO%P,COEFFSO%B, &
+              COEFFSO%A,COEFFS%AFI,COEFFS%BFI,MTOPP)
               cfVol = TEMPVOL(4)
             ELSE
               call r9cuft(cfVol,COEFFS,STUMP,SAWHT,errFlg)
@@ -368,7 +368,7 @@
 
 !...  get log lengths, dibs
         CALL R9LOGS(SAWHT, PLPHT, STUMP, MINLEN, MAXLEN, TRIM, &
-     &       LOGLEN,LOGDIA,NOLOGP,NOLOGS,TLOGS,COEFFS,ERRFLG,BOLHT)
+             LOGLEN,LOGDIA,NOLOGP,NOLOGS,TLOGS,COEFFS,ERRFLG,BOLHT)
 
         IF(ERRFLG .NE. 0) THEN
           DO 525, I=1,15
@@ -381,7 +381,7 @@
       IF (DEBUG%MODEL) THEN
          DO 550 I=1,TLOGS
          WRITE  (LUDBG, 530)'LOGDIA ', I, LOGDIA(I,2),'LOGLEN ', I, &
-     &     LOGLEN(I)
+           LOGLEN(I)
  530    FORMAT (A, I2, F6.1, 2X, A,I2, F6.1)
  550    CONTINUE
       END IF
@@ -405,7 +405,7 @@
       ELSE  !prod ne 1
 
         CALL R9LOGS(SAWHT, PLPHT, STUMP, MINLEN, MAXLEN, TRIM, &
-     &       LOGLEN,LOGDIA,NOLOGP,NOLOGS,TLOGS,COEFFS,ERRFLG,BOLHT)
+             LOGLEN,LOGDIA,NOLOGP,NOLOGS,TLOGS,COEFFS,ERRFLG,BOLHT)
 !     Added calculate boardfoot volume if flag is turned on (YW 2019/05/29)    
         NUMSEG = NOLOGS
         if(bfpFlg.eq.1) then
@@ -489,10 +489,10 @@
 !_______________________________________________________________________
 !
       subroutine r9Prep(volEq,dbhOb,topDib,topHt,ht1Prd,ht2Prd,htTot, &
-     &                  spp,geog,COEFFS,forst,maxLen, &
-     &                  minLen,merchL,mTopP,mTopS,stump,trim,minBfD, &
-     &                  prod,iProd,sawDib,plpDib,short,shrtHt,errFlg, &
-     &                  upsHt1)
+                        spp,geog,COEFFS,forst,maxLen, &
+                        minLen,merchL,mTopP,mTopS,stump,trim,minBfD, &
+                        prod,iProd,sawDib,plpDib,short,shrtHt,errFlg, &
+                        upsHt1)
 !_______________________________________________________________________
 !
 !  Parse out the info in the volume equation (volEq).  Check to see if 
@@ -557,22 +557,22 @@
         errFlg=10
 !      elseif(ht2Prd.eq.0.0 .and. htTot.eq.0.0) then
       elseif(ht1Prd.le.0.01 .and. ht2Prd.le.0.01 &
-     &  .and. htTot.le.0.01 .and. upsHt1.le.0.01) then
+        .and. htTot.le.0.01 .and. upsHt1.le.0.01) then
         errFlg=10
 ! YW removed the following check to let small tree calc using short tree logic(02/12/2016)
 !      elseif(htTot.gt.0.0.and.htTot.le.17.3) then
 !        errFlg=10
       elseif(htTot.gt.0.0 .and. ht1Prd.gt.0.0 &
-     &  .and. htTot.lt.ht1Prd) then
+        .and. htTot.lt.ht1Prd) then
         errFlg=7
       elseif(htTot.gt.0.0 .and. ht2Prd.gt.0.0 &
-     &  .and. htTot.lt.ht2Prd) then
+        .and. htTot.lt.ht2Prd) then
         errFlg=8
       elseif(ht2Prd.gt.0.0 .and. ht1Prd.gt.0.0 &
-     &  .and. ht2Prd.lt.ht1Prd) then
+        .and. ht2Prd.lt.ht1Prd) then
         errFlg=7
       ELSEIF(prod.NE.'01'.AND.ht1Prd.GT.0.0.and. ht2Prd.le.0.01 &
-     &  .and. htTot.le.0.01 .and. upsHt1.le.0.01)THEN
+        .and. htTot.le.0.01 .and. upsHt1.le.0.01)THEN
         errFlg=7
 !      elseif(htTot.gt.35.0*sqrt(dbhOb+3.0)) then
 !        errFlg=5
@@ -582,7 +582,7 @@
 !        errFlg=5
 !     check sawtimber reference height (upsHt1) and saw height ht1Prd
       elseif(upsHt1.gt.0 .and. ht1Prd.gt.0 &
-     &  .and. upsHt1.lt.ht1Prd) then
+        .and. upsHt1.lt.ht1Prd) then
         errFlg=10
       endif
       if(errFlg.ne.0) return
@@ -629,11 +629,11 @@
 !         ashes
               sppGrp=1540
           elseif(spp.eq.740 .or. spp.eq.742 .or. spp.eq.744 &
-     &        .or. spp.eq.745 .or. spp.eq.753) then
+              .or. spp.eq.745 .or. spp.eq.753) then
 !         cottonwoods
               sppGrp=1740
           elseif(spp.eq.741 .or. spp.eq.743 .or. spp.eq.746 &
-     &        .or. spp.eq.752) then
+              .or. spp.eq.752) then
 !         poplars
               sppGrp=1750
           elseif(spp.ge.760 .and. spp.le.769) then
@@ -671,8 +671,8 @@
 !      trim=0.3
 !      merchL=8.0
        CALL MRULES(REGN,FORST,VOLEQ,DBHOB,COR,EVOD,OPT,MAXLEN,MINLEN, &
-     &           MERCHL,MINLENT,MTOPP,MTOPS,STUMP,TRIM,BTR,DBTBH,MINBFD, &
-     &           PROD)
+                 MERCHL,MINLENT,MTOPP,MTOPS,STUMP,TRIM,BTR,DBTBH,MINBFD, &
+                 PROD)
 
       if(mTopP.ne.0) then
         sawDib=mTopP
@@ -780,7 +780,7 @@
         COEFFS%A17 = coef4(sppIdx,2)
         COEFFS%B17 = coef4(sppIdx,3)
       elseif((abs(topDib-7) .lt. 0.00001) &
-     &  .or. (abs(topDib-9) .lt. 0.00001)) then
+        .or. (abs(topDib-9) .lt. 0.00001)) then
         COEFFS%A17 = coef79(sppIdx,2)
         COEFFS%B17 = coef79(sppIdx,3)
       else
@@ -815,7 +815,7 @@
 !_______________________________________________________________________
 !
       subroutine r9dia417(COEFFS,topDib,dbhOb,topHt,ht1Prd,ht2Prd, &
-     &                    htTot,sawDib,plpDib,errFlg,upsHt1,volEq)
+                          htTot,sawDib,plpDib,errFlg,upsHt1,volEq)
 !_______________________________________________________________________
 !
 !  Calculates inside bark diameter at 4.5' (dbhIb), inside-bark diameter 
@@ -871,7 +871,7 @@
 
 
       if((topDib.gt.dbhIb .and. topHt.gt.4.5) &
-     &  .or. (topDib.lt.dbhIb .and. topHt.lt.4.5)) then
+        .or. (topDib.lt.dbhIb .and. topHt.lt.4.5)) then
         errFlg=11
         return
       endif
@@ -918,7 +918,7 @@
 !_______________________________________________________________________
 !
       subroutine r9totHt(totHt,htTot,dbhIb,dib17,topHt,topDib,a,b, &
-     &                  errFlg)
+                        errFlg)
 !_______________________________________________________________________
 !
 !  Calculates total tree height from the specified inside-bark DBH 
@@ -947,7 +947,7 @@
         Qb=-2.0*b-Im*2.0*(1.0-b)/a
         Qc=b+(1.0-b)*Im-topDib**2/dib17**2
         totHt=17.3+(topHt-17.3)*(2.0*Qa) &
-     &        /(-1.0*Qb-(Qb**2-4.0*Qa*Qc)**0.5)
+              /(-1.0*Qb-(Qb**2-4.0*Qa*Qc)**0.5)
         totHt=max(totHt,topHt+topDib*2.0)
         totHt=min(totHt,topHt+topDib*8.0)
       else
@@ -959,7 +959,7 @@
 !_______________________________________________________________________
 !
       subroutine r9cuft(cfVol,COEFFS,lowrHt, &
-     &                  upprHt,errFlg)
+                        upprHt,errFlg)
 !_______________________________________________________________________
 !
 !  Calculates cubic foot volume (cfVol) from the specified lower height 
@@ -1074,8 +1074,8 @@
 !The above calculation is seperated into three parts
       IF(I1.GT.0)THEN
         V1 = I1 * dbhib**2 *((1-G*W)*(U1-L1) &
-     &        +W*((1-L1/totht)**r * (totht - L1) &
-     &        -(1-U1/totht)**r * (totht - U1))/(r+1))
+              +W*((1-L1/totht)**r * (totht - L1) &
+              -(1-U1/totht)**r * (totht - U1))/(r+1))
       ENDIF
       IF(I2.GT.0.AND.I3.GT.0) THEN
 !to avoid number (1-U2/totHt)**p off limit (YW 2023/06/12)
@@ -1083,17 +1083,17 @@
               V2 = T*(U2-L2)+Z*((1-L2/totHt)**p*(totHt-L2))/(p+1)
           ELSE
               V2 = T*(U2-L2)+Z*((1-L2/totHt)**p*(totHt-L2) &
-     &        -(1-U2/totHt)**p*(totHt-U2))/(p+1)
+              -(1-U2/totHt)**p*(totHt-U2))/(p+1)
           ENDIF
       ENDIF
       IF(I4.GT.0)THEN
           V3 = dib17**2*(b*(U3-L3)-b*((U3-17.3)**2-(L3-17.3)**2) &
-     &        /(totHt-17.3)+(b/3)*((U3-17.3)**3-(L3-17.3)**3) &
-     &        /(totHt-17.3)**2 &
-     &      +I5*(1.0/3.0)*((1-b)/a**2)*(a*(totHt-17.3)-(L3-17.3))**3 &
-     &        /(totHt-17.3)**2 &
-     &      -I6*(1.0/3.0)*((1-b)/a**2)*(a*(totHt-17.3)-(U3-17.3))**3 &
-     &        /(totHt-17.3)**2)
+              /(totHt-17.3)+(b/3)*((U3-17.3)**3-(L3-17.3)**3) &
+              /(totHt-17.3)**2 &
+            +I5*(1.0/3.0)*((1-b)/a**2)*(a*(totHt-17.3)-(L3-17.3))**3 &
+              /(totHt-17.3)**2 &
+            -I6*(1.0/3.0)*((1-b)/a**2)*(a*(totHt-17.3)-(U3-17.3))**3 &
+              /(totHt-17.3)**2)
       ENDIF
       cfVol = 0.005454154*(V1+V2+V3)
       if(cfVol.lt.0.0) cfVol=0.0
@@ -1154,7 +1154,7 @@
 
 !--   Fix a potential problem when r coefficient is negative
       if(r .lt.0.0 .and. abs(stemHt - totHt).lt.0.00001) &
-     &  stemHt=stemHt-0.1
+        stemHt=stemHt-0.1
 
 !-----Set height indicator variables
       if(stemHt.lt.4.5) then
@@ -1206,20 +1206,20 @@
       Dt = 0.0
       IF(Is.EQ.1.0)THEN
         Ds = (DBHIB**2 * (1 + (C + E/DBHIB**3)* &
-     &   ((1-StTot)**R - (1-4.5/TOTHT)**R)/ &
-     &   (1-(1-4.5/TOTHT)**R)))
+         ((1-StTot)**R - (1-4.5/TOTHT)**R)/ &
+         (1-(1-4.5/TOTHT)**R)))
       ENDIF
       IF(Ib.EQ.1.0)THEN
         Db = (DBHIB**2-(DBHIB**2-DIB17**2)* &
-     &   ((1-4.5/TOTHT)**P &
-     &     -(1-stemHt/TOTHT)**P)/((1-4.5/TOTHT) &
-     &   **P-(1-17.3/TOTHT)**P))
+         ((1-4.5/TOTHT)**P &
+           -(1-stemHt/TOTHT)**P)/((1-4.5/TOTHT) &
+         **P-(1-17.3/TOTHT)**P))
       ENDIF
       IF(It.EQ.1.0)THEN
         Dt = (DIB17**2*(B*(((stemHt-17.3)/ &
-     &   (TOTHT-17.3))-1)**2 &
-     &   +Im*((1-B)/A**2)*(A-(stemHt-17.3)/ &
-     &   (TOTHT-17.3))**2))
+         (TOTHT-17.3))-1)**2 &
+         +Im*((1-B)/A**2)*(A-(stemHt-17.3)/ &
+         (TOTHT-17.3))**2))
       ENDIF
       IF((Ds+Db+Dt).GT.0) StmDib = (Ds+Db+Dt)**0.5
 
@@ -1406,27 +1406,27 @@
       real      scrbnr(120)
 
       data (scrbnr(i),i=1,60) / &
-     &  0.000,0.143,0.390,0.676,1.070,1.160, &
-     &  1.400,1.501,2.084,3.126,3.749,4.900, &
-     &  6.043,7.140,8.880,10.000,11.528,13.290, &
-     &  14.990,17.499,18.990,20.880,23.510,25.218, &
-     &  28.677,31.249,34.220,36.376,38.040,41.060, &
-     &  44.376,45.975,48.990,50.000,54.688,57.660, &
-     &  64.319,66.730,70.000,75.240,79.480,83.910, &
-     &  87.190,92.501,94.990,99.075,103.501,107.970, &
-     &  112.292,116.990,121.650,126.525,131.510,136.510, &
-     &  141.610,146.912,152.210,157.710,163.288,168.990/
+        0.000,0.143,0.390,0.676,1.070,1.160, &
+        1.400,1.501,2.084,3.126,3.749,4.900, &
+        6.043,7.140,8.880,10.000,11.528,13.290, &
+        14.990,17.499,18.990,20.880,23.510,25.218, &
+        28.677,31.249,34.220,36.376,38.040,41.060, &
+        44.376,45.975,48.990,50.000,54.688,57.660, &
+        64.319,66.730,70.000,75.240,79.480,83.910, &
+        87.190,92.501,94.990,99.075,103.501,107.970, &
+        112.292,116.990,121.650,126.525,131.510,136.510, &
+        141.610,146.912,152.210,157.710,163.288,168.990/
       data (scrbnr(i),i=61,120) / &
-     &  174.850,180.749,186.623,193.170,199.120,205.685, &
-     &  211.810,218.501,225.685,232.499,239.317,246.615, &
-     &  254.040,261.525,269.040,276.630,284.260,292.501, &
-     &  300.655,308.970,317.360,325.790,334.217,343.290, &
-     &  350.785,359.120,368.380,376.610,385.135,393.380, &
-     &  402.499,410.834,419.166,428.380,437.499,446.565, &
-     &  455.010,464.150,473.430,482.490,491.700,501.700, &
-     &  511.700,521.700,531.700,541.700,552.499,562.501, &
-     &  573.350,583.350,594.150,604.170,615.010,625.890, &
-     &  636.660,648.380,660.000,671.700,683.330,695.011/
+        174.850,180.749,186.623,193.170,199.120,205.685, &
+        211.810,218.501,225.685,232.499,239.317,246.615, &
+        254.040,261.525,269.040,276.630,284.260,292.501, &
+        300.655,308.970,317.360,325.790,334.217,343.290, &
+        350.785,359.120,368.380,376.610,385.135,393.380, &
+        402.499,410.834,419.166,428.380,437.499,446.565, &
+        455.010,464.150,473.430,482.490,491.700,501.700, &
+        511.700,521.700,531.700,541.700,552.499,562.501, &
+        573.350,583.350,594.150,604.170,615.010,625.890, &
+        636.660,648.380,660.000,671.700,683.330,695.011/
 
 !======================================================================
 
@@ -1470,8 +1470,8 @@
 !--       International 1/4 volume
           if(dib.ge.4.0) then
             bdft=0.04976191*len*dib**2 +0.006220239*len**2*dib &
-     &          -0.1854762*len*dib +0.0002591767*len**3 &
-     &          +0.01159226*len**2 +0.04222222*len
+                -0.1854762*len*dib +0.0002591767*len**3 &
+                +0.01159226*len**2 +0.04222222*len
 
           else
             bdft=0.0

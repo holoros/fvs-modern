@@ -11,7 +11,7 @@ INCLUDE 'VOLSTD.f90'
 
 INTEGER iRet, ColNumber, iInvRef, I, SPPNUM,ISPPSDI,ISTIDX
 DOUBLE PRECISION FORMCLS,MIND,MERCHTOPD,STUMP, &
-     & SAWD,SAWTD,SAWSTMP,BFD,BFTD,BFSTUMP
+       SAWD,SAWTD,SAWSTMP,BFD,BFTD,BFSTUMP
 CHARACTER*4    SPPFVS,SPPPLTS
 CHARACTER*5    SPPFIA
 CHARACTER*2000 SQLStmtStr
@@ -20,7 +20,7 @@ CHARACTER*3    CRUISETYPE
 CHARACTER*7    SDITYPE
 
 INTEGER fsql3_tableexists,fsql3_exec,fsql3_bind_int,fsql3_step, &
-     & fsql3_prepare,fsql3_bind_double,fsql3_finalize
+       fsql3_prepare,fsql3_bind_double,fsql3_finalize
 
 CALL DBSCASE(1)
 
@@ -29,27 +29,27 @@ TABLENAME = 'FVS_InvReference'
 iRet=fsql3_tableexists(IoutDBref,TRIM(TABLENAME)//CHAR(0))
 IF(iRet.EQ.0) THEN
   SQLStmtStr='CREATE TABLE '//TRIM(TABLENAME)// &
-     & ' (CaseID text not null, '// &
-     & 'StandID text not null, '// &
-     & 'SpeciesNum int, '// &
-     & 'SpeciesFVS text, '// &
-     & 'SpeciesPlants text, '// &
-     & 'SpeciesFIA text, '// &
-     & 'SDIType text,'// &
-     & 'SDIMax int, '// &
-     & 'SiteIndex int, '// &
-     & 'CFCruiseType text,'// &
-     & 'CFVolEq text, '// &
-     & 'CFMinDBH real, '// &
-     & 'CFTopDia real, '// &
-     & 'CFStump real, '// &
-     & 'CFSawMinDBH real, '// &
-     & 'CFSawTopDia real, '// &
-     & 'CFSawStump real, '// &
-     & 'BFVolEq text, '// &
-     & 'BFMinDBH real, '// &
-     & 'BFTopDia real, '// &
-     & 'BFStump real);'//CHAR(0)
+       ' (CaseID text not null, '// &
+       'StandID text not null, '// &
+       'SpeciesNum int, '// &
+       'SpeciesFVS text, '// &
+       'SpeciesPlants text, '// &
+       'SpeciesFIA text, '// &
+       'SDIType text,'// &
+       'SDIMax int, '// &
+       'SiteIndex int, '// &
+       'CFCruiseType text,'// &
+       'CFVolEq text, '// &
+       'CFMinDBH real, '// &
+       'CFTopDia real, '// &
+       'CFStump real, '// &
+       'CFSawMinDBH real, '// &
+       'CFSawTopDia real, '// &
+       'CFSawStump real, '// &
+       'BFVolEq text, '// &
+       'BFMinDBH real, '// &
+       'BFTopDia real, '// &
+       'BFStump real);'//CHAR(0)
 
   iRet=fsql3_exec(IoutDBref, SQLStmtStr)
   IF(iRet.NE.0) THEN
@@ -84,19 +84,19 @@ DO I=1,MAXSP
   END IF
 
   SQLStmtStr='INSERT INTO '//TRIM(TABLENAME)// &
-     & ' (CaseID,StandID,'// &
-     & 'SpeciesNum,SpeciesFVS,SpeciesPlants,SpeciesFIA,'// &
-     & 'SDIType,SDIMax,SiteIndex,'// &
-     & 'CFCruiseType,CFVolEq,CFMinDBH,CFTopDia,CFStump,'// &
-     & 'CFSawMinDBH,CFSawTopDia,CFSawStump,'// &
-     & 'BFVolEQ,BFMinDBH,BFTopDia,BFStump)'// &
-     & " VALUES('"//CASEID//"','"//TRIM(NPLT)//"',?,'"// &
-     & TRIM(JSP(I))//"','"//TRIM(PLNJSP(I))//"','"// &
-     & TRIM(FIAJSP(I))//"','"// &
-     & SDITYPE//"',"//'?,?,'// &
-     & "'"//CRUISETYPE//"','"//TRIM(VEQNNC(I))//"',?,?,?,"// &
-     & '?,?,?,'// &
-     & "'"//TRIM(VEQNNB(I))//"',?,?,?);"//CHAR(0)
+       ' (CaseID,StandID,'// &
+       'SpeciesNum,SpeciesFVS,SpeciesPlants,SpeciesFIA,'// &
+       'SDIType,SDIMax,SiteIndex,'// &
+       'CFCruiseType,CFVolEq,CFMinDBH,CFTopDia,CFStump,'// &
+       'CFSawMinDBH,CFSawTopDia,CFSawStump,'// &
+       'BFVolEQ,BFMinDBH,BFTopDia,BFStump)'// &
+       " VALUES('"//CASEID//"','"//TRIM(NPLT)//"',?,'"// &
+       TRIM(JSP(I))//"','"//TRIM(PLNJSP(I))//"','"// &
+       TRIM(FIAJSP(I))//"','"// &
+       SDITYPE//"',"//'?,?,'// &
+       "'"//CRUISETYPE//"','"//TRIM(VEQNNC(I))//"',?,?,?,"// &
+       '?,?,?,'// &
+       "'"//TRIM(VEQNNB(I))//"',?,?,?);"//CHAR(0)
 
   iRet=fsql3_prepare(IoutDBref,SQLStmtStr)
   IF(iRet.NE.0) THEN

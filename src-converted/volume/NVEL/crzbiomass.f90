@@ -32,9 +32,9 @@
          I = I + 1
          IF(SPREGNDFTWF(I,1).EQ.REGN) THEN
            IF((SPREGNDFTWF(I,2).EQ.IFORST .AND. &
-     &      SPREGNDFTWF(I,3).EQ.SPCD) .OR. &
-     &      (SPREGNDFTWF(I,2).EQ.0 .AND. &
-     &      SPREGNDFTWF(I,3).EQ.SPCD)) THEN
+            SPREGNDFTWF(I,3).EQ.SPCD) .OR. &
+            (SPREGNDFTWF(I,2).EQ.0 .AND. &
+            SPREGNDFTWF(I,3).EQ.SPCD)) THEN
              DONE = I
              REGNWF(1) = SPREGNDFTWF(I,4)
              REGNWF(2) = SPREGNDFTWF(I,5)
@@ -211,7 +211,7 @@
        END
 !--------------------------------------------------------------------------------------------
        SUBROUTINE CRZBIOMASS(REGN,FORST,SPCD,DBHOB,DRCOB, HTTOT,FCLASS, &
-     &  VOL,WF,BMS,ERRFLG,PROD)
+        VOL,WF,BMS,ERRFLG,PROD)
        IMPLICIT NONE
        INTEGER REGN, IFORST, SPCD, ERRFLG, I,J, LENGTH, FCLASS
        REAL DBHOB, HTTOT, DBH, THT, VOL(15), WF(3), BMS(8),DRCOB
@@ -359,19 +359,19 @@
          IF(FCLASS.GT.1) stm = 0
 !        Pinyon pine species         
          IF(SPCD.EQ.106.OR.SPCD.EQ.133.OR.SPCD.EQ.134 &
-     &      .OR.SPCD.EQ.138.OR.SPCD.EQ.140.OR.SPCD.EQ.141 &
-     &      .OR.SPCD.EQ.143)THEN
+            .OR.SPCD.EQ.138.OR.SPCD.EQ.140.OR.SPCD.EQ.141 &
+            .OR.SPCD.EQ.143)THEN
            Pied = 1
            drcp = DRCOB
 !        Gambel oak species           
          ELSEIF(SPCD.EQ.803.OR.SPCD.EQ.810.OR.SPCD.EQ.814 &
-     &      .OR.SPCD.EQ.829.OR.SPCD.EQ.843.OR.SPCD.EQ.846 &
-     &      .OR.SPCD.EQ.847)THEN
+            .OR.SPCD.EQ.829.OR.SPCD.EQ.843.OR.SPCD.EQ.846 &
+            .OR.SPCD.EQ.847)THEN
            Quga = 1
            drcq = DRCOB
          ENDIF
          DBHOB = -2.6843+1.0222*DRCOB+0.7433*stm &
-     &   +0.7469*Pied-0.0399*drcp+1.2244*Quga-0.0689*drcq
+         +0.7469*Pied-0.0399*drcp+1.2244*Quga-0.0689*drcq
          IF(DBHOB.LT.0) DBHOB = 0
        ENDIF
       RETURN

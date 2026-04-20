@@ -109,11 +109,11 @@ BALM = BAL * FT2pACRtoM2pHA
 KSP = OSPMAP(ISPC)
 
 HTG = &
-     +  B00(KSP) &
-     + (B01(KSP)  * LHM) &
-     + (B02(KSP)  * HM) &
-     + (BSI(KSP)  * SIM) &
-     + (BBAL(KSP) * BALM)
+      +  B00(KSP) &
+      + (B01(KSP)  * LHM) &
+      + (B02(KSP)  * HM) &
+      + (BSI(KSP)  * SIM) &
+      + (BBAL(KSP) * BALM)
 
 !     JUST TO BE SAFE, CONSTRAIN PREDICTED DG TO +/- 5 BEFORE
 !     EXPONENTIATION; THEN CONSTRAIN THE ANNUAL GROWTH TO

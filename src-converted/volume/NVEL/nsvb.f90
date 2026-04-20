@@ -18,9 +18,9 @@
 ! 14 top and limb
 ! 15 carbon content
       SUBROUTINE NVBC(REGN,FORST,DIST,VOLEQ,DBHOB,HTTOT,MTOPP,MTOPS, &
-     & HT1PRD,HT2PRD,STUMP,PROD,BRKHT,BRKHTD,LIVE,CR,CULL,DECAYCD, &
-     & LOGLEN,LOGDIA,LOGVOL,BOLHT,LOGST,NOLOGP,NOLOGS,VOL,DRYBIO,GRNBIO, &
-     & ERRFLG,FIASPCD,CTYPE)
+       HT1PRD,HT2PRD,STUMP,PROD,BRKHT,BRKHTD,LIVE,CR,CULL,DECAYCD, &
+       LOGLEN,LOGDIA,LOGVOL,BOLHT,LOGST,NOLOGP,NOLOGS,VOL,DRYBIO,GRNBIO, &
+       ERRFLG,FIASPCD,CTYPE)
       IMPLICIT NONE
       CHARACTER*11 VOLEQ
       CHARACTER*2 FORST,DIST,PROD,PROD2
@@ -165,11 +165,11 @@
 !IF(LIVE.EQ.'D'.AND.CR.GT.0) CR = 0
 
       CALL NVB_RefSpcData(SPCD,SPGRPCD,WDSG,SFTHRD,CF,ERRFLG, &
-     & SPGRNWF, SPDRYWF)
+       SPGRNWF, SPDRYWF)
       IF(ERRFLG.GT.0.AND.ERRFLG.NE.6) RETURN
 !Reset VOLEQ if it has 4-digit SPCD
       IF(LEN_TRIM(VOLEQ).EQ.11.AND.VOLEQ(11:11).NE.'P' &
-     & .AND.(VOLEQ(11:11).GE.'0'.AND.VOLEQ(11:11).LE.'9'))THEN
+       .AND.(VOLEQ(11:11).GE.'0'.AND.VOLEQ(11:11).LE.'9'))THEN
           IF(SPCD.GT.999)THEN
               WRITE (JKSPGRP, '(i1)') SPGRPCD
               VOLEQ = 'NVB000000'//JKSPGRP
@@ -187,17 +187,17 @@
 !First call the mrules to get the region defaults
       V_EQN = VOLEQ(1:10)
       CALL MRULES(REGN,FORST,V_EQN,DBHOB,COR,EVOD,OPT,MAXLEN, &
-     &   MINLEN,MERCHL,MINLENT,MTOPP,MTOPS,STUMP,TRIM,BTR,DBTBH,MINBFD, &
-     &   PROD)
+         MINLEN,MERCHL,MINLENT,MTOPP,MTOPS,STUMP,TRIM,BTR,DBTBH,MINBFD, &
+         PROD)
       IF(MTOPS.GT.MTOPP) MTOPS = MTOPP
 !If HTTOT is not provided, try to get an estimate from HT1PRD/MTOPP, HT2PRD/MTOPS
       IF(HTTOT.LE.0)THEN
           IF(HT2PRD.GT.0.AND.MTOPS.GT.0)THEN
               CALL NVB_ESTTHT(VOLEQ,DBHOB,HT2PRD,MTOPS,HTTOT,ERRFLG, &
-     &         SPGRPCD,WDSG)
+               SPGRPCD,WDSG)
           ELSEIF(HT1PRD.GT.0.AND.MTOPP.GT.0)THEN
               CALL NVB_ESTTHT(VOLEQ,DBHOB,HT1PRD,MTOPP,HTTOT,ERRFLG, &
-     &         SPGRPCD,WDSG)
+               SPGRPCD,WDSG)
           ENDIF
       ENDIF
 !If HTTOT still 0, check broken height
@@ -210,7 +210,7 @@
 !RETURN
           ELSEIF(BRKHT.GT.0.AND.BRKHTD.GT.0)THEN
               CALL NVB_ESTTHT(VOLEQ,DBHOB,BRKHT,BRKHTD,HTTOT,ERRFLG, &
-     &         SPGRPCD,WDSG)
+               SPGRPCD,WDSG)
           ENDIF
       ENDIF
       IF(HTTOT.LE.0) ERRFLG = 4
@@ -322,10 +322,10 @@
       IF(HT1PRD.LE.0.AND.MTOPP.LT.DBHOB)THEN
           IF(CTYPE.EQ.'I'.OR.CTYPE.EQ.'i')THEN
               CALL NVB_HT2TOPDob(VOLEQ,DBHOB,HTTOT,Vtotob2,MTOPP,HT1PRD, &
-     &        ERRFLG,SPGRPCD,WDSG)
+              ERRFLG,SPGRPCD,WDSG)
           ELSE
               CALL NVB_HT2TOPDib(VOLEQ,DBHOB,HTTOT,Vtotib,MTOPP,HT1PRD, &
-     &        ERRFLG,SPGRPCD,WDSG)
+              ERRFLG,SPGRPCD,WDSG)
           ENDIF
 !Check the broken height
           IF(BRKHT.GT.0.AND.BRKHT.LT.HT1PRD) HT1PRD=BRKHT
@@ -368,7 +368,7 @@
           ENDIF
           CALL SEGMNT(OPT,EVOD,LMERCH,MAXLEN,MINLEN,TRIM,NUMSEG,LOGLEN)
           CALL NVB_CalcLOGVOL(LOGST,NUMSEG,DIBL,HT2,Vtotib,TRIM,HTTOT, &
-     &  LOGLEN,LOGDIA,LOGVOL,BOLHT,VOL,COR,a,b)
+        LOGLEN,LOGDIA,LOGVOL,BOLHT,VOL,COR,a,b)
           LOGST = NUMSEG
           NOLOGP = NUMSEG
           HTsaw = HT2
@@ -386,10 +386,10 @@
       IF(HT2PRD.LE.0.AND.MTOPS.LT.DBHOB)THEN
           IF(CTYPE.EQ.'I'.OR.CTYPE.EQ.'i')THEN
               CALL NVB_HT2TOPDob(VOLEQ,DBHOB,HTTOT,Vtotob2,MTOPS,HT2PRD, &
-     &        ERRFLG,SPGRPCD,WDSG)
+              ERRFLG,SPGRPCD,WDSG)
           ELSE
               CALL NVB_HT2TOPDib(VOLEQ,DBHOB,HTTOT,Vtotib,MTOPS,HT2PRD, &
-     &        ERRFLG,SPGRPCD,WDSG)
+              ERRFLG,SPGRPCD,WDSG)
           ENDIF
 !Check the broken height
           IF(BRKHT.GT.0.AND.BRKHT.LT.HT2PRD) HT2PRD=BRKHT
@@ -415,7 +415,7 @@
           ENDIF
           CALL NUMLOG(OPT,EVOD,LMERCH,MAXLEN,MINLEN,TRIM,NUMSEG)
           CALL SEGMNT(OPT,EVOD,LMERCH,MAXLEN,MINLENT,TRIM,NUMSEG, &
-     &     LOGLENT)
+           LOGLENT)
           NOLOGS = NUMSEG
           IF((LOGST+NUMSEG).GT.20) THEN
               ERRFLG2 = 12
@@ -428,7 +428,7 @@
  600       CONTINUE
 
             CALL NVB_CalcLOGVOL(LOGST,NUMSEG,DIBL,HT2,Vtotib,TRIM,HTTOT, &
-     &      LOGLEN,LOGDIA,LOGVOL,BOLHT,VOL,COR,a,b)
+            LOGLEN,LOGDIA,LOGVOL,BOLHT,VOL,COR,a,b)
             LOGST = LOGST + NUMSEG
           ENDIF
           HTmrch = HT2
@@ -537,7 +537,7 @@
       DRYBIO(12) = BrchHarm
       DRYBIO(13) = WfolRem
       DRYBIO(14) = AGBpredRed-Wstumpib-Wstumpbk-Wsawib-Wsawbk &
-     &  -Wtwib-Wtwbk
+        -Wtwib-Wtwbk
 !Calculate carbon
       IF(LIVE.EQ.'D'.AND.DECAYCD.GT.0)THEN
           CF = DeadCF
@@ -597,7 +597,7 @@
       INCLUDE "tables1.inc"
 
       CALL CALC_EQVW(VOLEQ,DBHOB,HTTOT,Tbl1Cnt,SPcoef,JKcoef,Vib,ERRFLG, &
-     & SPGRPCD,WDSG)
+       SPGRPCD,WDSG)
       RETURN
       END
 !----------------------------------------------------------------------
@@ -610,7 +610,7 @@
       INCLUDE "tables2.inc"
 
       CALL CALC_EQVW(VOLEQ,DBHOB,HTTOT,Tbl2Cnt,SPcoef,JKcoef,Vbk,ERRFLG, &
-     & SPGRPCD,WDSG)
+       SPGRPCD,WDSG)
       RETURN
       END
 !----------------------------------------------------------------------
@@ -623,13 +623,13 @@
       INCLUDE "tables3.inc"
 
       CALL CALC_EQVW(VOLEQ,DBHOB,HTTOT,Tbl3Cnt,SPcoef,JKcoef,Vob,ERRFLG, &
-     & SPGRPCD,WDSG)
+       SPGRPCD,WDSG)
       RETURN
       END
 !----------------------------------------------------------------------
 ! Stem height to a top diameter outside bark
       SUBROUTINE NVB_HT2TOPDob(VOLEQ,DBHOB,HTTOT,Vob,TOPD,HT2,ERRFLG, &
-     & SPGRPCD,WDSG)
+       SPGRPCD,WDSG)
       IMPLICIT NONE
       CHARACTER*11 VOLEQ
       INTEGER ERRFLG,SPGRPCD
@@ -648,7 +648,7 @@
 !----------------------------------------------------------------------
 ! Stem height to a top diameter inside bark
       SUBROUTINE NVB_HT2TOPDib(VOLEQ,DBHOB,HTTOT,Vib,TOPD,HT2,ERRFLG, &
-     & SPGRPCD,WDSG)
+       SPGRPCD,WDSG)
       IMPLICIT NONE
       CHARACTER*11 VOLEQ
       INTEGER ERRFLG,SPGRPCD
@@ -665,7 +665,7 @@
 !----------------------------------------------------------------------
 ! Calc Dia outside bark at a given height
       SUBROUTINE NVB_DobAtHT(VOLEQ,DBHOB,HTTOT,Vob,HT2,DOB,ERRFLG, &
-     & SPGRPCD,WDSG)
+       SPGRPCD,WDSG)
       IMPLICIT NONE
       CHARACTER*11 VOLEQ
       INTEGER ERRFLG,SPGRPCD
@@ -682,7 +682,7 @@
 !----------------------------------------------------------------------
 ! Calc Dia inside bark at a given height
       SUBROUTINE NVB_DibAtHT(VOLEQ,DBHOB,HTTOT,Vib,HT2,DIB,ERRFLG, &
-     & SPGRPCD,WDSG)
+       SPGRPCD,WDSG)
       IMPLICIT NONE
       CHARACTER*11 VOLEQ
       INTEGER ERRFLG,SPGRPCD
@@ -706,7 +706,7 @@
       INCLUDE "tables6.inc"
 
       CALL CALC_EQVW(VOLEQ,DBHOB,HTTOT,Tbl6Cnt,SPcoef,JKcoef,Wbk,ERRFLG, &
-     & SPGRPCD,WDSG)
+       SPGRPCD,WDSG)
       RETURN
       END
 !----------------------------------------------------------------------
@@ -719,7 +719,7 @@
       INCLUDE "tables7.inc"
 
       CALL CALC_EQVW(VOLEQ,DBHOB,HTTOT,Tbl7Cnt,SPcoef,JKcoef,Wbrch, &
-     & ERRFLG,SPGRPCD,WDSG)
+       ERRFLG,SPGRPCD,WDSG)
       RETURN
       END
 !----------------------------------------------------------------------
@@ -732,7 +732,7 @@
       INCLUDE "tables8.inc"
 
       CALL CALC_EQVW(VOLEQ,DBHOB,HTTOT,Tbl8Cnt,SPcoef,JKcoef,AGB,ERRFLG, &
-     & SPGRPCD,WDSG)
+       SPGRPCD,WDSG)
       RETURN
       END
 !----------------------------------------------------------------------
@@ -745,13 +745,13 @@
       INCLUDE "tables9.inc"
 
       CALL CALC_EQVW(VOLEQ,DBHOB,HTTOT,Tbl9Cnt,SPcoef,JKcoef,Wfo,ERRFLG, &
-     & SPGRPCD,WDSG)
+       SPGRPCD,WDSG)
       RETURN
       END
 !----------------------------------------------------------------------
 ! Calculate the volume or weight from a given VOLEQ
       SUBROUTINE CALC_EQVW(VOLEQ,D,H,CoefCnt,SPcoef,JKcoef,VW,ERRFLG, &
-     & SPGRPCD,WDSG )
+       SPGRPCD,WDSG )
       IMPLICIT NONE
       CHARACTER*11 VOLEQ
       INTEGER I,EQN,ERRFLG,SPCD,SPGRPCD,CoefCnt
@@ -778,7 +778,7 @@
           RETURN
       ENDIF
       CALL SPEQCOEF(VOLEQ,CoefCnt,SPcoef,SPCD,EQN, &
-     & a,a0,a1,b,b0,b1,b2,c,c1)
+       a,a0,a1,b,b0,b1,b2,c,c1)
       IF(EQN.EQ.0)THEN
 !If the equation is not in the list, then using Jenkins group equation
 !CALL JKSPGRP(SPCD, SPGRPCD, WDSG)
@@ -860,7 +860,7 @@
 !----------------------------------------------------------------------
 ! Calculate volume or weight from the equations
       SUBROUTINE CalcVOLWT(SPCD,D,H,equation,a,a0,a1,b,b0,b1,b2,c,c1, &
-     & WDSG,VOLWT)
+       WDSG,VOLWT)
       IMPLICIT NONE
       INTEGER equation,k,SPCD
       REAL D,H,a,a0,a1,b,b0,b1,b2,c,c1,WDSG,VOLWT
@@ -901,7 +901,7 @@
 !----------------------------------------------------------------------
 ! Get the equation coefficients for SPCD
       SUBROUTINE SPEQCOEF(VOLEQ,TOTROW,SPCOEF,SPCD, &
-     & equation,a,a0,a1,b,b0,b1,b2,c,c1)
+       equation,a,a0,a1,b,b0,b1,b2,c,c1)
       IMPLICIT NONE
       CHARACTER*11 VOLEQ
       INTEGER SPCD,DIVISION,STDORG,TOTROW,equation,I,DONE
@@ -948,7 +948,7 @@
 !----------------------------------------------------------------------
 ! Get the coef for species 999
       SUBROUTINE OTEQCOEF(TOTROW,SPCOEF,equation, &
-     & a,a0,a1,b,b0,b1,b2,c,c1)
+       a,a0,a1,b,b0,b1,b2,c,c1)
       IMPLICIT NONE
       INTEGER TOTROW, equation
       REAL SPCOEF(TOTROW,13), a,a0,a1,b,b0,b1,b2,c,c1
@@ -988,7 +988,7 @@
           ENDIF
           X = mid/HTTOT
           diff = TOPD - ((TCUFT/0.005454154/HTTOT*a*b* &
-     &    (1-X)**(a-1)*(1-(1-X)**a)**(b-1)))**0.5
+          (1-X)**(a-1)*(1-(1-X)**a)**(b-1)))**0.5
           IF(ABS(diff).LT.0.001) THEN
               EXIT
           ENDIF
@@ -1014,20 +1014,20 @@
       DIA = 0
       IF(HT2.GE.THT) RETURN
       DIA=SQRT((TCUFT/ 0.005454154 / THT) * (a * b * &
-     &    (1-HT2/THT)**(a-1)*(1-(1 - HT2/THT)**a)**(b-1)))
+          (1-HT2/THT)**(a-1)*(1-(1 - HT2/THT)**a)**(b-1)))
       RETURN
       END
 !----------------------------------------------------------------------
 ! Get ratio coef alpha (a) and belta (b) for the VOLEQ
       SUBROUTINE NVB_GetRatioCOEF(VOLEQ,COEFCNT,SPCOEF,JKCOEF,a,b, &
-     & SPGRPCD)
+       SPGRPCD)
       CHARACTER*11 VOLEQ
       INTEGER COEFCNT,EQN,SPCD,SPGRPCD
       REAL SPCOEF(COEFCNT,13),JKCOEF(9,5),WDSG
       REAL a,a0,a1,b,b0,b1,b2,c,c1
 
       CALL SPEQCOEF(VOLEQ,COEFCNT,SPCOEF,SPCD,EQN, &
-     & a,a0,a1,b,b0,b1,b2,c,c1)
+       a,a0,a1,b,b0,b1,b2,c,c1)
       IF(EQN.EQ.0)THEN
 !If the equation is not in the list, then using Jenkins group equation
 !CALL JKSPGRP(SPCD, SPGRPCD)
@@ -1042,7 +1042,7 @@
 !**************************************************************
 ! Calculate LOGDIA, LOGVOL, BOLHT and VOL      
       SUBROUTINE NVB_CalcLOGVOL(LOGST,NUMSEG,DIBL,HT2,TCUFT,TRIM,THT, &
-     & LOGLEN,LOGDIA,LOGVOL,BOLHT,VOL,COR,a,b)
+       LOGLEN,LOGDIA,LOGVOL,BOLHT,VOL,COR,a,b)
       IMPLICIT NONE
       INTEGER LOGST,NUMSEG,I
       REAL DIBL,HT2,TCUFT,TRIM,DIB,a,b,THT,DIBS,LOGCV,LENTH,LOGV,BFINT
@@ -1085,7 +1085,7 @@
 !----------------------------------------------------------------------
 ! Estimate total height for a broken top tree
       SUBROUTINE NVB_ESTTHT(VOLEQ,DBHOB,BRKHT,BRKHTD,HTTOT,ERRFLG, &
-     & SPGRPCD,WDSG)
+       SPGRPCD,WDSG)
       IMPLICIT NONE
       CHARACTER*11 VOLEQ
       REAL DBHOB,BRKHT,BRKHTD,HTTOT
@@ -1107,7 +1107,7 @@
           CALL NVB_Vob(VOLEQ,DBHOB,THT,TCUFT,ERRFLG,SPGRPCD,WDSG)
           X = BRKHT/THT
           diff = BRKHTD - ((TCUFT/0.005454154/THT*a*b* &
-     &    (1-X)**(a-1)*(1-(1-X)**a)**(b-1)))**0.5
+          (1-X)**(a-1)*(1-(1-X)**a)**(b-1)))**0.5
           IF(diff.LT.0.05) THEN
               EXIT
           ENDIF
@@ -1288,7 +1288,7 @@
       CALL NVB_EcoProv(REGN,FORST,DIST,iPROV)
       iPROV = (iPROV/10)*10
       CALL NVB_RefSpcData(SPCD,SPGRPCD,WDSG,SFTHRD,CF,ERRFLG, &
-     &      SPGRNWF,SPDRYWF)
+            SPGRNWF,SPDRYWF)
       IF(ERRFLG.GT.0) THEN
           ERRFLG = 6
           RETURN
@@ -1348,7 +1348,7 @@
 !----------------------------------------------------------------------
 ! Search FIA_REF_Species to get species Jenkins SPGRPCD and WDSG (wood density lb/cf), carbon ratio, soft or hard wood
       SUBROUTINE NVB_RefSpcData(SPCD,SPGRPCD,WDSG,SFTHRD,CF,ERRFLG, &
-     & SPGRNWF,SPDRYWF)
+       SPGRNWF,SPDRYWF)
       IMPLICIT NONE
       INTEGER SPCD, SPGRPCD, FIRST,LAST,HALF,DONE,ERRFLG,SFTHRD
       REAL WDSG, CF, SPGRNWF, SPDRYWF
@@ -1425,9 +1425,9 @@
          I = I + 1
          IF(SPREGNDFTWF(I,1).EQ.REGN) THEN
            IF((SPREGNDFTWF(I,2).EQ.IFORST .AND. &
-     &      SPREGNDFTWF(I,3).EQ.SPCD) .OR. &
-     &      (SPREGNDFTWF(I,2).EQ.0 .AND. &
-     &      SPREGNDFTWF(I,3).EQ.SPCD)) THEN
+            SPREGNDFTWF(I,3).EQ.SPCD) .OR. &
+            (SPREGNDFTWF(I,2).EQ.0 .AND. &
+            SPREGNDFTWF(I,3).EQ.SPCD)) THEN
              DONE = I
              WtFac = SPREGNDFTWF(I,4)
              WtFac2 = SPREGNDFTWF(I,5)
@@ -1445,7 +1445,7 @@
 !Species does not have a regional default, get green weight from ref_species
       IF(DONE.EQ.-1.AND.WtFac.LT.1)THEN
           CALL NVB_RefSpcData(SPCD,SPGRPCD,WDSG,SFTHRD,CF,ERRFLG, &
-     & SPGRNWF,SPDRYWF)
+       SPGRNWF,SPDRYWF)
           WtFac = SPGRNWF
       ENDIF
 !Dead weight factor is not defined by region, using regional average

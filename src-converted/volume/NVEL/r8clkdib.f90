@@ -26,7 +26,7 @@
 
       READ(VOLEQ(3:3),'(I1)')EQN
       IF(EQN .NE. 0 .AND. EQN .NE. 4 .AND. EQN .NE. 7 .AND. EQN .NE. 9 &
-     & .AND. EQN .NE. 8) THEN
+       .AND. EQN .NE. 8) THEN
         ERRFLAG = 1
         GO TO 999
       ENDIF
@@ -36,17 +36,17 @@
       ELSEIF  (SPEC.EQ.268) THEN
          SPEC = 261
       ELSEIF  (SPEC.EQ.313 .OR. SPEC.EQ.314 .OR. SPEC.EQ.317 .OR. &
-     &          SPEC.EQ.650 .OR. SPEC.EQ.651 .OR. &
-     &          SPEC.EQ.691 .OR. SPEC.EQ.711 .OR. SPEC.EQ.742 .OR. &
-     &          SPEC.EQ.762 .OR. SPEC.EQ.920 .OR. SPEC.EQ.930 .OR. &
-     &          SPEC.EQ.545 .OR. SPEC.EQ.546) THEN
+                SPEC.EQ.650 .OR. SPEC.EQ.651 .OR. &
+                SPEC.EQ.691 .OR. SPEC.EQ.711 .OR. SPEC.EQ.742 .OR. &
+                SPEC.EQ.762 .OR. SPEC.EQ.920 .OR. SPEC.EQ.930 .OR. &
+                SPEC.EQ.545 .OR. SPEC.EQ.546) THEN
          SPEC = 300
       ELSEIF  (SPEC.EQ.521 .OR. SPEC.EQ.550 .OR. SPEC.EQ.580 .OR. &
-     &          SPEC.EQ.601 .OR. SPEC.EQ.602 .OR. SPEC.EQ.318) THEN
+                SPEC.EQ.601 .OR. SPEC.EQ.602 .OR. SPEC.EQ.318) THEN
          SPEC = 500
       ELSEIF  (SPEC.EQ.804 .OR. SPEC.EQ.817 .OR. SPEC.EQ.820 .OR. &
-     &          SPEC.EQ.823 .OR. SPEC.EQ.825 .OR. &
-     &          SPEC.EQ.826 .OR. SPEC.EQ.830 .OR. SPEC.EQ.834) THEN
+                SPEC.EQ.823 .OR. SPEC.EQ.825 .OR. &
+                SPEC.EQ.826 .OR. SPEC.EQ.830 .OR. SPEC.EQ.834) THEN
          SPEC = 800
       ENDIF
 
@@ -285,7 +285,7 @@
 
 !-------------------------------------------------------------------------------------
       SUBROUTINE R8CLKDIB(VOLEQ, FORST, DBHOB, HTTOT, UPSHT1,HTUP,DIB, &
-     &                    ERRFLAG)
+                          ERRFLAG)
       USE CLKCOEF_MOD
 
       implicit none
@@ -359,11 +359,11 @@
         DIB17=DBHOB*(A17+B17*(17.3/TOPHT)**2)
 
         dib=(is*(dbhib**2*(1+(c+e/dbhib**3)*((1-highht/topht)**r &
-     &       -(1-4.5/topht)**r)/(1-(1-4.5/topht)**r))) &
-     &     +ib*(dbhib**2-(dbhib**2-dib17**2)*((1-4.5/topht)**p &
-     &       -(1-highht/topht)**p)/((1-4.5/topht)**p-(1-17.3/topht)**p)) &
-     &     +it*(dib17**2*(b*(((highht-17.3)/(topht-17.3))-1)**2 &
-     &     +im*((1-b)/a**2)*(a-(highht-17.3)/(topht-17.3))**2)))**0.5
+             -(1-4.5/topht)**r)/(1-(1-4.5/topht)**r))) &
+           +ib*(dbhib**2-(dbhib**2-dib17**2)*((1-4.5/topht)**p &
+             -(1-highht/topht)**p)/((1-4.5/topht)**p-(1-17.3/topht)**p)) &
+           +it*(dib17**2*(b*(((highht-17.3)/(topht-17.3))-1)**2 &
+           +im*((1-b)/a**2)*(a-(highht-17.3)/(topht-17.3))**2)))**0.5
 
        ELSE
 !--    HEIGHT TO 4, 7 OR 9 TOP DOB
@@ -376,7 +376,7 @@
            HTTWO = 0
            CTYPE = 'F'
            CALL R8VOL2(VOLEQ,VOLTMP,DBHOB,HTONE,HTTWO,MTOPP,HTTOT,CTYPE, &
-     &                  ERRFLAG)
+                        ERRFLAG)
            UPSHT1 = HTTWO
          ENDIF
 
@@ -392,16 +392,16 @@
 ! when TOPHT < 17.3 (YW 2016/03/08)
          IF(IS.GT.0)THEN
            dib=(is*(dbhib**2*(1+(c+e/dbhib**3)*((1-highht/topht)**r &
-     &       -(1-4.5/topht)**r)/(1-(1-4.5/topht)**r))))**0.5
+             -(1-4.5/topht)**r)/(1-(1-4.5/topht)**r))))**0.5
          ELSEIF(IB.GT.0)THEN
            IF(TOPHT.GT.17.3)THEN
            dib = (ib*(dbhib**2-(dbhib**2-dib17**2)*((1-4.5/topht)**p &
-     &           -(1-highht/topht)**p)/((1-4.5/topht)**p &
-     &           -(1-17.3/topht)**p)))**0.5
+                 -(1-highht/topht)**p)/((1-4.5/topht)**p &
+                 -(1-17.3/topht)**p)))**0.5
            ELSE
              IF(highht.le.topht)THEN
                dib = (dbhib**2-(highht-4.5)/(topht-4.5) &
-     &               *(dbhib**2-DX**2))**0.5
+                     *(dbhib**2-DX**2))**0.5
              ELSEIF(HTTOT.GT.0)THEN
                dib = (DX**2-(highht-topht)/(httot-topht)*DX**2)**0.5
              ENDIF
@@ -410,7 +410,7 @@
            IF(TOPHT.GT.17.3)THEN
              IF(HTUP.LE.TOPHT)THEN
                dib = (IT*(DIB17**2-(DIB17**2-DX**2)*(1-((TOPHT-HTUP)/ &
-     &        (TOPHT-17.3))**Q)))**0.5
+              (TOPHT-17.3))**Q)))**0.5
              ELSE
 !   For the part above UPSHT1, need to use total height equation
 !   If HTTOT is not provided, using R9 logic to calculate the total height.
@@ -425,7 +425,7 @@
                  a = COEFFS%A
                  b = COEFFS%B
                  CALL r9totHt(totHt,htTot,dbhIb,dib17,topHt,topDib,a,b, &
-     &                  errFlag)
+                        errFlag)
                  HTTOT = totHt
                ENDIF
                COEFFS%TOTHT = HTTOT
