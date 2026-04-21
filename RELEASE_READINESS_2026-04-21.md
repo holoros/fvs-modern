@@ -99,16 +99,18 @@ Added:
 went through `git ls-remote https://github.com/holoros/fvs-modern.git`
 plus `WebFetch` against the public repo pages. Observations:
 
-- Remote HEAD on `main` matches local HEAD at `129872c` ("Fix F77
-  continuation artifacts across all 25 variants for full NVEL-linked
-  exe builds").
-- Latest published tag is `v2026.04.5`, which matches the CHANGELOG
-  entry for the Zenodo delivery retag.
+- Remote HEAD on `main` matches local HEAD (as of the 2026-04-21 push
+  at v2026.04.6, `9cc0642` "Close ACD Cardinal advisory with gcc/12.3.0
+  rebuild evidence"; v2026.04.7 follows immediately with CITATION.cff
+  version bump and .gitignore hardening).
 - `.github/workflows/` contains `ci.yml`, `docker-publish.yml`, and
   `upstream-sync.yml`, all referenced correctly from the README
   badges and from internal docs.
-- `CITATION.cff` and `.zenodo.json` are present; both passed cffconvert
-  / Zenodo ingestion on the 2026.04.5 retag.
+- `CITATION.cff` and `.zenodo.json` are present and structurally valid.
+  A comprehensive Zenodo audit on 2026-04-21 found no fvs-modern
+  records on Zenodo despite seven tags, indicating the Zenodo GitHub
+  webhook was never enabled. Enablement is tracked as a follow-up
+  operational action (see v2026.04.7 release notes).
 - `LICENSE` carries the dual CC0-1.0 + MIT statement matching
   CITATION.cff and README claims.
 

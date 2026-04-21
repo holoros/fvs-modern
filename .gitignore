@@ -145,6 +145,21 @@ src-converted/tests/**/fort.15
 src-converted/tests/**/*.out
 src-converted/tests/**/*.trl
 src-converted/tests/**/*.chp
+src-converted/tests/**/*.sng
+src-converted/tests/**/*.sum
+
+# Manuscript scratch tooling at repo root (PNAS v6 response work, not part
+# of fvs-modern). Keep these in a separate manuscript repo or local scratch.
+/package.json
+/package-lock.json
+/node_modules/
+/apply_v6_patches.gs
+/build_letters.js
+/pnas_v6_figures/
+
+# Perseus projection status and other dated internal status notes
+docs/perseus_projection_status_*.md
+docs/*_status_*.md
 
 # Build artifacts (shared libraries built from src-converted/)
 lib/

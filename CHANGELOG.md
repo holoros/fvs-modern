@@ -6,6 +6,42 @@ project adheres to calendar-based versioning (YYYY.MM).
 
 ## [Unreleased]
 
+## [2026.04.7] — 2026-04-21
+
+### Fixed
+- `CITATION.cff`: bumped `version` from `2026.04.5` to `2026.04.7` and
+  `date-released` from `2026-04-13` to `2026-04-21`. The v2026.04.6 tag
+  shipped with stale citation metadata; anyone using GitHub's "Cite this
+  repository" widget, Zotero, or cffconvert would have seen the older
+  version string. Zenodo prefers `.zenodo.json` over `CITATION.cff` on
+  ingestion so DOI minting is unaffected by the previous discrepancy.
+- `RELEASE_READINESS_2026-04-21.md`: the "Latest published tag is
+  v2026.04.5" line updated to reflect the v2026.04.6 push, and the
+  Zenodo status line replaced with a pointer to the outstanding
+  operational action on the Zenodo webhook.
+
+### Changed
+- `.gitignore` extended to cover keyword-file test outputs with `.sng`
+  and `.sum` extensions; PNAS v6 manuscript response scratch at the
+  repo root (`package.json`, `package-lock.json`, `node_modules/`,
+  `apply_v6_patches.gs`, `build_letters.js`, `pnas_v6_figures/`); and
+  dated internal status docs under `docs/` (`perseus_projection_status_*.md`
+  and `docs/*_status_*.md`). None of these belong in the public source
+  tree; they were working artifacts from parallel manuscript and
+  calibration workstreams.
+
+### Known operational actions
+- Zenodo GitHub webhook for `holoros/fvs-modern` has never been enabled.
+  A 2026-04-21 audit against the Zenodo public API confirmed zero
+  fvs-modern records despite seven tags (v2026.04.0 through v2026.04.6).
+  Enable at `https://zenodo.org/account/settings/github/` by toggling
+  the repo ON while logged in as @holoros. After enabling, this tag
+  (v2026.04.7) will be the first to mint a DOI. Past tags can be
+  backfilled by manually uploading the source tarball for each prior
+  tag through the Zenodo UI if historical version DOIs are desired.
+
+## [2026.04.6] — 2026-04-21
+
 ### Added
 - Standalone executable builder (`deployment/scripts/build_fvs_executables.sh`)
   for subprocess based projection pipelines. Supports all 25 variants with
