@@ -72,10 +72,14 @@ simulation engine, or API surface.
 | **Total** | **68/68 (100%)** |
 
 Shared library builds are green for all 25 variants, including the two
-Canadian variants (BC and ON) and the ACD advisory build. The standalone
-executable build path ships 4 fully linked variants (NE, ACD, CS, LS)
-and relies on the shared library fallback for the remaining variants.
-See `build_fvs_executables.sh` for the linker rpath configuration.
+Canadian variants (BC and ON) and ACD. ACD is now promoted out of
+advisory status after a gcc/12.3.0 rebuild on Cardinal login01 on
+2026-04-21 reproduced the workspace build byte-for-byte at the source
+level and produced a loadable `FVSacd.so` with all four public API
+entry points exported. The standalone executable build path ships 4
+fully linked variants (NE, ACD, CS, LS) and relies on the shared library
+fallback for the remaining variants. See `build_fvs_executables.sh`
+for the linker rpath configuration.
 
 The iet03 keyword simulation no longer segfaults and now exits cleanly
 with `STOP 10`. The numeric summary diverges from the 2025-04-25 baseline,
@@ -98,9 +102,13 @@ making FMCOM self-sufficient is tracked for the next tag.
   simulation itself now completes cleanly but the summary diverges from
   that baseline as expected (GitHub issues #3 and #5, resolved for crash,
   baseline refresh pending).
-- ACD remains advisory while the Cardinal stability discrepancy is resolved
-  (GitHub issue #2). The `diagnose_acd_cardinal.sh` script captures source
-  hashes and compiler flags for reproducible triage.
+- ACD Cardinal advisory is closed (GitHub issue #2). 2026-04-21 rebuild
+  on Cardinal login01 under gcc/12.3.0 produced `FVSacd.so` (7.7 MB,
+  sha256 `357ac26b51a5dc18804d7f764c43b609bbac7b1f46bc3991cf94dadddf9105af`)
+  that loads via `ctypes.CDLL` and exposes `fvssetcmdline_`,
+  `fvssummary_`, `fvsdimsizes_`, `fvstreeattr_`. The
+  `diagnose_acd_cardinal.sh` script is retained for future triage should
+  the discrepancy recur on another login node or compiler revision.
 - Shared `fire/base/common/FMCOM.f90` is an include-only common block
   fragment that references MAXSP/MAXTRE/MXFLCL as array dimensions.
   Relies on the caller's INCLUDE ordering; tracked as IMPLICIT NONE

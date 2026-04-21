@@ -74,28 +74,35 @@ or default variant-level SDIMAX values.
 
 ## Build System
 
-### ACD variant on cardinal.osc.edu
+### ACD variant on cardinal.osc.edu (resolved 2026-04-21)
 
 Earlier development cycles reported ACD build instability on Cardinal.
-The 2026-04-13 diagnostic (see `deployment/scripts/diagnose_acd_cardinal.sh`
-and `docs/acd_cardinal_handoff.md`) resolved this:
+The resolution thread closed on 2026-04-21 with a fresh rebuild under
+gcc/12.3.0 on Cardinal login01:
 
 - `src-converted/acd/blkdat.f90` and `src-converted/acd/crown.f90` are
-  byte-identical on Cardinal and the workspace
-  (sha256 `59db704b...` and `33415929...`).
+  byte-identical on Cardinal and in the workspace
+  (sha256 `59db704b6857284e05281b721093e48647a664e7bcbead1f76aa67febe8f791d`
+  and `33415929d3e442d6c448cf0b6867211e7901dbdacdd4e20cbfafe4b75b9efb93`).
 - All MAXSP-dimensioned DATA statements in ACD carry 108 values, matching
   the declared MAXSP in `src-converted/acd/common/PRGPRM.f90`.
-- ifort 2021.10.0 and ifx 2023.2.3 both compile ACD sources cleanly on
-  Cardinal (warnings only for explicit interface declarations of DBCHK,
-  OPFIND, OPGET, OPDONE, which are benign).
-- `FVSacd.so` (built 2026-04-10) loads successfully via `ctypes.CDLL` on
-  Cardinal.
+- ifort 2021.10.0 and ifx 2023.2.3 previously compiled ACD sources cleanly
+  on Cardinal. gcc/12.3.0 now does the same: the 2026-04-21 Cardinal build
+  produced `FVSacd.so` at 7.7 MB
+  (sha256 `357ac26b51a5dc18804d7f764c43b609bbac7b1f46bc3991cf94dadddf9105af`),
+  loaded via `ctypes.CDLL` with `RTLD_LAZY`, and exposes all four public
+  API entry points (`fvssetcmdline_`, `fvssummary_`, `fvsdimsizes_`,
+  `fvstreeattr_`) under `nm -D --defined-only`.
+- The earlier gfortran 11.4.1 `-fimplicit-none` smoke-test artifact for
+  `iosum` in `src-converted/common/OUTCOM.f90` is not triggered by the
+  production build path (`build_fvs_libraries.sh`, which uses implicit
+  typing). It remains tracked as an IMPLICIT NONE hardening item for
+  the next calendar tag alongside `FMCOM.f90`.
 
-gfortran 11.4.1 on Cardinal flags an undeclared `iosum` symbol in
-`src-converted/common/OUTCOM.f90` when compiled with `-fimplicit-none`.
-This is a smoke-test artifact from the diagnostic script, not a bug that
-appears in the production build (which relies on implicit typing). Tracked
-as a backlog item for the next calendar tag; harmless at runtime.
+Status: **resolved**. ACD now ships as a fully supported variant in the
+REST surface and the shared-library matrix. `diagnose_acd_cardinal.sh` is
+retained in `deployment/scripts/` for future triage should the discrepancy
+recur on a different Cardinal login node or compiler revision.
 
 ### macOS compilation
 

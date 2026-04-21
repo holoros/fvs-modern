@@ -26,7 +26,7 @@ fvs-modern/
     src-converted/              Full FVS codebase in free-form Fortran 90 (2,247 files)
         base/                   Core simulation engine (253 files)
         vbase/                  Virtual base includes (20 files)
-        ne/, ie/, cr/, ...      23 US + 2 Canadian regional variants (acd advisory)
+        ne/, ie/, cr/, ...      23 US + 2 Canadian regional variants
         fire/, estb/, volume/   Extension modules
 
     deployment/
@@ -162,7 +162,7 @@ curl -X POST http://localhost:8000/run \
   -d '{"variant": "ne", "num_cycles": 10, "stand_init": [...]}'
 ```
 
-The API supports all 25 variants (24 fully supported + acd advisory), returns JSON results, and can be deployed behind nginx for multi-user access. See `deployment/microfvs/` for setup.
+The API supports all 25 variants, returns JSON results, and can be deployed behind nginx for multi-user access. See `deployment/microfvs/` for setup.
 
 ## Bayesian calibration
 

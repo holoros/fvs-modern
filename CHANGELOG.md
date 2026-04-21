@@ -35,12 +35,19 @@ project adheres to calendar-based versioning (YYYY.MM).
 - Five previously stubbed subroutines (SUMOUT, OPADD, OPCSET, OPGET3, FILOPN)
   restored to full implementations.
 - ACD variant .so now builds successfully on Cardinal (NVEL include path fix).
+  2026-04-21 verification on Cardinal login01 under gcc/12.3.0 produced
+  `FVSacd.so` (sha256 `357ac26b51a5dc18804d7f764c43b609bbac7b1f46bc3991cf94dadddf9105af`)
+  that loads via `ctypes.CDLL` and exposes all four public API entry points
+  (`fvssetcmdline_`, `fvssummary_`, `fvsdimsizes_`, `fvstreeattr_`). ACD is
+  promoted out of advisory status and ships as a fully supported variant
+  in the REST surface and shared-library matrix.
 - `KNOWN_ISSUES.md`: iet03 reclassified from "segfault" to "resolved (crash
   fixed; baseline refresh pending)" after the SUMOUT/OPADD/OPCSET/OPGET3/FILOPN
   restorations. The test now exits cleanly with `STOP 10` on 2026-04-21; only
   the numeric summary diverges from the stale 2025-04-25 baseline.
-- README variant counts reconciled (23 US + 2 Canadian regional variants;
-  24 fully supported + ACD advisory in the REST surface description).
+- README variant counts reconciled: 23 US + 2 Canadian regional variants,
+  all 25 fully supported in the REST surface description after the ACD
+  Cardinal advisory closed.
 - CLAUDE.md build command example corrected to `build_fvs_libraries.sh
   src-converted ./lib ne ak ie` (removed duplicated script path).
 

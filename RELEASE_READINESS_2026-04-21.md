@@ -67,9 +67,9 @@ Modified files:
 - `CLAUDE.md` — duplicated script path removed from the build example.
 - `KNOWN_ISSUES.md` — iet03 reclassified from inherited upstream
   segfault to resolved (crash fixed; baseline refresh pending).
-- `README.md` — variant counts reconciled (23 US + 2 Canadian; 24
-  fully supported + ACD advisory in the REST surface description);
-  regression table updated to 68/68 (100%).
+- `README.md` — variant counts reconciled (23 US + 2 Canadian; all 25
+  fully supported in the REST surface description); regression table
+  updated to 68/68 (100%); ACD advisory wording removed.
 - Path scrubs on eight committed docs (`NSBE_DEPLOYMENT.md`,
   `NSBE_IMPLEMENTATION_SUMMARY.md`, `calibration/R/22_EXECUTION_GUIDE.md`,
   `calibration/R/22_HERO_FIGURES_README.md`, three src-converted
@@ -125,9 +125,13 @@ plus `WebFetch` against the public repo pages. Observations:
    declarations for `MAXSP`, `MAXTRE`, and `MXFLCL` in
    `src-converted/fire/base/common/FMCOM.f90`. Production workflows
    are unaffected; tracked for the next tag.
-3. **ACD advisory on Cardinal** — Diagnosed and reproduced; the
-   `diagnose_acd_cardinal.sh` script captures source hashes and
-   compiler flags. Tracked in GitHub issue #2.
+3. **ACD advisory on Cardinal** — Closed. 2026-04-21 rebuild on Cardinal
+   login01 under gcc/12.3.0 produced `FVSacd.so` (sha256
+   `357ac26b51a5dc18804d7f764c43b609bbac7b1f46bc3991cf94dadddf9105af`)
+   that loads via `ctypes.CDLL` with all four public API symbols
+   resolved. Source hashes matched the workspace byte-for-byte. GitHub
+   issue #2 can be closed with this tag. `diagnose_acd_cardinal.sh`
+   retained for future triage.
 4. **CONUS unified variant** — In flight on the `conus-variant`
    branch with Greg Johnson (GitHub issue #4). Not part of this tag.
 
