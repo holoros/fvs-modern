@@ -4,14 +4,19 @@
 
 ### iet03 segfault (Inland Empire variant, test 03)
 
-The iet03 regression test produces a segmentation fault during execution.
-This is a pre-existing issue inherited from the upstream USDA FVS source
-(Open-FVS revision 3360). The segfault occurs in the establishment extension
-module under specific stand initialization conditions. All other 66 regression
-tests pass (98.5% pass rate).
+The iet03 regression test previously produced a segmentation fault during
+execution, inherited from upstream USDA FVS source (Open-FVS revision 3360).
+As of 2026-04-21 the test exits cleanly with `STOP 10` on the updated base
+and fire extension sources (the SUMOUT, OPADD, OPCSET, OPGET3, FILOPN
+restorations land before the FFE snag initializer fires). The summary output
+diverges numerically from the 2025-04-25 baseline, which is expected given
+the fire and SDI plumbing changes between those snapshots. The regression
+harness currently counts this as a pass (simulation completed, summary lines
+differ from stale baseline).
 
-**Status**: Known, triaged 2026-04-13. Does not affect core growth/mortality
-projections or the Bayesian calibration pipeline.
+**Status**: Resolved for crash; baseline refresh pending before we claim
+exact-match parity. Does not affect core growth/mortality projections or the
+Bayesian calibration pipeline. Tracked by GitHub issues #3 and #5.
 
 **Triage notes**: The iet03 keyword file exercises the Fire and Fuels
 Extension (FFE) together with SNAGINIT, SIMFIRE, SALVAGE, DEFULMOD, POTFIRE,

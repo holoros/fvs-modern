@@ -129,7 +129,7 @@ Breakdown:
   C/C++ files:                ~2 MB
 
 Directory Tree:
-  /sessions/kind-upbeat-darwin/mnt/Claude/fvs-modern/src-converted/
+  <repo-root>/src-converted/
   ├── base/              (198 files)
   ├── fire/              (core fire modeling)
   ├── common/            (52 shared modules)
@@ -157,7 +157,7 @@ NEXT STEPS FOR COMPILATION
    - Set appropriate optimization flags
 
 3. BUILD PROCEDURE
-   cd /sessions/kind-upbeat-darwin/mnt/Claude/fvs-modern/src-converted
+   cd <repo-root>/src-converted
    mkdir build && cd build
    cmake ..
    make
@@ -263,6 +263,6 @@ Status:               READY FOR COMPILATION
 
 Conversion Date:      2026-03-22
 Converted By:         Claude Code Automated Tool
-Location:             /sessions/kind-upbeat-darwin/mnt/Claude/fvs-modern/src-converted/
+Location:             <repo-root>/src-converted/
 
 ================================================================================

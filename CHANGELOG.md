@@ -21,6 +21,10 @@ project adheres to calendar-based versioning (YYYY.MM).
 - Getting Started walkthrough (`docs/getting_started.md`) covering library build,
   ctypes verification, and keyword file simulation.
 - Comprehensive FVS ecosystem landscape scan in README Related Projects section.
+- `.github/CODEOWNERS` so GitHub review requests are auto-routed to the
+  maintainer for Fortran source, calibration, deployment, CI, and release
+  metadata paths.
+- `docs/release_v2026_04_6_notes.md` release notes for the v2026.04.6 tag.
 
 ### Changed
 - Executable builder includes 11 additional include directories (vvolume, vie,
@@ -31,6 +35,14 @@ project adheres to calendar-based versioning (YYYY.MM).
 - Five previously stubbed subroutines (SUMOUT, OPADD, OPCSET, OPGET3, FILOPN)
   restored to full implementations.
 - ACD variant .so now builds successfully on Cardinal (NVEL include path fix).
+- `KNOWN_ISSUES.md`: iet03 reclassified from "segfault" to "resolved (crash
+  fixed; baseline refresh pending)" after the SUMOUT/OPADD/OPCSET/OPGET3/FILOPN
+  restorations. The test now exits cleanly with `STOP 10` on 2026-04-21; only
+  the numeric summary diverges from the stale 2025-04-25 baseline.
+- README variant counts reconciled (23 US + 2 Canadian regional variants;
+  24 fully supported + ACD advisory in the REST surface description).
+- CLAUDE.md build command example corrected to `build_fvs_libraries.sh
+  src-converted ./lib ne ak ie` (removed duplicated script path).
 
 ### Fixed
 - FILOPN double open: JOTREE unit was opened twice when running via keyword file
@@ -39,13 +51,49 @@ project adheres to calendar-based versioning (YYYY.MM).
   correctly for all variants.
 - CI symbol verification updated to check actual API entry points
   (fvssetcmdline_, fvssummary_) rather than the PROGRAM symbol.
+- iet03 regression: previously segfaulted during FFE snag and fuels
+  initialization, now exits cleanly (`STOP 10`). The fix rides on the
+  SUMOUT/OPADD/OPCSET/OPGET3/FILOPN restorations landing before the FFE
+  initializer fires. Tracked by GitHub issues #3 and #5; baseline refresh
+  still pending before we claim byte-exact parity.
+- Scrubbed stale Cowork session paths (`/sessions/kind-upbeat-darwin/...`)
+  from eight committed docs and conversion manifests so the public checkout
+  no longer leaks internal sandbox locations.
 
 ### Removed
 - Stale CI workflow snapshot and internal process documents (email drafts,
   Cardinal handoff notes, release runbook) from docs/.
+- `NSBE_DEPLOYMENT.md` and `NSBE_IMPLEMENTATION_SUMMARY.md` moved out of the
+  public tree into `docs/internal/` (now gitignored). The underlying NSBE
+  volume and biomass coefficient data remains in `data/NSBE/`.
+
+### Fixed (continued)
+- BC Canadian variant: declared `JDST(3)` in the BC-specific
+  `src-converted/canada/bc/ESHAP.f90` common block and extended the
+  `/ESHAP/` common list so `esinit.f90`, `varget.f90`, and `varput.f90`
+  all resolve the symbol without relying on implicit typing. All three
+  files now compile cleanly under `-fimplicit-none` and the rebuilt
+  `FVSbc.so` loads via ctypes with the full API surface.
+
+### Known issues
+- `iet03` numeric baseline still references the 2025-04-25 snapshot; the
+  simulation itself now completes cleanly but the summary diverges as
+  expected from the fire and SDI plumbing changes (for example, 2003 TPA
+  is 441 in the current run vs. 266 in the baseline). Baseline refresh
+  is deferred pending reviewer sign-off on which run is the reference;
+  tracked in GitHub issues #3 and #5.
+- `src-converted/fire/base/common/FMCOM.f90` is an include-only common
+  block fragment that references `MAXSP`, `MAXTRE`, and `MXFLCL` as
+  array dimensions. It relies on callers including `PRGPRM.f90` and
+  `FMPARM.f90` first. All production callers do, so the shared-library
+  build is green; a future pass to make the file self-sufficient under
+  `-fimplicit-none` remains tracked as IMPLICIT NONE hardening.
 
 ### Planned
-- Root cause the `iet03` FFE segfault under gdb and file an Open-FVS issue.
+- Refresh the iet03 summary baseline against the 2026-04-21 build and close
+  issues #3 and #5.
+- Make `FMCOM.f90` self-sufficient so it compiles cleanly when pulled
+  in through `build_fvs_executables.sh` with `-fimplicit-none`.
 - Add CONUS unified variant based on ORGANON growth forms
   (`conus-variant` branch with Greg Johnson).
 - Incrementally apply F77 continuation fixes to expand exe build coverage

@@ -131,7 +131,7 @@ export FVS_PROJECT_ROOT="/path/to/fvs-modern"
 Rscript calibration/R/22_hero_figures.R
 
 # Option 2: On Cardinal (environment variable pre-set)
-cd /sessions/kind-upbeat-darwin/mnt/Claude/fvs-modern
+cd <repo-root>/fvs-modern
 Rscript calibration/R/22_hero_figures.R
 ```
 

@@ -41,7 +41,7 @@ Prerequisites:
   - C compiler (for SQLite support)
 
 Quick Build:
-  cd /sessions/kind-upbeat-darwin/mnt/Claude/fvs-modern/src-converted
+  cd <repo-root>/src-converted
   mkdir build
   cd build
   cmake ..
@@ -80,7 +80,7 @@ KEY CHANGES FROM ORIGINAL
 DIRECTORY LAYOUT
 ================================================================================
 
-/sessions/kind-upbeat-darwin/mnt/Claude/fvs-modern/src-converted/
+<repo-root>/src-converted/
 │
 ├── base/                    ← Core FVS functionality
 ├── fire/                    ← Fire and fuel modeling

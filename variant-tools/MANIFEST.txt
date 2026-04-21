@@ -1,7 +1,7 @@
 FVS VARIANT TEMPLATE SYSTEM - FILE MANIFEST
 ============================================
 
-Location: /sessions/kind-upbeat-darwin/mnt/Claude/fvs-modern/variant-tools/
+Location: <repo-root>/variant-tools/
 
 DOCUMENTATION FILES
 ===================

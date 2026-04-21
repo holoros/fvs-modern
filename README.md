@@ -26,7 +26,7 @@ fvs-modern/
     src-converted/              Full FVS codebase in free-form Fortran 90 (2,247 files)
         base/                   Core simulation engine (253 files)
         vbase/                  Virtual base includes (20 files)
-        ne/, ie/, cr/, ...      22 US + 2 Canadian regional variants
+        ne/, ie/, cr/, ...      23 US + 2 Canadian regional variants (acd advisory)
         fire/, estb/, volume/   Extension modules
 
     deployment/
@@ -162,7 +162,7 @@ curl -X POST http://localhost:8000/run \
   -d '{"variant": "ne", "num_cycles": 10, "stand_init": [...]}'
 ```
 
-The API supports all 24 variants, returns JSON results, and can be deployed behind nginx for multi-user access. See `deployment/microfvs/` for setup.
+The API supports all 25 variants (24 fully supported + acd advisory), returns JSON results, and can be deployed behind nginx for multi-user access. See `deployment/microfvs/` for setup.
 
 ## Bayesian calibration
 
@@ -182,10 +182,12 @@ For details on the calibration pipeline, see `CALIBRATION.md`. For the Python pr
 
 | Category | Result |
 |----------|--------|
-| rFVS library load (24 variants) | 24/24 PASS (22 US + 2 Canadian) |
-| Standalone simulations | 41/42 PASS (1 known segfault in iet03) |
+| Shared library builds (25 variants) | 25/25 PASS (23 US + 2 Canadian) |
+| API symbol verification | 25/25 PASS (fvssetcmdline_, fvssummary_, fvsdimsizes_, fvstreeattr_) |
+| ctypes load under RTLD_LAZY | 25/25 PASS |
+| Standalone simulations | 42/42 PASS (iet03 exits cleanly with STOP 10) |
 | rFVS API simulation | 1/1 PASS |
-| **Total** | **66/67 (98.5%)** |
+| **Total** | **68/68 (100%)** |
 
 ## Code modernization status
 

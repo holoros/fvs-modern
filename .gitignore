@@ -128,6 +128,7 @@ docs/email_*.md
 docs/cardinal_runs/
 docs/*_runbook.md
 docs/*_handoff.md
+docs/internal/
 
 # OS artifacts
 .DS_Store
@@ -135,6 +136,15 @@ docs/*_handoff.md
 *~
 .Rhistory
 .RData
+
+# Claude Code local settings (do not commit user-specific config)
+.claude/
+
+# Keyword-file test outputs that regenerate on each run
+src-converted/tests/**/fort.15
+src-converted/tests/**/*.out
+src-converted/tests/**/*.trl
+src-converted/tests/**/*.chp
 
 # Build artifacts (shared libraries built from src-converted/)
 lib/

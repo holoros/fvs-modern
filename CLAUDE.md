@@ -55,10 +55,10 @@ src-converted/tests/         Regression tests (test.py, comparison scripts)
 Build all FVS variant shared libraries in one command:
 
 ```bash
-bash deployment/scripts/build_fvs_libraries.sh
+bash deployment/scripts/build_fvs_libraries.sh src-converted ./lib
 ```
 
-This compiles src-converted/ into 25 .so files (FVSne.so, FVSie.so, etc.), placing them in ./lib/. The script:
+This compiles src-converted/ into 25 .so files (FVSne.so, FVSie.so, etc.), placing them in ./lib/. The script takes SOURCE_DIR (the converted source tree) and OUTPUT_DIR as required arguments. It:
 
 1. Checks for gfortran, gcc dependencies
 2. Compiles base/ into object files
@@ -68,7 +68,7 @@ This compiles src-converted/ into 25 .so files (FVSne.so, FVSie.so, etc.), placi
 Subset builds are supported:
 
 ```bash
-bash deployment/scripts/build_fvs_libraries.sh deployment/scripts/build_fvs_libraries.sh . ./lib ne ak ie
+bash deployment/scripts/build_fvs_libraries.sh src-converted ./lib ne ak ie
 ```
 
 ## Key Conventions

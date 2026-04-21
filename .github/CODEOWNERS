@@ -1,0 +1,29 @@
+# CODEOWNERS for fvs-modern
+#
+# GitHub uses this file to request reviews automatically on pull requests.
+# Order matters: later patterns override earlier ones.
+
+# Default owner for everything
+*                                   @holoros
+
+# Fortran source tree (inherits USDA public domain; changes should be
+# coordinated with the upstream tracker in .github/workflows/upstream-sync.yml)
+/src-converted/                     @holoros
+/deployment/patches/                @holoros
+
+# Calibration pipeline
+/calibration/                       @holoros
+
+# Python and REST interfaces
+/deployment/fvs2py/                 @holoros
+/deployment/microfvs/               @holoros
+
+# Build, CI, and release infrastructure
+/deployment/scripts/                @holoros
+/.github/                           @holoros
+/scripts/                           @holoros
+
+# Release and metadata files
+CITATION.cff                        @holoros
+.zenodo.json                        @holoros
+CHANGELOG.md                        @holoros

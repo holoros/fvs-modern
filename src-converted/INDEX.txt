@@ -233,7 +233,7 @@ STEP 3: CONFIGURE BUILD
 - Or build all variants with default configuration
 
 STEP 4: COMPILE
-  cd /sessions/kind-upbeat-darwin/mnt/Claude/fvs-modern/src-converted
+  cd <repo-root>/src-converted
   mkdir build && cd build
   cmake ..
   make
@@ -370,7 +370,7 @@ Conversion Date:       2026-03-22
 Conversion Tool:       fixed_to_free.py
 
 Source Repository:     ForestVegetationSimulator-main
-Output Directory:      /sessions/kind-upbeat-darwin/mnt/Claude/fvs-modern/src-converted
+Output Directory:      <repo-root>/src-converted
 
 Regional Variants:     22 (AK, ACD, BM, CA, CI, CR, CS, EC, EM, IE, KT, LS, 
                            NC, NE, OC, OP, PN, SN, SO, TT, UT, WC, WS)

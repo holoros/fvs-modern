@@ -7,7 +7,7 @@
 ## Quick Start
 
 ```bash
-cd /sessions/kind-upbeat-darwin/mnt/Claude/fvs-modern
+cd <repo-root>/fvs-modern
 Rscript calibration/R/22_hero_figures.R
 ```
 
