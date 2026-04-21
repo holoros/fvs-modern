@@ -166,7 +166,7 @@ The API supports all 25 variants, returns JSON results, and can be deployed behi
 
 ## Bayesian calibration
 
-The `calibration/` directory contains a complete Bayesian recalibration pipeline for all 25 FVS variants using FIA remeasurement data. Six model components are refitted per variant: diameter growth, height growth, height to diameter allometry, mortality, crown ratio, and stand density (SDImax).
+The `calibration/` directory contains a complete Bayesian recalibration pipeline for all 25 FVS variants using FIA remeasurement data. Seven model components are refitted per variant: diameter growth (Wykoff), height to diameter allometry (Chapman Richards), height increment (six variants only), mortality (logistic with annualization), crown ratio change, stand density (SDImax), and the self thinning slope (Reineke exponent).
 
 Key features:
 

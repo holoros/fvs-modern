@@ -134,7 +134,37 @@ print(compare_configs("ne"))
 ```
 
 This shows default vs. calibrated values for every parameter, with percent
-change and number of species affected.
+change and number of species affected. Truncated example output for the
+Northeast variant:
+
+```
+Parameter Comparison: NE (Default vs. Calibrated)
+======================================================================
+Calibration date: 2026-03-31
+Components: diameter_growth, height_diameter, mortality, crown_ratio, sdimax
+
+Parameter                              Default Calibrated     Change
+----------------------------------------------------------------------
+bark_ratio/BKRAT                          0.91       0.91      +0.0% (0 spp changed)
+crown/BCR1                                4.40       4.40      +0.0% (0 spp changed)
+growth/B1                                 0.00       0.00      +2.7% (85 spp changed)
+growth/B2                                 0.09       0.09      -0.0% (0 spp changed)
+other/SIGMAR                              0.05       0.05      +0.0% (0 spp changed)
+species_definitions/JTYPE               528.63     528.63      +0.0% (0 spp changed)
+...
+```
+
+The `(N spp changed)` count reports how many species have a relative
+change greater than one percent. For the NE variant, most default
+parameters are preserved and the bulk of the calibration effect flows
+through the `growth`, `height_diameter`, and `mortality` components
+(the last two are applied via SDIMAX, MORTMULT, GROWMULT, and HTGMULT
+keyword injection rather than element wise parameter replacement, so
+they do not appear as rows in the table).
+
+For programmatic use, `FvsConfigLoader.compare("ne")` returns the same
+information as a dictionary, with per parameter arrays of default and
+calibrated values, mean percent change, and species change counts.
 
 ## Creating a Custom Calibration
 
@@ -209,16 +239,24 @@ keywords = loader.generate_keywords()
 
 ### On OSC Cardinal (all 25 variants)
 
+Substitute your OSC username and project code below. The example uses
+`<OSC_USER>` and `<OSC_PROJECT>` as placeholders; for the maintainer
+these are `crsfaaron` and `PUOM0008`, respectively.
+
 ```bash
-ssh crsfaaron@cardinal.osc.edu
-cd /users/PUOM0008/crsfaaron
+ssh <OSC_USER>@cardinal.osc.edu
+cd /users/<OSC_PROJECT>/<OSC_USER>
 git clone https://github.com/holoros/fvs-modern.git
 bash fvs-modern/calibration/osc/setup_osc.sh     # one time: ~20 min
 bash fvs-modern/calibration/osc/submit_cardinal.sh  # submits 25 SLURM jobs
 ```
 
-Configuration is in `calibration/osc/config_osc.sh`. FIA data should be
-at `$FVS_FIA_DATA` (or `/path/to/FIA`) with state subdirectory structure.
+Configuration is in `calibration/osc/config_osc.sh`. Adjust
+`OSC_ACCOUNT` to your project code and point `FVS_FIA_DATA` (or the
+equivalent variable defined in the config) at your FIA database
+directory with the expected state subdirectory structure. The same
+scripts run on any SLURM scheduler; Cardinal is called out only because
+it is the maintainer's environment.
 
 ### On a Local Workstation (single variant)
 
@@ -311,7 +349,12 @@ ensemble = fvs.run_ensemble()
 
 # Get summarized results with credible intervals
 summary = fvs.uncertainty_summary
-# Columns: (variable, mean), (variable, std), (variable, q0025), etc.
+# summary is a pandas DataFrame with a two level MultiIndex on the
+# columns: the outer level is the FVS output variable (BA, TPA,
+# VOLUME, MORT_BA, etc.) and the inner level is the statistic
+# (mean, std, q0025, q0500, q0975). Access a specific band with:
+#   summary[("BA", "q0500")]         # posterior median basal area
+#   summary[("VOLUME", ["q0025", "q0975"])]  # 95% credible band
 ```
 
 #### REST API (microfvs)

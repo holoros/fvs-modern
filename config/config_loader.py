@@ -198,8 +198,13 @@ class FvsConfigLoader:
 
     @property
     def calibration_metadata(self) -> dict | None:
-        """Calibration metadata (only present in calibrated configs)."""
-        return self.config.get("calibration_metadata", None)
+        """Calibration metadata (only present in calibrated configs).
+
+        The posterior_to_json pipeline writes this under the top level
+        key `calibration`. Older exports used `calibration_metadata`. We
+        accept either for backward compatibility.
+        """
+        return self.config.get("calibration") or self.config.get("calibration_metadata")
 
     # =========================================================================
     # fvs2py Integration
@@ -441,6 +446,17 @@ class FvsConfigLoader:
                 cal_val = calibrated_cats[cat_name][param_name]
 
                 if isinstance(default_val, list) and isinstance(cal_val, list):
+                    # Skip non numeric arrays (species code tables, flags, etc.)
+                    def _all_numeric(seq):
+                        return all(isinstance(e, (int, float)) and not isinstance(e, bool) for e in seq)
+                    if not (_all_numeric(default_val) and _all_numeric(cal_val)):
+                        continue
+                    # Skip arrays of different lengths (variant specific schema
+                    # differences; comparing element wise is not meaningful)
+                    if len(default_val) != len(cal_val):
+                        continue
+                    if len(default_val) == 0:
+                        continue
                     d_arr = np.array(default_val, dtype=np.float64)
                     c_arr = np.array(cal_val, dtype=np.float64)
 
@@ -500,8 +516,13 @@ class FvsConfigLoader:
         ]
 
         if meta:
-            lines.append(f"Calibration date: {meta.get('calibration_date', '?')}")
-            lines.append(f"Components: {', '.join(meta.get('components_updated', []))}")
+            # Accept both key conventions: newer posterior_to_json output
+            # writes `date`; earlier exports used `calibration_date`.
+            cal_date = meta.get("date") or meta.get("calibration_date") or "?"
+            components = meta.get("components_updated") or []
+            lines.append(f"Calibration date: {cal_date}")
+            if components:
+                lines.append(f"Components: {', '.join(components)}")
             lines.append("")
 
         lines.append(f"{'Parameter':<35} {'Default':>10} {'Calibrated':>10} {'Change':>10}")

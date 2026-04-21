@@ -117,17 +117,34 @@ This takes 10 to 20 minutes depending on your machine. The output will show each
 
 ## Step 7: Use calibrated parameters (optional)
 
-fvs-modern includes Bayesian calibrated parameters for all 25 variants, derived from FIA remeasurement data. To use them in a projection, reference the calibrated config:
+fvs-modern ships with Bayesian calibrated parameters for all 25 variants,
+derived from FIA remeasurement data. Point estimates live under
+`config/calibrated/<variant>.json` and full posterior draws live under
+`config/calibrated/<variant>_draws.json`:
 
 ```bash
-# Point estimates (median of posterior)
-ls config/calibrated/ne_calibrated.json
-
-# The calibration pipeline is in calibration/R/ (Stan models)
-# and calibration/python/ (FVS projection drivers)
+ls config/calibrated/ne.json config/calibrated/ne_draws.json
 ```
 
-See `CALIBRATION.md` for full details on the Bayesian pipeline.
+To drive a projection with the calibrated overlay from Python, pass
+`config_version="calibrated"` when constructing `FVS`:
+
+```python
+import sys; sys.path.insert(0, 'deployment/fvs2py')
+from fvs2py import FVS
+
+fvs = FVS('lib/FVSne.so', config_version='calibrated')
+fvs.set_cmdline('--keywordfile=my_stand.key')
+fvs.run()
+```
+
+The same switch is available on the REST API (`config_version` field on
+the `/run` POST body) and on the keyfile injection path for standalone
+FVS users. The calibration pipeline that produces these JSON files lives
+in `calibration/R/` (Stan models) and `calibration/python/` (projection
+drivers). See `CALIBRATION.md` for the full pipeline, the `custom`
+option for user supplied calibrations, and the uncertainty propagation
+workflow.
 
 ## Next steps
 

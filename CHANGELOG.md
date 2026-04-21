@@ -6,6 +6,41 @@ project adheres to calendar-based versioning (YYYY.MM).
 
 ## [Unreleased]
 
+### Fixed
+- `docs/getting_started.md` Step 7: corrected the calibrated config
+  filename from `config/calibrated/ne_calibrated.json` (does not exist)
+  to `config/calibrated/ne.json` and `config/calibrated/ne_draws.json`,
+  and added a working Python example showing how to load the calibrated
+  overlay via `FVS(..., config_version="calibrated")`.
+- `README.md` Bayesian calibration section: reconciled the component
+  count (six → seven) to match `CALIBRATION.md` and `CLAUDE.md`. The
+  seven components are diameter growth, height to diameter allometry,
+  height increment (six variants only), mortality, crown ratio change,
+  stand density, and the self thinning slope.
+- `CALIBRATION.md`: replaced hardcoded OSC username (`crsfaaron`) and
+  project code (`PUOM0008`) in the Cardinal example with `<OSC_USER>`
+  and `<OSC_PROJECT>` placeholders. The scripts already read paths from
+  environment variables; this change makes the user facing example
+  portable to other OSC users and other SLURM resources.
+- `config/config_loader.py` `FvsConfigLoader.compare()`: previously
+  crashed with `ValueError: could not convert string to float: 'NA'`
+  on most real calibrated variants because the helper tried to coerce
+  species code tables and sentinel strings to `float64`. Now skips non
+  numeric lists and mismatched length arrays with a conservative
+  fallback. Confirmed working on NE, AK, IE, CS, LS, CA, and SN.
+- `config/config_loader.py` `calibration_metadata` property and
+  `summary_table()`: posterior_to_json writes the metadata block under
+  `calibration` (with key `date`), but the helpers looked for
+  `calibration_metadata` and `calibration_date`, so neither the date
+  nor the component list rendered. Both now accept either key
+  convention.
+
+### Added
+- `CALIBRATION.md`: worked `compare_configs("ne")` sample output so
+  readers can see the shape of the comparison table without running it
+  first, and a note clarifying that `fvs.uncertainty_summary` is a
+  pandas DataFrame with a two level MultiIndex on the columns.
+
 ## [2026.04.7] — 2026-04-21
 
 ### Fixed
