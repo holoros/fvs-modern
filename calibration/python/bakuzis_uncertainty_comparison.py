@@ -63,9 +63,197 @@ from bakuzis_100yr_comparison import (  # noqa: E402
     DENSITY_CLASSES,
     KEYFILE_TEMPLATE,
     SITE_CLASSES,
-    SPECIES_GROUPS,
+    SPECIES_GROUPS as SPECIES_GROUPS_EAST,
     generate_synthetic_stand,
 )
+
+# Variant specific species groups. The eastern set (NE, ACD) uses the
+# original Spruce Fir / Northern Hardwood / Pine / Oak Pine mixes from
+# the point estimate Bakuzis runner. PN, SN, and IE use locally
+# appropriate species drawn from each variant's MAXSP table.
+
+SPECIES_GROUPS_PN = {
+    "Douglas-fir-Hemlock": {
+        "label": "Douglas-fir / Hemlock",
+        "species": [
+            {"spcd": 202, "pct": 55, "name": "Douglas-fir"},
+            {"spcd": 263, "pct": 25, "name": "Western hemlock"},
+            {"spcd": 17,  "pct": 12, "name": "Grand fir"},
+            {"spcd": 15,  "pct": 8,  "name": "White fir"},
+        ],
+        "site_species": 202,
+        "fortypcd": 201,
+    },
+    "Mixed-Conifer": {
+        "label": "Mixed Conifer",
+        "species": [
+            {"spcd": 15,  "pct": 30, "name": "White fir"},
+            {"spcd": 17,  "pct": 25, "name": "Grand fir"},
+            {"spcd": 202, "pct": 25, "name": "Douglas-fir"},
+            {"spcd": 263, "pct": 20, "name": "Western hemlock"},
+        ],
+        "site_species": 15,
+        "fortypcd": 270,
+    },
+    "Pine": {
+        "label": "Pacific Northwest Pine",
+        "species": [
+            {"spcd": 122, "pct": 55, "name": "Ponderosa pine"},
+            {"spcd": 108, "pct": 20, "name": "Lodgepole pine"},
+            {"spcd": 119, "pct": 15, "name": "Western white pine"},
+            {"spcd": 116, "pct": 10, "name": "Jeffrey pine"},
+        ],
+        "site_species": 122,
+        "fortypcd": 221,
+    },
+    "Spruce-Fir": {
+        "label": "Spruce-Fir (Pacific)",
+        "species": [
+            {"spcd": 98,  "pct": 40, "name": "Sitka spruce"},
+            {"spcd": 263, "pct": 30, "name": "Western hemlock"},
+            {"spcd": 19,  "pct": 20, "name": "Subalpine fir"},
+            {"spcd": 15,  "pct": 10, "name": "White fir"},
+        ],
+        "site_species": 98,
+        "fortypcd": 264,
+    },
+}
+
+SPECIES_GROUPS_SN = {
+    "Loblolly-Shortleaf": {
+        "label": "Loblolly-Shortleaf Pine",
+        "species": [
+            {"spcd": 131, "pct": 55, "name": "Loblolly pine"},
+            {"spcd": 110, "pct": 25, "name": "Shortleaf pine"},
+            {"spcd": 132, "pct": 15, "name": "Virginia pine"},
+            {"spcd": 316, "pct": 5,  "name": "Red maple"},
+        ],
+        "site_species": 131,
+        "fortypcd": 161,
+    },
+    "Longleaf-Slash": {
+        "label": "Longleaf-Slash Pine",
+        "species": [
+            {"spcd": 121, "pct": 50, "name": "Longleaf pine"},
+            {"spcd": 111, "pct": 30, "name": "Slash pine"},
+            {"spcd": 110, "pct": 15, "name": "Shortleaf pine"},
+            {"spcd": 131, "pct": 5,  "name": "Loblolly pine"},
+        ],
+        "site_species": 121,
+        "fortypcd": 141,
+    },
+    "Mixed-Pine-Hardwood": {
+        "label": "Mixed Pine-Hardwood",
+        "species": [
+            {"spcd": 131, "pct": 40, "name": "Loblolly pine"},
+            {"spcd": 316, "pct": 30, "name": "Red maple"},
+            {"spcd": 129, "pct": 20, "name": "Eastern white pine"},
+            {"spcd": 110, "pct": 10, "name": "Shortleaf pine"},
+        ],
+        "site_species": 131,
+        "fortypcd": 401,
+    },
+    "Bottomland-Hardwood": {
+        "label": "Bottomland Hardwood",
+        "species": [
+            {"spcd": 316, "pct": 35, "name": "Red maple"},
+            {"spcd": 311, "pct": 30, "name": "Florida maple"},
+            {"spcd": 313, "pct": 20, "name": "Boxelder"},
+            {"spcd": 221, "pct": 15, "name": "Baldcypress"},
+        ],
+        "site_species": 316,
+        "fortypcd": 601,
+    },
+}
+
+SPECIES_GROUPS_IE = {
+    "Douglas-fir-Mix": {
+        "label": "Douglas-fir Mix",
+        "species": [
+            {"spcd": 202, "pct": 50, "name": "Douglas-fir"},
+            {"spcd": 122, "pct": 25, "name": "Ponderosa pine"},
+            {"spcd": 119, "pct": 15, "name": "Western white pine"},
+            {"spcd": 17,  "pct": 10, "name": "Grand fir"},
+        ],
+        "site_species": 202,
+        "fortypcd": 201,
+    },
+    "Lodgepole-Subalpine": {
+        "label": "Lodgepole-Subalpine",
+        "species": [
+            {"spcd": 108, "pct": 50, "name": "Lodgepole pine"},
+            {"spcd": 19,  "pct": 30, "name": "Subalpine fir"},
+            {"spcd": 93,  "pct": 15, "name": "Engelmann spruce"},
+            {"spcd": 73,  "pct": 5,  "name": "Western larch"},
+        ],
+        "site_species": 108,
+        "fortypcd": 281,
+    },
+    "White-Pine-Larch": {
+        "label": "White Pine-Larch",
+        "species": [
+            {"spcd": 119, "pct": 40, "name": "Western white pine"},
+            {"spcd": 73,  "pct": 30, "name": "Western larch"},
+            {"spcd": 202, "pct": 20, "name": "Douglas-fir"},
+            {"spcd": 122, "pct": 10, "name": "Ponderosa pine"},
+        ],
+        "site_species": 119,
+        "fortypcd": 211,
+    },
+    "Ponderosa-Mixed": {
+        "label": "Ponderosa-Mixed",
+        "species": [
+            {"spcd": 122, "pct": 50, "name": "Ponderosa pine"},
+            {"spcd": 202, "pct": 25, "name": "Douglas-fir"},
+            {"spcd": 119, "pct": 15, "name": "Western white pine"},
+            {"spcd": 108, "pct": 10, "name": "Lodgepole pine"},
+        ],
+        "site_species": 122,
+        "fortypcd": 221,
+    },
+}
+
+
+def get_species_groups(variant: str) -> dict:
+    """Return the species group dictionary appropriate for the given variant."""
+    v = variant.lower()
+    if v in ("pn",):
+        return SPECIES_GROUPS_PN
+    if v in ("sn",):
+        return SPECIES_GROUPS_SN
+    if v in ("ie",):
+        return SPECIES_GROUPS_IE
+    # Default: eastern groups for NE, ACD, and any future eastern variants
+    return SPECIES_GROUPS_EAST
+
+
+# Variant specific stand location defaults. The synthetic stand
+# generator in bakuzis_100yr_comparison.py hardcodes Maine values
+# (region 9, state 23, county 19, lat 45, lon -69). Western and
+# Southern variants need region/state/lat/lon appropriate to their
+# coverage area or FVS rejects the stand on input.
+LOCATION_DEFAULTS = {
+    "ne":  dict(region=9, state=23, county=19, latitude=45.0,  longitude=-69.0),
+    "acd": dict(region=9, state=23, county=19, latitude=45.0,  longitude=-69.0),
+    "pn":  dict(region=6, state=41, county=51, latitude=44.5,  longitude=-122.5),  # Linn Co OR
+    "sn":  dict(region=8, state=1,  county=125, latitude=33.5,  longitude=-86.8),   # Tuscaloosa AL
+    "ie":  dict(region=1, state=16, county=49, latitude=46.5,  longitude=-115.5),  # Idaho County ID
+}
+
+
+def patch_stand_location(stand_df: pd.DataFrame, variant: str) -> pd.DataFrame:
+    """Override the hardcoded Maine location values with variant defaults."""
+    v = variant.lower()
+    loc = LOCATION_DEFAULTS.get(v, LOCATION_DEFAULTS["ne"])
+    df = stand_df.copy()
+    for k, val in loc.items():
+        if k in df.columns:
+            df[k] = val
+    return df
+
+
+# Backwards compatible alias so existing imports continue to work
+SPECIES_GROUPS = SPECIES_GROUPS_EAST
 
 # ---------------------------------------------------------------------------
 # Environment and path setup (no hardcoded Cardinal paths; all via env)
@@ -97,15 +285,19 @@ logger = logging.getLogger(__name__)
 # Scenario enumeration
 # ---------------------------------------------------------------------------
 
-def enumerate_scenarios() -> list[tuple[str, str, str, int]]:
+def enumerate_scenarios(species_groups: dict | None = None) -> list[tuple[str, str, str, int]]:
     """Return the full factorial of scenarios as (species, site, density, id).
 
     Scenario ids are 1 based and stable across batches so that SLURM
-    array jobs can address specific scenarios by id.
+    array jobs can address specific scenarios by id. Pass a variant
+    specific species_groups dict to enumerate scenarios for variants
+    other than NE/ACD; default uses the eastern groups.
     """
+    if species_groups is None:
+        species_groups = SPECIES_GROUPS_EAST
     scenarios = []
     scenario_id = 0
-    for sp_key in SPECIES_GROUPS:
+    for sp_key in species_groups:
         for site_key in SITE_CLASSES:
             for dens_key in DENSITY_CLASSES:
                 scenario_id += 1
@@ -150,12 +342,6 @@ def run_scenario(
             Ignored for 'default' and 'calibrated'.
     """
     with tempfile.TemporaryDirectory() as tmpdir:
-        db_path = os.path.join(tmpdir, "FVS_Data.db")
-        conn = sqlite3.connect(db_path)
-        stand_df.to_sql("fvs_standinit", conn, if_exists="replace", index=False)
-        tree_df.to_sql("fvs_treeinit", conn, if_exists="replace", index=False)
-        conn.close()
-
         # Build the calibration keyword block
         cal_keywords = ""
         if config_version == "calibrated":
@@ -172,11 +358,35 @@ def run_scenario(
         elif config_version == "posterior" and draw_keywords:
             cal_keywords = draw_keywords
 
-        keyfile_content = KEYFILE_TEMPLATE.format(
-            stand_id=stand_id,
-            db_path=db_path,
-            calibration_keywords=cal_keywords or "** DEFAULT PARAMETERS",
-        )
+        # Eastern variants (NE, ACD) use the original DATABASE/STANDSQL
+        # path that has been verified for them. Non-eastern variants
+        # use INVENTORY mode (STDINFO + TREEFMT + TREEDATA inline) to
+        # avoid the FVS_StandInit schema mismatch.
+        eastern_variants = ("ne", "acd")
+        if variant.lower() in eastern_variants:
+            db_path = os.path.join(tmpdir, "FVS_Data.db")
+            conn = sqlite3.connect(db_path)
+            stand_df.to_sql("fvs_standinit", conn, if_exists="replace", index=False)
+            tree_df.to_sql("fvs_treeinit", conn, if_exists="replace", index=False)
+            conn.close()
+
+            keyfile_content = KEYFILE_TEMPLATE.format(
+                stand_id=stand_id,
+                db_path=db_path,
+                calibration_keywords=cal_keywords or "** DEFAULT PARAMETERS",
+            )
+        else:
+            # INVENTORY mode for PN, SN, IE, and other non-eastern variants.
+            from inventory_keyfile import make_inventory_keyfile
+            keyfile_content = make_inventory_keyfile(
+                stand_df=stand_df,
+                tree_df=tree_df,
+                stand_id=stand_id,
+                variant=variant,
+                inv_year=int(stand_df.iloc[0].get("inv_year", 2000)),
+                num_cycles=20,
+                calibration_keywords=cal_keywords,
+            )
 
         keyfile_path = os.path.join(tmpdir, f"{variant}_{stand_id}.key")
         with open(keyfile_path, "w") as f:
@@ -232,11 +442,19 @@ def run_all(
     batch_id: int,
     batch_size: int,
     output_dir: str,
+    use_fia: bool = False,
+    fia_n_plots: int = 5,
 ) -> pd.DataFrame:
     """Run the full scenario x config x draw matrix for one variant.
 
-    Returns a long DataFrame with columns identifying scenario, config,
-    draw_id, and all FVS_Summary2 outputs.
+    When use_fia is True, real FIA stands are sampled from
+    fia_stand_generator instead of the synthetic generator. Each
+    Bakuzis cell yields up to fia_n_plots replicates so the BA bin
+    is genuinely represented rather than approximated by one
+    synthetic stand.
+
+    Returns a long DataFrame with columns identifying scenario,
+    config, draw_id, replicate, and all FVS_Summary2 outputs.
     """
     np.random.seed(seed)
 
@@ -278,13 +496,34 @@ def run_all(
             logger.warning(f"UncertaintyEngine setup failed for {variant}: {e}")
             engine = None
 
-    scenarios = slice_batch(enumerate_scenarios(), batch_id, batch_size)
+    species_groups = get_species_groups(variant)
+    scenarios = slice_batch(
+        enumerate_scenarios(species_groups), batch_id, batch_size
+    )
     logger.info(
         f"Variant {variant}: {len(scenarios)} scenarios "
-        f"(batch {batch_id} of size {batch_size})"
+        f"(batch {batch_id} of size {batch_size}) using "
+        f"{len(species_groups)} species groups"
     )
 
     all_rows = []
+
+    # Optional FIA generator setup
+    fia_generator = None
+    if use_fia:
+        try:
+            from fia_stand_generator import generate_real_stand
+            fia_generator = generate_real_stand
+            logger.info(
+                f"FIA mode enabled: sampling up to {fia_n_plots} real "
+                f"stands per cell for variant {variant}"
+            )
+        except Exception as e:
+            logger.error(
+                f"--use-fia requested but fia_stand_generator import failed: {e}. "
+                "Falling back to synthetic generator."
+            )
+            fia_generator = None
 
     for sp_key, site_key, dens_key, scenario_num in scenarios:
         stand_id = f"BK{scenario_num:02d}"
@@ -292,47 +531,61 @@ def run_all(
             f"  Scenario {scenario_num}: {sp_key} / {site_key} / {dens_key}"
         )
 
-        stand_df, tree_df = generate_synthetic_stand(
-            SPECIES_GROUPS[sp_key],
-            SITE_CLASSES[site_key],
-            DENSITY_CLASSES[dens_key],
-            stand_id,
-            variant,
-        )
-
-        # -- Default and calibrated MAP --------------------------------------
-        for config_label, config_version in [
-            ("default", "default"),
-            ("calibrated_map", "calibrated"),
-        ]:
+        # Choose generator: FIA (real plots) or synthetic
+        scenario_stands: list[tuple] = []
+        if fia_generator is not None:
             try:
-                summary = run_scenario(
-                    stand_df, tree_df, stand_id, variant, config_version,
+                fia_stands = fia_generator(
+                    variant=variant,
+                    site_class=site_key,
+                    density_class=dens_key,
+                    n_plots=fia_n_plots,
+                    seed=seed + scenario_num,
                 )
-                if summary is not None and not summary.empty:
-                    summary = summary.copy()
-                    summary["species_group"] = sp_key
-                    summary["site_class"] = site_key
-                    summary["density_class"] = dens_key
-                    summary["variant"] = variant.upper()
-                    summary["config"] = config_label
-                    summary["draw_id"] = np.nan
-                    summary["scenario"] = scenario_num
-                    all_rows.append(summary)
-            except Exception as e:
-                logger.error(f"    {config_label} failed: {e}")
-
-        # -- Posterior draws -------------------------------------------------
-        if engine is not None and default_config is not None:
-            for i, draw_idx in enumerate(draw_indices):
-                try:
-                    draw = engine.get_draw(int(draw_idx))
-                    draw_kw = engine.generate_keywords_for_draw(
-                        draw, default_config, draw_idx=int(draw_idx),
+                # Returns list of (stand_df, tree_df, cond_row); attach BK id
+                for rep_idx, (sdf, tdf, _row) in enumerate(fia_stands, start=1):
+                    rep_stand_id = f"{stand_id}R{rep_idx}"
+                    sdf = sdf.copy()
+                    sdf["stand_id"] = rep_stand_id
+                    tdf = tdf.copy()
+                    tdf["stand_id"] = rep_stand_id
+                    scenario_stands.append((rep_stand_id, sdf, tdf, rep_idx))
+                if not scenario_stands:
+                    logger.warning(
+                        f"    No FIA plots match {sp_key}/{site_key}/{dens_key}; "
+                        "skipping this scenario."
                     )
+                    continue
+                logger.info(f"    sampled {len(scenario_stands)} real FIA stands")
+            except Exception as e:
+                logger.error(f"    FIA sampling failed: {e}; using synthetic")
+                fia_generator = None
+
+        if not scenario_stands:
+            # Synthetic single-stand fallback (no FIA mode or no FIA matches)
+            stand_df, tree_df = generate_synthetic_stand(
+                species_groups[sp_key],
+                SITE_CLASSES[site_key],
+                DENSITY_CLASSES[dens_key],
+                stand_id,
+                variant,
+            )
+            # Override hardcoded Maine location values with variant defaults
+            # so FVS-PN/SN/IE accepts the stand instead of rejecting it.
+            stand_df = patch_stand_location(stand_df, variant)
+            scenario_stands = [(stand_id, stand_df, tree_df, 1)]
+
+        # Iterate over each stand replicate (1 for synthetic, up to fia_n_plots
+        # for FIA mode) and run default + calibrated MAP + posterior draws.
+        for rep_stand_id, stand_df, tree_df, rep_idx in scenario_stands:
+            # -- Default and calibrated MAP ----------------------------------
+            for config_label, config_version in [
+                ("default", "default"),
+                ("calibrated_map", "calibrated"),
+            ]:
+                try:
                     summary = run_scenario(
-                        stand_df, tree_df, stand_id, variant,
-                        "posterior", draw_keywords=draw_kw,
+                        stand_df, tree_df, rep_stand_id, variant, config_version,
                     )
                     if summary is not None and not summary.empty:
                         summary = summary.copy()
@@ -340,16 +593,46 @@ def run_all(
                         summary["site_class"] = site_key
                         summary["density_class"] = dens_key
                         summary["variant"] = variant.upper()
-                        summary["config"] = "posterior"
-                        summary["draw_id"] = int(draw_idx)
+                        summary["config"] = config_label
+                        summary["draw_id"] = np.nan
                         summary["scenario"] = scenario_num
+                        summary["replicate"] = rep_idx
                         all_rows.append(summary)
                 except Exception as e:
-                    logger.error(f"    draw {draw_idx} failed: {e}")
+                    logger.error(f"    {config_label} rep {rep_idx} failed: {e}")
 
-                # Progress log every 10 draws
-                if (i + 1) % 10 == 0:
-                    logger.info(f"    draws done: {i + 1}/{len(draw_indices)}")
+            # -- Posterior draws --------------------------------------------
+            if engine is not None and default_config is not None:
+                for i, draw_idx in enumerate(draw_indices):
+                    try:
+                        draw = engine.get_draw(int(draw_idx))
+                        draw_kw = engine.generate_keywords_for_draw(
+                            draw, default_config, draw_idx=int(draw_idx),
+                        )
+                        summary = run_scenario(
+                            stand_df, tree_df, rep_stand_id, variant,
+                            "posterior", draw_keywords=draw_kw,
+                        )
+                        if summary is not None and not summary.empty:
+                            summary = summary.copy()
+                            summary["species_group"] = sp_key
+                            summary["site_class"] = site_key
+                            summary["density_class"] = dens_key
+                            summary["variant"] = variant.upper()
+                            summary["config"] = "posterior"
+                            summary["draw_id"] = int(draw_idx)
+                            summary["scenario"] = scenario_num
+                            summary["replicate"] = rep_idx
+                            all_rows.append(summary)
+                    except Exception as e:
+                        logger.error(f"    draw {draw_idx} rep {rep_idx} failed: {e}")
+
+                    # Progress log every 10 draws
+                    if (i + 1) % 10 == 0:
+                        logger.info(
+                            f"    rep {rep_idx} draws done: "
+                            f"{i + 1}/{len(draw_indices)}"
+                        )
 
     if not all_rows:
         return pd.DataFrame()
@@ -391,6 +674,14 @@ def main():
         help="Scenarios per batch (0 means all 36)",
     )
     parser.add_argument("--output-dir", type=str, default=OUTPUT_DIR)
+    parser.add_argument(
+        "--use-fia", action="store_true",
+        help="Use real FIA stands (fia_stand_generator) instead of synthetic"
+    )
+    parser.add_argument(
+        "--fia-n-plots", type=int, default=5,
+        help="Number of real FIA plots to sample per Bakuzis cell"
+    )
     args = parser.parse_args()
 
     variants = ["ne", "acd"] if args.all_variants else [args.variant]
@@ -408,6 +699,8 @@ def main():
             batch_id=args.batch_id,
             batch_size=args.batch_size,
             output_dir=args.output_dir,
+            use_fia=args.use_fia,
+            fia_n_plots=args.fia_n_plots,
         )
         total_rows += len(df)
 
