@@ -232,6 +232,13 @@ lib/
 # PERSEUS uncertainty run outputs (large CSVs, reproducible from code)
 calibration/output/perseus/
 calibration/output/bakuzis/
+# Aggregated Bakuzis summary tables are committed via `git add -f` so
+# reviewers can regenerate figures without re-running the Cardinal
+# pipeline. Negation rules cannot re-include files from an ignored
+# directory; force-add the three summary CSVs explicitly:
+#   bakuzis_uncertainty_summary_long.csv
+#   bakuzis_benchmark_wide.csv
+#   bakuzis_laws_compliance.csv
 
 # Slide decks (not part of the software distribution)
 calibration/slides/*.pptx

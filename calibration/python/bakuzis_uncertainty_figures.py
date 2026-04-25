@@ -56,10 +56,13 @@ def add_horizon(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def plot_trajectory_bands(summary: pd.DataFrame, outpath: str) -> None:
-    ba = summary.loc[summary["variable"] == "atba"].copy()
+def plot_trajectory_bands(summary: pd.DataFrame, outpath: str,
+                           variant: str = "NE") -> None:
+    ba = summary.loc[
+        (summary["variable"] == "atba") & (summary["variant"] == variant)
+    ].copy()
     if ba.empty:
-        logger.warning("No atba rows in summary; skipping trajectory figure")
+        logger.warning(f"No atba rows for variant {variant}; skipping trajectory figure")
         return
 
     fig, axes = plt.subplots(
@@ -121,7 +124,7 @@ def plot_trajectory_bands(summary: pd.DataFrame, outpath: str) -> None:
         frameon=False, fontsize=10, bbox_to_anchor=(0.5, -0.01),
     )
     fig.suptitle(
-        "Bakuzis matrix: 100 year BA trajectories with parametric uncertainty\n"
+        f"Bakuzis matrix ({variant}): 100 year BA trajectories with parametric uncertainty\n"
         "Ribbon is 95 percent posterior credible band around the calibrated median",
         fontsize=12, y=0.99,
     )
@@ -131,10 +134,13 @@ def plot_trajectory_bands(summary: pd.DataFrame, outpath: str) -> None:
     logger.info(f"Wrote {outpath}")
 
 
-def plot_divergence(benchmark: pd.DataFrame, outpath: str) -> None:
-    ba = benchmark.loc[benchmark["variable"] == "atba"].copy()
+def plot_divergence(benchmark: pd.DataFrame, outpath: str,
+                     variant: str = "NE") -> None:
+    ba = benchmark.loc[
+        (benchmark["variable"] == "atba") & (benchmark["variant"] == variant)
+    ].copy()
     if ba.empty or "def_median_y100" not in ba.columns:
-        logger.warning("Benchmark table missing y100 columns; skipping divergence")
+        logger.warning(f"Benchmark table missing y100 for {variant}; skipping divergence")
         return
     ba["band_pct"] = (
         100
@@ -164,7 +170,7 @@ def plot_divergence(benchmark: pd.DataFrame, outpath: str) -> None:
     ax.set_xlabel("Default BA at year 100 (ft²/ac)")
     ax.set_ylabel("Calibrated posterior median minus default (% of default)")
     ax.set_title(
-        "Year 100 BA divergence with posterior band width as marker size"
+        f"Year 100 BA divergence ({variant}) with posterior band width as marker size"
     )
     ax.grid(alpha=0.3)
 
@@ -245,12 +251,15 @@ def plot_laws(laws: pd.DataFrame, outpath: str) -> None:
     logger.info(f"Wrote {outpath}")
 
 
-def plot_band_growth(summary: pd.DataFrame, outpath: str) -> None:
+def plot_band_growth(summary: pd.DataFrame, outpath: str,
+                      variant: str = "NE") -> None:
     ba = summary.loc[
-        (summary["variable"] == "atba") & (summary["config"] == "posterior_band")
+        (summary["variable"] == "atba")
+        & (summary["config"] == "posterior_band")
+        & (summary["variant"] == variant)
     ].copy()
     if ba.empty:
-        logger.warning("No posterior rows; skipping band growth figure")
+        logger.warning(f"No posterior rows for variant {variant}; skipping band growth")
         return
     ba = add_horizon(ba)
     ba["band_pct"] = 100 * (ba["q975"] - ba["q025"]) / ba["median"].replace(0, np.nan)
@@ -277,7 +286,7 @@ def plot_band_growth(summary: pd.DataFrame, outpath: str) -> None:
     axes[0, 1].legend(handles=site_handles, loc="upper left",
                       fontsize=9, frameon=False)
     fig.suptitle(
-        "Posterior uncertainty growth with projection horizon",
+        f"Posterior uncertainty growth with projection horizon ({variant})",
         fontsize=13, y=0.99,
     )
     fig.tight_layout(rect=[0, 0, 1, 0.96])
