@@ -319,18 +319,34 @@ def main():
 
     summary = pd.read_csv(args.summary)
     summary = add_horizon(summary)
-    plot_trajectory_bands(
-        summary, os.path.join(args.outdir, "fig_bakuzis_trajectories.png")
-    )
-    plot_band_growth(
-        summary, os.path.join(args.outdir, "fig_bakuzis_band_growth.png")
-    )
+
+    # Render per-variant trajectory and band-growth figures for every
+    # variant present in the summary. Filenames carry the variant
+    # suffix; the historical NE-only filename is preserved by also
+    # writing the NE outputs without a suffix.
+    variants_present = sorted(summary["variant"].dropna().unique())
+    for v in variants_present:
+        suffix = "" if v.upper() == "NE" else f"_{v.lower()}"
+        plot_trajectory_bands(
+            summary,
+            os.path.join(args.outdir, f"fig_bakuzis_trajectories{suffix}.png"),
+            variant=v,
+        )
+        plot_band_growth(
+            summary,
+            os.path.join(args.outdir, f"fig_bakuzis_band_growth{suffix}.png"),
+            variant=v,
+        )
 
     if os.path.exists(args.bench):
         bench = pd.read_csv(args.bench)
-        plot_divergence(
-            bench, os.path.join(args.outdir, "fig_bakuzis_divergence.png")
-        )
+        for v in variants_present:
+            suffix = "" if v.upper() == "NE" else f"_{v.lower()}"
+            plot_divergence(
+                bench,
+                os.path.join(args.outdir, f"fig_bakuzis_divergence{suffix}.png"),
+                variant=v,
+            )
     if os.path.exists(args.laws):
         laws = pd.read_csv(args.laws)
         plot_laws(laws, os.path.join(args.outdir, "fig_bakuzis_laws.png"))

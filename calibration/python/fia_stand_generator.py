@@ -190,10 +190,16 @@ def build_stand_init(
     Schema matches the existing synthetic generator so the bakuzis
     runner can swap generators without changing downstream code.
     """
+    # Override inv_year to a fixed canonical baseline (2000) so that
+    # all sampled plots project from the same calendar starting point.
+    # Without this, plots with different FIA INVYRs would yield
+    # trajectories that overlap on different calendar-year bins,
+    # causing the aggregator's groupby on year to mix plots at
+    # different horizons and produce sawtooth-shaped means.
     return pd.DataFrame([{
         "stand_id": stand_id,
         "variant": variant.upper(),
-        "inv_year": int(cond_row.get("INVYR", 2000)),
+        "inv_year": 2000,
         "latitude": 0.0,            # FIA coordinates are perturbed; leave 0
         "longitude": 0.0,
         "region": _variant_region(variant),

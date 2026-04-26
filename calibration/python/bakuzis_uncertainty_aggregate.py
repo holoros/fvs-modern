@@ -70,11 +70,14 @@ def load_ensemble(paths: Iterable[str]) -> pd.DataFrame:
     if not frames:
         return pd.DataFrame()
     df = pd.concat(frames, ignore_index=True)
-    # Keep only variables we understand
+    # Keep only variables we understand. The "replicate" column is
+    # present when the runner used FIA mode (one row per real plot per
+    # config-draw); it is absent in synthetic mode. Either way we
+    # preserve it so summarize_ensemble can pool across replicates.
     vars_present = [v for v in CORE_VARS if v in df.columns]
     keep = [
         "year", "scenario", "species_group", "site_class", "density_class",
-        "variant", "config", "draw_id",
+        "variant", "config", "draw_id", "replicate",
     ] + vars_present
     keep = [c for c in keep if c in df.columns]
     return df[keep].copy()
@@ -93,45 +96,89 @@ def resolve_inputs(args) -> list[str]:
 # ---------------------------------------------------------------------------
 
 def summarize_ensemble(df: pd.DataFrame, quantiles: list[float]) -> pd.DataFrame:
-    """Collapse posterior draws into quantile bands.
+    """Collapse posterior draws (and FIA replicates) into quantile bands.
 
-    Default and calibrated_map rows carry through unchanged (one value
-    per scenario x year). Posterior rows are summarized across draw_id
-    to produce median and credible bands per scenario x year.
+    Default and calibrated_map rows are aggregated across FIA replicates
+    so each cell yields a single median (and SD across replicates,
+    capturing within-cell stand-to-stand variability). Posterior rows
+    are summarized across the cross product of draw_id and replicate
+    so the credible band reflects both parameter and stand uncertainty.
+
+    In synthetic-stand mode (no replicate column) behavior is unchanged
+    because there is exactly one stand per cell.
     """
     vars_present = [v for v in CORE_VARS if v in df.columns]
     if not vars_present:
         return pd.DataFrame()
 
-    # Default and calibrated MAP: pass through as point estimates with
-    # NaN band widths.
-    point_mask = df["config"].isin(["default", "calibrated_map"])
-    point = df.loc[point_mask].copy()
-    point_long = point.melt(
-        id_vars=[
-            "year", "scenario", "species_group", "site_class", "density_class",
-            "variant", "config",
-        ],
-        value_vars=vars_present,
-        var_name="variable",
-        value_name="median",
+    has_replicate = "replicate" in df.columns
+    n_replicates = (
+        int(df["replicate"].nunique()) if has_replicate else 1
     )
-    for q in quantiles:
-        point_long[f"q{int(round(q * 1000)):03d}"] = point_long["median"]
-    point_long["mean"] = point_long["median"]
-    point_long["sd"] = 0.0
-    point_long["n_draws"] = 1
 
-    # Posterior band: group across draws
-    post_mask = df["config"] == "posterior"
-    post = df.loc[post_mask].copy()
-    if post.empty:
-        return point_long
+    # When replicate is present, FIA-sampled plots may carry different
+    # FIA INVYRs, so the calendar `year` column is misaligned across
+    # replicates. Compute a horizon (years since each replicate's own
+    # start) and aggregate on that, then convert horizon back to a
+    # canonical calendar year (2000 + horizon) so downstream figures
+    # and benchmark tables continue to work without modification.
+    df = df.copy()
+    if has_replicate:
+        plot_keys = ["variant", "scenario", "replicate", "config", "draw_id"]
+        df["horizon_yr"] = (
+            df["year"]
+            - df.groupby(plot_keys, dropna=False)["year"].transform("min")
+        )
+        # Quantize horizon to the nearest 5-year cycle so small
+        # within-cycle differences across plots merge cleanly.
+        df["horizon_yr"] = (df["horizon_yr"] / 5).round().astype(int) * 5
+        df["year"] = 2000 + df["horizon_yr"]
 
     group_cols = [
         "year", "scenario", "species_group", "site_class", "density_class",
         "variant",
     ]
+
+    # Default and calibrated MAP: aggregate across replicates so each
+    # cell-year gets a single point estimate plus an SD across plots.
+    point_mask = df["config"].isin(["default", "calibrated_map"])
+    point = df.loc[point_mask].copy()
+    pieces_point = []
+    for var in vars_present:
+        for cfg, sub in point.groupby("config"):
+            tmp = sub.groupby(group_cols, dropna=False, as_index=False).agg(
+                median=(var, lambda s: float(np.nanmedian(s))),
+                mean=(var, "mean"),
+                sd=(var, "std"),
+                n_draws=(var, "count"),
+            )
+            for q in quantiles:
+                tmp[f"q{int(round(q * 1000)):03d}"] = (
+                    sub.groupby(group_cols, dropna=False)[var]
+                    .quantile(q)
+                    .reset_index(drop=True)
+                    .values
+                )
+            tmp["variable"] = var
+            tmp["config"] = cfg
+            # Preserve old contract: SD of point configs is across
+            # replicates only (not across draws). Replace NaN with 0
+            # for synthetic mode where n=1.
+            tmp["sd"] = tmp["sd"].fillna(0.0)
+            pieces_point.append(tmp)
+    point_long = (
+        pd.concat(pieces_point, ignore_index=True)
+        if pieces_point
+        else pd.DataFrame()
+    )
+
+    # Posterior band: pool across draws AND replicates so the band
+    # captures both parameter and stand-to-stand uncertainty.
+    post_mask = df["config"] == "posterior"
+    post = df.loc[post_mask].copy()
+    if post.empty:
+        return point_long
+
     pieces = []
     for var in vars_present:
         tmp = post.groupby(group_cols, dropna=False, as_index=False).agg(
@@ -153,6 +200,7 @@ def summarize_ensemble(df: pd.DataFrame, quantiles: list[float]) -> pd.DataFrame
 
     post_long = pd.concat(pieces, ignore_index=True)
     out = pd.concat([point_long, post_long], ignore_index=True, sort=False)
+    out.attrs["n_replicates"] = n_replicates
     return out
 
 

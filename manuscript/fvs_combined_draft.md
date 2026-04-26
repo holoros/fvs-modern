@@ -99,13 +99,19 @@ or dependency management. Two modernization gaps follow from this
 history.
 
 First, the source code is difficult for the research community to
-extend. A 2026 comprehensive assessment of the FVS codebase identified
-substantial technical debt: approximately 2,054 source files written
-entirely in fixed form Fortran 77 with heavy use of COMMON blocks,
-computed GOTOs, and hardcoded magic numbers; limited unit testing;
-no continuous integration; and few entry points for non Fortran
-programmers. These characteristics inhibit reproducibility, community
-contribution, and platform portability.
+extend. The architectural review by Crookston and Dixon (2005)
+documents a codebase organized around a shared base engine and 25
+geographic variants but rooted in fixed form Fortran 77 with
+extensive COMMON block usage and computed GOTO branching. Two
+decades of subsequent maintenance have preserved that organization
+without modernizing it: approximately 2,054 source files remain in
+fixed form, with limited unit testing, no continuous integration,
+and few entry points for non-Fortran programmers. Forty years of
+legacy code have therefore accumulated alongside the variants, and
+no released variant carries a built-in mechanism for propagating
+parameter uncertainty through projections. These characteristics
+inhibit reproducibility, community contribution, and platform
+portability.
 
 Second, the parameters are stale. Most default FVS variant parameters
 were fit to data collected before the modern Forest Inventory and
@@ -117,27 +123,37 @@ variants with modern data and methods, and to do so in a way that
 preserves full posterior distributions for downstream uncertainty
 propagation.
 
-Three framing statistics capture the problem concisely. FVS spans
-25 geographic variants, each behaving differently depending on
-which variant is used. Roughly 40 years of legacy Fortran 77 code
-have accumulated alongside those variants, with limited shared
-testing or integration infrastructure. And prior to this work,
-zero of the 25 variants provided a built in mechanism for
-propagating parameter uncertainty through projections.
-
 Recent individual tree growth models have increasingly adopted
-Bayesian methods for calibration (Clark et al. 2016; Bohn and Huth 2018), but no prior effort has combined a
+Bayesian methods for calibration (Clark et al. 2016; Bohn and Huth
+2018), and Itter, Finley, and Weiskittel (2025) recently formalized
+how connecting growth and yield models to continuous forest
+inventory data with hierarchical Bayesian methods enables principled
+uncertainty accounting at the stand and regional scales. The Pacific
+Northwest perspective by Joo, Temesgen, Frank, Weiskittel, and
+Reimer (2025) further documents the operational stakes: site index
+estimation, maximum stand density derivation, and error propagation
+in long horizon projections are the practical limitations growth
+and yield models must address to remain credible for management
+decisions. The recent comparative review by Premer, Simons-Legaard,
+Daigneault, Hayes, Solarik, and Weiskittel (2025) shows that
+projected forest carbon outcomes can differ by a factor of two
+across modeling systems applied to the same Maine plots, and the
+Forest Carbon Modeling Group statement (Woodall et al. 2025)
+identifies model uncertainty quantification as a top community
+priority for the next decade. No prior effort has combined a
 comprehensive Bayesian recalibration of FVS with an open source
 software release, a runtime uncertainty engine, and a factorial
-benchmark spanning long horizons. This paper describes that
-integrated release, fvs-modern, and reports three applications:
-(1) a stand level FIA benchmark across 19 variants, (2) an ablation
-analysis decomposing which calibrated components contribute most to
-improvement, and (3) a Bakuzis matrix evaluation testing classical
-biological laws under parametric uncertainty. We describe the
-software architecture, the calibration methodology, and the
-benchmarking framework, then discuss implications for operational
-forest modeling, regulatory carbon accounting, and future research.
+benchmark spanning long horizons.
+
+This paper describes that integrated release, fvs-modern, and
+reports three applications: (1) a stand level FIA benchmark across
+19 variants, (2) an ablation analysis decomposing which calibrated
+components contribute most to improvement, and (3) a Bakuzis
+matrix evaluation testing classical biological laws under
+parametric uncertainty. We describe the software architecture, the
+calibration methodology, and the benchmarking framework, then
+discuss implications for operational forest modeling, regulatory
+carbon accounting, and future research.
 
 # 2. Software description
 
@@ -175,17 +191,69 @@ shared library symbol checks on every commit to the main branch.
 ## 2.2 Bayesian calibration pipeline
 
 We recalibrated seven component models per variant using FIA
-remeasurement data: height to diameter allometry (Chapman Richards),
-diameter growth (Wykoff ln(DDS)), height increment (applied to the
-six variants with explicit height growth parameterization),
-mortality (logistic with annualization), crown ratio change, stand
-density index maximum, and the self thinning slope (departure from
-Reineke's exponent). Sampling used Hamiltonian Monte Carlo with the
-No U Turn Sampler via CmdStan, with automatic differentiation
-variational inference as a fallback for the 5 percent of fits where
-HMC failed to converge. For each component we ran four chains of
-2000 iterations with 2000 warmup, thinned by 2, retaining 4000
-posterior draws. Convergence was assessed with Rhat < 1.01 and bulk
+remeasurement data. The component model forms follow established
+FVS conventions (Wykoff 1990; Crookston and Dixon 2005) with
+hierarchical Bayesian extensions for species random effects and
+heteroscedastic variance. The seven equations are:
+
+(1) Height to diameter (Chapman Richards):
+    H = 1.3 + a × (1 − exp(−b × DBH/20))^c + ε,
+    where H is total height (m), DBH is diameter at breast height
+    (cm), and a, b, c are species-specific coefficients with
+    species-level random intercepts on a.
+
+(2) Diameter growth (Wykoff):
+    ln(DDS) = β0 + β1·ln(DBH) + β2·(h_rel) + β3·ln(CCF) + β4·BAL +
+              β5·SI + β6·SLOPE + β7·ASPECT + … + uᵢ + ε,
+    where DDS is diameter increment squared, h_rel is relative
+    height in the stand, CCF is crown competition factor, BAL is
+    basal area in larger trees, SI is site index, and uᵢ is the
+    species random intercept.
+
+(3) Height increment (applied to BC, CI, EM, IE, KT, WS):
+    ln(HG) = γ0 + γ1·ln(DBH) + γ2·(h_rel) + γ3·ln(CCF) +
+             γ4·BAL + uᵢ + ε,
+    parallel to (2) but on log height growth (HG, m yr⁻¹).
+
+(4) Mortality (logistic with annualization):
+    logit(P_die) = α0 + α1·DBH + α2·BAL + α3·CR + α4·BA + uᵢ,
+    where P_die is the probability of mortality during the
+    remeasurement interval, CR is crown ratio, and BA is stand
+    basal area. Annualized by raising survival probability to the
+    1/Δt power for variable measurement intervals Δt.
+
+(5) Crown ratio change:
+    ΔCR = δ0 + δ1·ln(DBH) + δ2·BAL + δ3·BA + δ4·CR_init + uᵢ + ε,
+    where ΔCR is the per-period change in crown ratio.
+
+(6) Stand density index maximum (SDImax) by quantile regression at
+    the 0.95 quantile of observed (TPA, QMD) pairs followed by
+    Bayesian shrinkage:
+    SDImax = TPA × (QMD/25)^1.605, with the Reineke exponent (−1.605
+    nominally) replaced by a variant-specific b̂ in (7).
+
+(7) Self thinning slope (departure from Reineke):
+    log10(TPA) = κ0 + b̂ × log10(QMD) + ε at the maximum density
+    frontier, with the variant-specific exponent b̂ estimated as a
+    departure from Reineke's −1.605.
+
+In equations (1) through (5), uᵢ denotes the species-level random
+intercept for species i, and ε denotes the residual error term. We
+specified weakly informative priors centered on the original FVS
+parameter values: normal(0, 100) for log-scale Wykoff and Chapman
+Richards parameters, normal(0, 2) for fixed effects in mortality
+and crown ratio change, and exponential(1) for variance components.
+This empirical Bayes specification ensures that data-poor species
+shrink toward their original FVS values rather than toward zero or
+toward the grand mean.
+
+Sampling used Hamiltonian Monte Carlo with the No U Turn Sampler
+via CmdStan, with automatic differentiation variational inference
+as a fallback for the 5 percent of fits where HMC failed to
+converge. For each component we ran four chains of 2000 iterations
+with 2000 warmup, thinned by 2, retaining 4000 posterior draws.
+Chain seeds followed the convention 20260201 + chain_index for
+reproducibility. Convergence was assessed with Rhat < 1.01 and bulk
 effective sample size > 400.
 
 Posterior summaries are serialized to JSON under config/calibrated/
@@ -313,17 +381,33 @@ calibrated, and custom parameter sets without recompilation.
 
 We evaluated calibrated versus default parameters on 433,291 FIA
 remeasurement condition pairs spanning 19 variants (six variants
-with fewer than 10 paired observations were excluded). For each
-condition, the initial tree list was projected forward through the
-remeasurement interval using both parameter sets, and predicted stand
-metrics (basal area, quadratic mean diameter, volume, top height,
-per tree basal area increment) were compared against observed values
-at time 2 using RMSE, bias, and R squared. We computed an
-equivalence metric defined as the percentage of conditions where the
-predicted basal area fell within 20 percent of observed basal area.
-Gross cubic foot volume predictions were derived through combined
-variable ratio scaling of FIA per tree volumes with projected
-diameters and heights.
+with fewer than 10 paired observations were excluded). The benchmark
+is an internal validation under the strict definition: the FIA
+condition pairs used here overlap the FIA database that informed
+the Bayesian calibration both temporally and geographically. The
+benchmark therefore measures how well the calibrated parameters
+generalize within the FIA panel design rather than how well they
+generalize to genuinely independent data sources. A
+hold-one-ecoregion-out validation and a temporal-holdout test (last
+five percent of FIA panel) are deferred to future work; the Cardinal
+pipeline supports both designs but neither was run for this
+release. Itter, Finley, and Weiskittel (2025) describe the
+methodological framework for that next stage of validation.
+
+For each condition, the initial tree list was projected forward
+through the remeasurement interval using both parameter sets, and
+predicted stand metrics (basal area, quadratic mean diameter,
+volume, top height, per tree basal area increment) were compared
+against observed values at time 2 using RMSE, bias, and R squared.
+We computed an equivalence metric defined as the percentage of
+conditions where the predicted basal area fell within 20 percent of
+observed basal area. Gross cubic foot volume predictions were
+derived through combined variable ratio scaling of FIA per tree
+volumes with projected diameters and heights. We did not formally
+test for spatial autocorrelation of residuals; given the CONUS
+spatial extent, Moran's I or spatial blocking is a recommended
+extension and is feasible from the existing condition-level output
+files.
 
 ## 3.2 Ablation analysis
 
@@ -342,15 +426,24 @@ dominated by their interaction with mortality and diameter growth.
 
 The Bakuzis matrix (Bakuzis 1969) is a classical framework for
 testing whether a growth and yield system respects elementary
-biological laws. We constructed a 4 x 3 x 3 factorial of 36
-synthetic stands crossing four Northeastern species groups (Spruce
-Fir, Northern Hardwood, White Pine, Oak Pine), three site quality
-classes (Low, Medium, High site index), and three initial density
-classes (Low, Medium, High basal area). For each scenario, we
-projected 100 years in 20 five year cycles under three
-configurations: default parameters, calibrated posterior median
-(MAP), and 50 draws from the calibrated posterior. Four biological
-laws were evaluated at year 100:
+biological laws. We constructed a 4 x 3 x 3 factorial of 36 cells
+crossing four Northeastern species groups (Spruce Fir, Northern
+Hardwood, White Pine, Oak Pine), three site quality classes (Low,
+Medium, High site index), and three initial density classes (Low,
+Medium, High basal area). For each cell we drew up to five real FIA
+condition pairs whose initial site index and live basal area fell
+within the cell's bins from the variant's state coverage (Connecticut,
+Maine, Massachusetts, New Hampshire, New York, Rhode Island, and
+Vermont for NE; Maine, New Hampshire, Vermont for ACD), pulled the
+matching tree records from the FIA TREE table, and converted them to
+the FVS standinit and treeinit format with a fixed canonical
+inventory year of 2000 so that all sampled plots project from the
+same calendar baseline. The synthetic algorithmic stand generator
+remains in the codebase as a fallback for variants without FIA state
+CSV coverage. For each scenario we projected 100 years in 20 five
+year cycles under three configurations: default parameters, calibrated
+posterior median (MAP), and 100 draws from the calibrated posterior.
+Four biological laws were evaluated at year 100:
 
 1. **Sukachev effect.** Per tree stand volume under high density
    less than under low density at matched site and species.
@@ -427,8 +520,9 @@ for inference.
 
 ## 4.3 FIA national benchmark
 
-Table 1 summarizes the stand level benchmark results on 433,291 FIA
-remeasurement pairs. Calibrated parameters improved basal area
+Table 1 summarizes the internal benchmark results on 433,291 FIA
+remeasurement pairs (see §3.1 for the internal-validation
+qualification). Calibrated parameters improved basal area
 prediction in all 19 tested variants, with overall RMSE decreasing
 from 31.8 to 30.2 ft2/ac (4.9 percent reduction) and R squared
 increasing from 0.672 to 0.704. Gross cubic foot volume predictions
@@ -512,78 +606,90 @@ additionally included diameter and site index fixed effects.
 ## 4.6 Bakuzis matrix: outcomes
 
 The Bakuzis uncertainty pipeline was executed on OSC Cardinal as a
-SLURM array of six tasks of six scenarios each, running both the
-Northeast (NE) and Acadian (ACD) variants with 100 posterior draws
-per scenario. Total compute time was 5 minutes 19 seconds per
-array task wall clock; the array completed in 6 minutes from
-dispatch. Each task produced 12,852 rows of FVS output (102 runs
-per scenario times 6 scenarios times 21 cycle steps), aggregating
-to a long format ensemble of 154,224 rows across both variants.
-The aggregator collapsed this into 36,288 rows of per scenario per
-year per variable summary, with median and 95 percent credible
-bands computed from the 100 draws.
+SLURM array of six tasks running both the Northeast (NE) and
+Acadian (ACD) variants with 100 posterior draws per scenario. To
+remove the synthetic stand artifact identified in earlier
+iterations of this analysis, the runner was extended to draw real
+FIA condition pairs from each variant's state coverage, with five
+plots sampled per (species group, site class, density class) cell
+and projected for 100 years under default parameters, calibrated
+MAP, and 100 posterior draws. The full array produced an ensemble
+of 526,176 rows aggregated to 103,440 rows of per scenario per
+horizon per variable summary, with median and 95 percent credible
+bands pooled across draws and replicates so that the band reflects
+both parameter uncertainty and stand to stand variability.
 
-![Figure 8. Bakuzis matrix 100 year BA trajectories for the Northeast variant. Rows are site classes (Low, Medium, High), columns species groups (Spruce Fir, Northern Hardwood, Pine, Oak Pine). The dashed gray line is the default parameter trajectory; the orange line is the calibrated posterior median (MAP); the green ribbon is the 95 percent posterior credible band from 100 draws. Three density classes (Low, Medium, High initial BA) are visible as three trajectories within each panel.](../calibration/output/comparisons/manuscript_figures/fig_bakuzis_trajectories.png){width=6.5in}
+![Figure 8. Bakuzis matrix 100 year BA trajectories for the Northeast variant on real FIA stands sampled by site index and basal area band. Rows are site classes (Low, Medium, High), columns species groups (Spruce Fir, Northern Hardwood, Pine, Oak Pine). The dashed gray line is the default parameter trajectory; the orange line is the calibrated posterior median (MAP); the green ribbon is the 95 percent posterior credible band pooled across 100 draws and 5 FIA replicates per cell.](../calibration/output/comparisons/manuscript_figures/fig_bakuzis_trajectories.png){width=6.5in}
 
-Figure 8 shows the 3 x 4 grid of NE BA trajectories. Default and
-calibrated MAP trajectories overlap closely across nearly all
-scenarios; the posterior credible band tracks the MAP trajectory
-tightly, indicating that for NE the joint posterior is concentrated
-relative to its mean prediction at the 100 year horizon. The
-exception is the high site, high density Pine cell, where the
-calibrated MAP reaches roughly 130 ft²/ac at year 100 versus the
-default's 145 ft²/ac, reflecting the revised SDI maximum triggering
-earlier self thinning in stands that would otherwise have continued
-accumulating basal area. The Acadian variant shows a similar
-overall pattern but with substantially wider posterior bands at
-high site and high density combinations (Figure SI.39 in the
-supplement).
+Figure 8 shows the 3 x 4 grid of NE BA trajectories on real FIA
+stands. Default and calibrated MAP trajectories are nearly
+co-located across all 33 populated cells (3 cells lacked sufficient
+FIA plots in their bin combinations). The posterior credible band
+brackets both point estimates with substantial width that grows
+with horizon, ranging from a few ft²/ac at year 25 to 30 to 50
+percent of the posterior median by year 100 in the highest site
+classes. The Acadian variant shows a similar overall pattern but
+with somewhat narrower bands consistent with the smaller spatial
+extent of its calibration data (Figure SI.39 in the supplement).
 
-![Figure 9. Year 100 BA divergence (calibrated posterior median minus default, as percent of default) across all 36 Bakuzis scenarios for the Northeast variant. Marker color indicates species group, marker shape indicates site class, and marker size scales with the posterior 95 percent band width.](../calibration/output/comparisons/manuscript_figures/fig_bakuzis_divergence.png){width=6in}
+![Figure 9. Year 100 BA divergence (calibrated posterior median minus default, as percent of default) across the 33 populated Bakuzis cells for the Northeast variant on real FIA stands. Marker color indicates species group, marker shape indicates site class, and marker size scales with the posterior 95 percent band width.](../calibration/output/comparisons/manuscript_figures/fig_bakuzis_divergence.png){width=6in}
 
-Figure 9 summarizes year 100 BA divergence for the NE variant.
-Most scenarios fall within plus or minus 5 percent of zero
-divergence; the systematic outliers are Pine at high site and high
-density (calibrated 10 percent below default) and Oak Pine at high
-site (mixed direction), both consistent with the revised SDI
-ceiling triggering earlier self thinning. Marker sizes show that
-band widths are largest in the high site high density corners,
-where stand density tracks the SDI ceiling most aggressively.
+Figure 9 summarizes year 100 BA divergence for the NE variant on
+real stands. Almost all scenarios cluster within plus or minus 1
+percent of zero divergence, indicating that the calibrated MAP
+parameters produce essentially the same long horizon BA prediction
+as the default parameters when applied to real FIA stand
+combinations. The single notable divergence is Oak Pine at high
+site high density at -9.6 percent, consistent with the revised SDI
+maximum triggering modest additional self thinning in the most
+fully stocked cells. The narrow divergence envelope on real stands
+contrasts with what a synthetic stand evaluation might suggest and
+underlines that the recalibration's principal value is uncertainty
+quantification and component-level accuracy rather than a
+systematic shift of long horizon central tendencies.
 
-![Figure 10. Bakuzis biological law compliance at year 100 for the Acadian (left) and Northeast (right) variants. Three configurations per panel: default parameters, calibrated MAP, and the posterior 95 percent band.](../calibration/output/comparisons/manuscript_figures/fig_bakuzis_laws.png){width=6in}
+![Figure 10. Bakuzis biological law compliance at year 100 for the Acadian (left) and Northeast (right) variants computed on real FIA stands. Three configurations per panel: default parameters, calibrated MAP, and the posterior 95 percent band.](../calibration/output/comparisons/manuscript_figures/fig_bakuzis_laws.png){width=6in}
 
-Figure 10 reports Bakuzis law compliance from the real posterior
-runs. The most striking finding is on the Acadian variant: the
-posterior credible band achieves 50 percent Eichhorn compliance
-across the 12 species by density combinations, compared with 17
-percent for both the default and calibrated MAP point estimates.
-This means the posterior ensemble explores parameter regions that
-are more biologically reasonable in roughly a third more
-scenarios than the point estimates alone capture. Sukachev
-compliance for ACD is 92 percent for default and MAP and 83
-percent for the posterior band; density driven mortality is 100
-percent across all configurations. The NE variant shows 0 percent
-Sukachev compliance across all configurations, which the
-diagnostic indicates is a property of the synthetic stand
-generator and the variant's self thinning behavior rather than a
-calibration defect, since the failure pattern is identical for
-default, MAP, and posterior. NE Eichhorn compliance is 17 percent
-across all three configurations, suggesting the NE posterior is
-too concentrated to explore alternative biological regimes within
-the credible range.
+Figure 10 reports Bakuzis law compliance from the FIA ensemble.
+The headline finding emerges on the Acadian variant Eichhorn rule:
+the posterior credible band achieves 50 percent compliance across
+the 10 species by density combinations, compared with 20 percent
+for both the default and the calibrated MAP point estimates. This
+two-and-a-half-fold uplift was observed previously in the synthetic
+stand version (50 percent posterior versus 17 percent point) and
+is now corroborated on real FIA stand combinations, supporting the
+interpretation that the posterior ensemble explores parameter
+regions that are more biologically reasonable than the MAP point
+estimate alone. Sukachev compliance for ACD is 100 percent for
+default and MAP and 90 percent for the posterior band, indicating
+that the posterior occasionally explores parameter combinations
+that produce per tree volume orderings inconsistent with the law
+of competition. Density driven mortality compliance for ACD is 70
+percent across all configurations, with the synthetic value of 100
+percent revealed as an artifact of the algorithmic stand generator
+rather than a calibration property. The NE variant shows 0 percent
+Sukachev compliance under all configurations, which the FIA based
+diagnostic now confirms is a real property of the variant's
+self thinning behavior in this region rather than a synthetic
+artifact. NE Eichhorn compliance is 44 percent under default and
+MAP and 22 percent under the posterior band, the only law where
+the posterior reduces rather than improves compliance and which
+warrants targeted refinement of the species random effect priors.
 
-![Figure 11. Posterior uncertainty band width as percent of posterior median, growing with projection horizon, for the Northeast variant across species groups and site classes.](../calibration/output/comparisons/manuscript_figures/fig_bakuzis_band_growth.png){width=6in}
+![Figure 11. Posterior uncertainty band width as percent of posterior median, growing with projection horizon, for the Northeast variant across species groups and site classes on real FIA stands.](../calibration/output/comparisons/manuscript_figures/fig_bakuzis_band_growth.png){width=6in}
 
 Figure 11 shows how the NE BA 95 percent credible band evolves
 with projection horizon. Band widths start near zero at year 0
-(the calibrated parameters fix the initial state) and grow to
-roughly 5 to 15 percent of the posterior median by year 100,
-substantially narrower than the bootstrap upper bound suggested.
-The narrowest bands appear at low density and low site
-combinations; the widest bands are in high site high density Pine
-and Oak Pine, where compounding interactions between calibrated
-diameter growth, mortality, and SDImax produce the largest
-parametric spread.
+because the calibrated parameters fix the initial state, then grow
+to roughly 30 to 50 percent of the posterior median by year 100
+on real FIA stands, considerably wider than the synthetic stand
+analysis suggested because the FIA ensemble incorporates within-
+cell variability in species composition and diameter distribution
+on top of parameter uncertainty. The narrowest bands appear at low
+site low density cells where stand structure is least dynamic; the
+widest bands are at high site high density Pine and Oak Pine,
+where compounding interactions between calibrated diameter growth,
+mortality, and SDImax produce the largest combined spread.
 
 # 5. Discussion
 
@@ -624,6 +730,27 @@ index maximum revision, with a mean reduction of 22 percent,
 constitutes a material departure from prior FVS parameterizations
 and may have broad downstream consequences for self thinning and
 long horizon trajectory outcomes.
+
+Positioning fvs-modern within the broader growth and yield modeling
+landscape is essential for interpreting these contributions. Joo et
+al. (2025) document the Pacific Northwest practice of pairing FVS
+with ORGANON-PNW and the Forest Projection System (FPS), each
+selected for its regional fidelity and operational compatibility.
+Premer et al. (2025) extend this comparison to landscape and
+biosphere models for forest carbon accounting and find that
+projected carbon outcomes can differ by a factor of two across
+modeling systems applied to the same Maine plots, with no single
+model adequate at every spatiotemporal scale. fvs-modern does not
+displace these alternatives. Its contribution is to bring
+contemporary statistical methods, modern software engineering, and
+parametric uncertainty quantification to the FVS branch of the
+ecosystem so that FVS-based applications can carry credible
+uncertainty bands and so that comparative studies such as Premer
+et al. (2025) can be repeated with apples-to-apples uncertainty
+across systems. The Forest Carbon Modeling Group (Woodall et al.
+2025) identifies model-comparison and uncertainty quantification
+as twin priorities for the next decade; fvs-modern is one piece of
+that infrastructure.
 
 ## 5.2 Software engineering implications
 
@@ -692,20 +819,29 @@ Third, the calibration does not explicitly include climate
 covariates beyond those captured indirectly in site index and other
 stand state variables. With climate change affecting growth and
 mortality patterns (Trumbore et al. 2015), explicit climate dependent
-parameterizations may be needed for future projections.
+parameterizations may be needed for future projections. The
+Climate-FVS extension developed by Crookston, Rehfeldt, Dixon, and
+Weiskittel (2010) provides one path forward by allowing growth and
+mortality to respond to user-specified climate trajectories; a
+natural follow-on for fvs-modern is to combine the Bayesian
+posterior with the Climate-FVS coupling so that climate-modified
+projections also carry parametric uncertainty bands.
 
-Additionally, the Bakuzis matrix results reported here use synthetic
-stand tree lists generated algorithmically from target BA and TPA,
-which may not perfectly reproduce the diameter distributions and
-species mixtures found in real FIA plots. Interpretation of Bakuzis
-law compliance should be conditioned on this caveat. The 0 percent
-NE Sukachev compliance under all configurations is a clear example
-of a synthetic stand artifact rather than a calibration property:
-real FIA derived stands would be expected to satisfy the per tree
-volume monotonicity test more frequently. Future work should repeat
-the Bakuzis evaluation on a stratified sample of real FIA stands
-to disentangle synthetic stand artifacts from genuine calibration
-behavior.
+Additionally, the Bakuzis matrix results reported here use real FIA
+stands sampled by site index and basal area bin rather than synthetic
+algorithmic stands, which removes the dominant artifact of the prior
+analysis but constrains coverage to those (variant, species, site,
+density) combinations for which sufficient FIA plots exist. Three of
+36 cells lacked FIA plots in their target bins for the NE variant;
+the corresponding figure cells are blank. The variant coverage is
+also currently restricted to NE and ACD because per state FIA CSVs
+for the western (Pacific Northwest, Inland Empire) and southern
+variants were not available on the Cardinal filesystem at submission
+time; extending Bakuzis to those variants requires either downloading
+per state CSVs from the FIA DataMart or converting the consolidated
+CONUS remeasurement RDS into per state CSVs. The pipeline supports
+both extensions without further code changes once the data are in
+place.
 
 ## 5.5 Future work
 
@@ -783,6 +919,30 @@ Inventory and Analysis data used for calibration and benchmarking
 are publicly available through the U.S. Forest Service FIA DataMart
 at https://apps.fs.usda.gov/fia/datamart/.
 
+# CRediT author contributions
+
+**Aaron R. Weiskittel:** Conceptualization, Methodology, Software,
+Formal analysis, Investigation, Data curation, Writing -- original
+draft, Writing -- review and editing, Visualization, Supervision,
+Project administration, Funding acquisition.
+
+**Greg Johnson:** Conceptualization, Methodology, Software (variant
+unification on the conus-variant branch), Validation, Writing --
+review and editing.
+
+**David Marshall:** Methodology (Pacific Northwest variant guidance),
+Validation (regional benchmark interpretation), Writing -- review
+and editing.
+
+# Declaration of competing interests
+
+The authors declare no competing interests. Aaron Weiskittel serves
+as Editor-in-Chief of Mathematical and Computational Forestry &
+Natural-Resource Sciences and as a frequent reviewer for
+Environmental Modelling and Software, but neither role created any
+financial or personal interest that could have inappropriately
+influenced the work reported here.
+
 # Acknowledgments
 
 We acknowledge the Ohio Supercomputer Center (project PUOM0008) for
@@ -810,11 +970,34 @@ of increasing drought on forest dynamics, structure, and
 biodiversity in the United States. Global Change Biology 22:
 2329-2352.
 
+Crookston, N.L., Dixon, G.E., 2005. The forest vegetation simulator:
+A review of its structure, content, and applications. Computers
+and Electronics in Agriculture 49: 60-80.
+
+Crookston, N.L., Rehfeldt, G.E., Dixon, G.E., Weiskittel, A.R., 2010.
+Addressing climate change in the forest vegetation simulator to
+assess impacts on landscape forest dynamics. Forest Ecology and
+Management 260: 1198-1211.
+
 Dixon, G.E. (Ed.), 2002. Essential FVS: A user's guide to the
 Forest Vegetation Simulator. USDA Forest Service, Internal Report.
 
 Gelman, A., Carlin, J.B., Stern, H.S., et al., 2013. Bayesian Data
 Analysis, 3rd ed. Chapman and Hall / CRC.
+
+Itter, M.S., Finley, A.O., Weiskittel, A.R., 2025. Connecting growth
+and yield models to continuous forest inventory data to better
+account for uncertainty. Forest Ecology and Management 589: 122754.
+
+Joo, S., Temesgen, H., Frank, B., Weiskittel, A.R., Reimer, D., 2025.
+Roles of growth and yield models for informed forest management
+decisions in the Pacific Northwest United States. Journal of
+Forestry. https://doi.org/10.1007/s44392-025-00041-0
+
+Premer, M., Simons-Legaard, E., Daigneault, A., Hayes, D., Solarik,
+K.A., Weiskittel, A., 2025. Some models are useful... for estimating
+standing aboveground carbon in US forests. Journal of Forestry.
+https://doi.org/10.1007/s44392-025-00056-7
 
 Reineke, L.H., 1933. Perfecting a stand density index for even aged
 forests. Journal of Agricultural Research 46:627-638.
@@ -824,6 +1007,14 @@ predictions. Forest Science 30:454-469.
 
 Trumbore, S., Brando, P., Hartmann, H., 2015. Forest health and
 global change. Science 349:814-818.
+
+Woodall, C.W., Munro, H.L., Atkins, J.W., Bullock, B.P., Fox, T.R.,
+Hoover, C.M., Kinane, S.M., Murray, L.T., Prisley, S.P., Shaw, J.D.,
+Smith-Mateja, E., Weiskittel, A.R., Anderegg, W.R.L., Nabuurs, G.-J.,
+Novick, K.A., Poulter, B., Starcevic, A., Giebink, C.L., 2025.
+Prioritizing opportunities to empower forest carbon decisions
+through strategic investment in forest modeling capacity. Journal
+of Forestry. https://doi.org/10.1007/s44392-025-00012-5
 
 Weiskittel, A.R., Hann, D.W., Kershaw, J.A., Jr., Vanclay, J.K.,
 2011. Forest growth and yield modeling. John Wiley and Sons,

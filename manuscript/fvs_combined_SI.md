@@ -132,6 +132,27 @@ is the headline finding for this part of the analysis.
 
 ![Figure SI.41. Posterior uncertainty band growth with horizon for the Acadian variant.](../calibration/output/comparisons/manuscript_figures/fig_bakuzis_band_growth_acd.png){width=6in}
 
+# Note on calibration parameter representation
+
+The calibrated parameters distributed under `config/calibrated/` retain
+the original FVS coefficient arrays nearly unchanged. The Bayesian
+posterior is applied at runtime through species-specific multiplier
+keywords (GROWMULT for diameter growth, MORTMULT for mortality,
+SDIMAX for stand density maximum, HTGMULT for height growth) rather
+than as direct replacement of the underlying B1, B2, or other
+coefficients. This architecture preserves backward compatibility with
+existing FVS keyword files and allows users to mix calibrated and
+default parameters per component or per species. As a consequence, a
+direct coefficient comparison between `config/ne.json` and
+`config/calibrated/ne.json` shows mean B1 changes of order 2 to 3
+percent across approximately 85 of 108 species (in the Northeast
+variant) but the operationally meaningful variation is carried in the
+per-species multipliers stored under `config/calibrated/<variant>_draws.json`.
+The `FvsConfigLoader.compare()` helper in
+`config/config_loader.py` computes both representations and a
+summary table can be regenerated with `python3 -c "from
+config.config_loader import compare_configs; print(compare_configs('ne'))"`.
+
 # Notes on reproducibility
 
 All raw calibration outputs (posterior draws, convergence diagnostics,
