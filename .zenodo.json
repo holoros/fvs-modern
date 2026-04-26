@@ -7,8 +7,7 @@
   "creators": [
     {
       "name": "Weiskittel, Aaron R.",
-      "affiliation": "Center for Research on Sustainable Forests, University of Maine",
-      "orcid": "0000-0002-9249-1686"
+      "affiliation": "Center for Research on Sustainable Forests, University of Maine"
     }
   ],
   "keywords": [
@@ -22,11 +21,5 @@
     "mortality",
     "stand projection"
   ],
-  "related_identifiers": [
-    {
-      "identifier": "https://github.com/holoros/fvs-modern",
-      "relation": "isSupplementTo",
-      "scheme": "url"
-    }
-  ]
+  "communities": []
 }
