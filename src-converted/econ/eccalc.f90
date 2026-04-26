@@ -166,8 +166,8 @@ subroutine initializeSavedVariables()
    revDisc     = 0.0; revUndisc  = 0.0
    undiscCost  = 0.0; undiscRev  = 0.0                            !Arrays by year
    return
-end subroutine initializeSavedVariables &
-   eset harvest & control variable values used within a single cycle but needed externally for next cycle, used 1st in echarv.f, initially set in ecinit.f
+end subroutine initializeSavedVariables
+   ! eset harvest & control variable values used within a single cycle but needed externally for next cycle, used 1st in echarv.f, initially set in ecinit.f
 subroutine resetSavedCycleVariables()
   Duplicate code from ecinit.f to initialize variables used in echarv.f & eccalc.f
    dbhSq     = 0.0
@@ -176,8 +176,8 @@ subroutine resetSavedCycleVariables()
    pctBf     = 0.0; pctFt3     = 0.0; pctTpa     = 0.0             !PCT harvest volume by cost type arrays (1:MAX_KEYWORDS)
    revVolume = 0.0                                                 !Array(1:MAXSP, 1:MAX_REV_UNITS, 1:MAX_KEYWORDS)
    return
-end subroutine resetSavedCycleVariables &
-   eset local harvest and control variable values used within a single cycle
+end subroutine resetSavedCycleVariables
+   ! eset local harvest and control variable values used within a single cycle
 subroutine resetLocalCycleVariables()
    isHarvestPct = .FALSE.
    harvCst   = 0.0; harvRvn    = 0.0; pctCst    = 0.0
@@ -674,8 +674,8 @@ subroutine calcEcon()
         rrrCalculated = .TRUE.
         write(rrrChar,'(f6.1)') rrr
       end if
-   end if &
-   te harvested cubic and board foot volumes that were valued, & then output to Event Monitor
+   end if
+   ! te harvested cubic and board foot volumes that were valued, & then output to Event Monitor
   ft3Total = 0.0; bfTotal = 0.0
   if (harvest(TPA) > 0.0 .and. (.not. isHarvestPct)) then         !Only get volumes that were actually valued
      do i = 1, MAXSP                                              !Loop over species
