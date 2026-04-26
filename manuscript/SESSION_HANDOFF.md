@@ -1,6 +1,24 @@
-# Session Handoff — 2026-04-26 09:55 EDT
+# Session Handoff — 2026-04-26 14:50 EDT
 
-## Status: FIA Bakuzis revision shipped, v2026.05.1 tagged, FVS-PN library load partially fixed
+## Status: FIA Bakuzis revision shipped, v2026.05.1 tagged, FVS-PN library load 80 percent fixed
+
+PN library symbols recovered through this session:
+- morcon_     (build script include order fix + vwc/morts.f90 link)
+- ecvol_      (econ/ecvol.f90 conversion bug repair)
+- ecinit_     (econ/ecinit.f90 repair)
+- echarv_     (econ/echarv.f90 repair via upstream reference)
+- ecstatus_   (econ/ecstatus.f90 repair)
+- setpretendstatus_  (entry inside ecstatus.f90)
+- eccalc_     (auto-fix script repair)
+- ecsetp_     (auto-fix script repair)
+
+Next blocker: eckey_ (entry inside econ/ecin.f90). The bug pattern in
+ecin.f90 line 830 area is a multi-line WRITE statement with a stray
+& on a comment fragment, not the simple comment-line recovery the
+auto-fix script handles. Manual repair against upstream is required.
+
+Repair script: scripts/fix_f77_comment_bug.py (also catches the same
+pattern in any other .f90 file passed as argument).
 
 The Bakuzis uncertainty SLURM array (job 8847841) ran end-to-end with
 the FIA-mode runner. Aggregator and figures regenerated, manuscript
