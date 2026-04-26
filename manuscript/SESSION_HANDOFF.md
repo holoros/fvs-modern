@@ -1,6 +1,20 @@
-# Session Handoff — 2026-04-26 14:50 EDT
+# Session Handoff — 2026-04-26 15:05 EDT
 
-## Status: FIA Bakuzis revision shipped, v2026.05.1 tagged, FVS-PN library load 80 percent fixed
+## Status: FVS-PN/SN/IE libraries fully load via ctypes; runtime EOF is the remaining blocker
+
+PN library symbols all recovered (12 in total). SN and IE libraries
+build cleanly with the same fixes. All three load via Python ctypes
+without errors. Marshall-format FIA CSVs converted for OR, WA, AL,
+FL, GA, MS, SC, TN, ID, MT (10 western and southern states).
+
+The remaining blocker is a Fortran runtime EOF error in
+`base/keyrdr.f90` line 47 when FVS-PN/SN/IE try to read the keyword
+file. This affects both our generated INVENTORY-mode keyfiles AND
+the canonical upstream `pnt01.key` test file, indicating it is a
+deeper FVS-modern runtime issue specific to non-eastern variants
+that requires comparison against a USDA reference binary or
+deeper Fortran debugging — beyond what the Cowork sandbox can
+do in a single session.
 
 PN library symbols recovered through this session:
 - morcon_     (build script include order fix + vwc/morts.f90 link)
