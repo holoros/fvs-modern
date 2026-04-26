@@ -1,20 +1,48 @@
-# Session Handoff — 2026-04-25 20:11 EDT
+# Session Handoff — 2026-04-26 09:55 EDT
 
-## Status: FIA Bakuzis pipeline complete and pushed
+## Status: FIA Bakuzis revision shipped, v2026.05.1 tagged, FVS-PN library load partially fixed
 
 The Bakuzis uncertainty SLURM array (job 8847841) ran end-to-end with
 the FIA-mode runner. Aggregator and figures regenerated, manuscript
-section 4.6 updated with real numbers, all changes committed and
-pushed to `origin/main` as commit `4de8467`.
+section 4.6 updated, v2 self-review compiled, release v2026.05.1
+tagged and pushed. FVS-PN library `morcon_` and `ecvol_` undefined
+symbol issues partially resolved via build script include-order fix
+and two econ source repairs.
 
 ```
+8faf40b Fix FVS-PN library load: build include order + econ conversion bugs
+245875d Release prep v2026.05.1: FIA-stand Bakuzis revision and post-review artifacts
+d2c2245 Merge pull request #6 from holoros/cn-johnson-variant-2026-04-25
 4de8467 Apply FIA-stand Bakuzis results to manuscript section 4.6
 76b85de Add FIA-derived stand generator and INVENTORY keyfile pathway
 89ecf0b v2026.05.0: Bakuzis uncertainty pipeline, real posterior runs, combined manuscript
 ```
 
-Local main and origin main both at `4de8467`. Verified with
-`git ls-remote origin main`.
+Local main, origin main, and tag `v2026.05.1` (sha 13f617c) all
+verified via `git ls-remote origin`.
+
+## Two manual steps remaining (require web UI, ~5 minutes total)
+
+**A. Enable Zenodo webhook** (mints a DOI for the v2026.05.1 tag):
+- Visit https://zenodo.org/account/settings/github/
+- Sign in as `@holoros`
+- Toggle the `holoros/fvs-modern` repo to ON
+
+**B. Create GitHub Release from the v2026.05.1 tag**:
+- Visit https://github.com/holoros/fvs-modern/releases/new?tag=v2026.05.1
+- Title: `v2026.05.1: FIA-stand Bakuzis evaluation`
+- Body: paste contents of `RELEASE_NOTES_v2026.05.1.md`
+- Click "Publish release"
+
+Steps A and B together trigger Zenodo's automatic ingestion. Within
+a few minutes the DOI appears on https://zenodo.org/badge/latestdoi/.
+Once known, drop the DOI into the manuscript software availability
+block in `manuscript/fvs_combined_draft.md`, regenerate docx, push.
+
+The Cowork sandbox cannot perform either step: SSH key authenticates
+to GitHub for git operations only; Releases API and Zenodo webhook
+toggle both require interactive auth on web UIs that are out of reach
+from this environment.
 
 ## Key findings (FIA-mode, 33 of 36 cells populated per variant)
 
