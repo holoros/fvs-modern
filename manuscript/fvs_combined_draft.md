@@ -41,11 +41,14 @@ median, or user supplied custom parameters, and can request ensemble
 projections sampled from the posterior.
 
 **Applications.** Using the modernized distribution we (i) ran an
-independent FIA benchmark on 433,291 remeasurement conditions across
+internal FIA benchmark on 433,291 remeasurement conditions across
 19 variants, (ii) quantified component contributions to improvement
 via an ablation analysis, and (iii) evaluated 100 year stand
-trajectories on a 36 scenario Bakuzis factorial that exposes the four
-classical biological laws under parametric uncertainty.
+trajectories on a 36 scenario Bakuzis factorial that tests three of
+the four classical biological laws (Sukachev, Eichhorn, density
+driven mortality) under parametric uncertainty; the fourth law
+(mortality size pattern) is reported as a design element pending
+treelist snapshot extraction.
 
 **Results.** Seven model components were calibrated per variant:
 diameter growth, height to diameter allometry, height increment
@@ -261,11 +264,16 @@ effective sample size > 400.
 Posterior summaries are serialized to JSON under config/calibrated/
 in two forms: a point estimate file with posterior medians
 (<variant>.json) and a draws file containing 500 joint posterior
-samples (<variant>_draws.json). The draws file preserves the joint
-posterior structure: every component within a draw shares the same
-MCMC iteration index, so correlations between (for example) diameter
-growth and mortality parameters are maintained when the draw is
-applied to FVS at runtime.
+samples (<variant>_draws.json), thinned by simple uniform
+subsampling from the 4,000 retained MCMC iterations to keep the
+on-disk artifact compact while preserving posterior coverage. The
+draws file preserves the joint posterior structure: every component
+within a draw shares the same MCMC iteration index, so correlations
+between (for example) diameter growth and mortality parameters are
+maintained when the draw is applied to FVS at runtime. Downstream
+ensemble runs typically consume between 50 and 500 of these joint
+draws depending on the cost of the projection workload; the FIA
+Bakuzis evaluation reported here used 100 draws per scenario.
 
 ![Figure 1. Bayesian calibration pipeline architecture. FIA remeasurement conditions feed a seven component hierarchical fitting workflow (Chapman Richards height diameter, Wykoff diameter growth, logistic mortality, crown ratio change, SDImax quantile regression, height increment for six variants, and self thinning slope). Stan with CmdStanR drives HMC sampling with ADVI fallback. Posterior summaries and 500 joint draws are serialized to JSON for runtime consumption by fvs2py, microfvs, and rFVS.](../calibration/figures/figure3_pipeline_architecture.png){width=6.5in}
 
@@ -401,11 +409,18 @@ through the remeasurement interval using both parameter sets, and
 predicted stand metrics (basal area, quadratic mean diameter,
 volume, top height, per tree basal area increment) were compared
 against observed values at time 2 using RMSE, bias, and R squared.
+Site index for each condition is taken from the FIA SICOND field
+referenced to a base age of 50 years (FIA SIBASE = 50), the
+convention used by the FIA program for most eastern and western
+species; conditions reporting a non-50 base age were excluded from
+the benchmark.
 We computed an equivalence metric defined as the percentage of
 conditions where the predicted basal area fell within 20 percent of
-observed basal area. Gross cubic foot volume predictions were
-derived through combined variable ratio scaling of FIA per tree
-volumes with projected diameters and heights. We did not formally
+observed basal area, following the model error framework of Reynolds
+(1984) for accuracy assessment of growth and yield projections.
+Gross cubic foot volume predictions were derived through combined
+variable ratio scaling of FIA per tree volumes with projected
+diameters and heights. We did not formally
 test for spatial autocorrelation of residuals; given the CONUS
 spatial extent, Moran's I or spatial blocking is a recommended
 extension and is feasible from the existing condition-level output
@@ -572,16 +587,21 @@ contribute most to improvement in each geographic region.
 
 Figure 6 (fig_trajectory_envelope_ne.png) shows 100 year basal area
 trajectories for the Northeast variant under default versus
-calibrated configurations, with the calibrated bootstrap confidence
-band constructed from FIA benchmark residuals. The calibrated
-envelope is tighter than the default at years 25 through 50 and
-diverges visibly at year 100, reflecting the cumulative effect of
-the 22 percent average downward revision of the stand density index
-maximum. For most scenarios the calibrated trajectory tracks the
-default within the envelope; for high site plus high density
-combinations the calibrated median drops roughly 8 to 12 percent
-below default at year 100, consistent with stronger self thinning
-under the revised SDI ceiling.
+calibrated configurations. The envelope here is a non parametric
+bootstrap of FIA benchmark residuals (residual resampling with
+replacement), distinct from the parametric posterior credible band
+in section 4.6: the bootstrap captures empirical prediction error on
+real stands at the time of the benchmark, whereas the posterior band
+captures parameter uncertainty propagated through the model. The two
+representations are complementary; together they bound the prediction
+interval. The calibrated envelope is tighter than the default at
+years 25 through 50 and diverges visibly at year 100, reflecting the
+cumulative effect of the 22 percent average downward revision of the
+stand density index maximum. For most scenarios the calibrated
+trajectory tracks the default within the envelope; for high site
+plus high density combinations the calibrated median drops roughly
+8 to 12 percent below default at year 100, consistent with stronger
+self thinning under the revised SDI ceiling.
 
 ## 4.5 Ablation analysis
 
@@ -801,10 +821,13 @@ CPU hours of compute and 10 to 15 GB of intermediate storage when
 FIA raw data are excluded.
 
 The Bakuzis uncertainty submission adds roughly 80 CPU minutes per
-variant at 50 posterior draws, or 5 hours at 500 draws. The SLURM
-array described in section 3.3 parallelizes the 36 scenarios across
-six tasks, bringing wall clock time for both NE and ACD at 100 draws
-into the 30 to 60 minute range on a normal load queue.
+variant at 50 posterior draws on a single synthetic stand per cell,
+or 5 hours at 500 draws under the same single-stand design. The
+FIA-mode evaluation reported here uses five real FIA plots per cell
+at 100 draws and runs as a SLURM array of six tasks parallelizing
+the 36 scenarios; wall clock time for both NE and ACD at this
+configuration is in the 30 to 60 minute range on a normal load
+queue.
 
 ## 5.4 Limitations
 
