@@ -6,6 +6,59 @@ project adheres to calendar-based versioning (YYYY.MM).
 
 ## [Unreleased]
 
+## [2026.05.2] — 2026-04-26
+
+### Fixed
+- `deployment/scripts/build_fvs_libraries.sh`: corrected gfortran
+  include path order. Variant-specific include directories
+  (`-I$var`, `-I$var/common`) now precede `-Ibase` so that headers
+  like `PRGPRM.f90` resolve to the variant's own copy with the
+  correct `MAXSP` parameter. Without this, variant-shared modules
+  such as `vwc/morts.f90` (used by both PN and WC, sized to
+  `MAXSP=39` from `pn/common/PRGPRM.f90`) silently picked up
+  `base/PRGPRM.f90`'s `MAXSP=23` and failed to compile their
+  39-element DATA arrays. Foundational fix that benefits every
+  variant build.
+- Repaired seven F77-to-F90 conversion bugs in `src-converted/econ/`:
+  `ecvol.f90`, `ecinit.f90`, `echarv.f90`, `ecstatus.f90`,
+  `eccalc.f90`, `ecsetp.f90`, `ecin.f90`. The conversion script had
+  mangled `C`-prefixed Fortran 77 comment blocks into trailing-`&`
+  continuations of the preceding statement, leaving the `econ`
+  extension uncompilable. After repair, the FVS-PN, FVS-SN, and
+  FVS-IE shared libraries build cleanly and load via Python
+  ctypes; twelve previously-undefined symbols (`morcon_`, `ecvol_`,
+  `ecinit_`, `echarv_`, `ecstatus_`, `setpretendstatus_`,
+  `eccalc_`, `ecsetp_`, `eckey_` plus three downstream) are now
+  resolved.
+
+### Added
+- `scripts/fix_f77_comment_bug.py`: heuristic auto-repair tool for
+  the comment-conversion pattern. Walks any Fortran file and
+  rewrites trailing-`&` plus stripped-comment-fragment pairs into
+  proper `!` comments. Used to repair `eccalc.f90` and `ecsetp.f90`
+  during this release.
+- `calibration/python/marshall_to_fia_csv.py`: adapter that
+  converts Marshall-format curated FIA CSVs (in
+  `calibration/data/marshall_csvs/`) to standard FIA DataMart
+  schema readable by `fia_stand_generator.py`. Used to convert
+  per-state inventory data for OR, WA, AL, FL, GA, MS, SC, TN, ID,
+  MT during this release. Ready to drive PN/SN/IE FIA Bakuzis
+  evaluation once the runtime keyword-reader regression is closed.
+- `calibration/python/PN_SN_LIBRARY_DIAGNOSIS.md`: living document
+  capturing the FVS-PN, FVS-SN, FVS-IE library state. Fully traces
+  the conversion-bug pattern and lists every file repaired.
+- `calibration/slurm/submit_bakuzis_fia_pnsnie.sh` (Cardinal-side):
+  SLURM array template for the future PN, SN, IE Bakuzis run.
+
+### Known
+- FVS-PN, FVS-SN, FVS-IE libraries now load cleanly but the
+  Fortran runtime hits an EOF in `base/keyrdr.f90` line 47 when
+  reading any keyword file (both INVENTORY-mode and canonical
+  upstream USDA test files). This is a deferred runtime-layer
+  issue from the F77-to-F90 conversion that requires comparison
+  against a USDA reference binary or deeper Fortran I/O debugging
+  with verbose tracing. Tracked in `PN_SN_LIBRARY_DIAGNOSIS.md`.
+
 ## [2026.05.1] — 2026-04-26
 
 ### Added
