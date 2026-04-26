@@ -833,15 +833,28 @@ algorithmic stands, which removes the dominant artifact of the prior
 analysis but constrains coverage to those (variant, species, site,
 density) combinations for which sufficient FIA plots exist. Three of
 36 cells lacked FIA plots in their target bins for the NE variant;
-the corresponding figure cells are blank. The variant coverage is
-also currently restricted to NE and ACD because per state FIA CSVs
-for the western (Pacific Northwest, Inland Empire) and southern
-variants were not available on the Cardinal filesystem at submission
-time; extending Bakuzis to those variants requires either downloading
-per state CSVs from the FIA DataMart or converting the consolidated
-CONUS remeasurement RDS into per state CSVs. The pipeline supports
-both extensions without further code changes once the data are in
-place.
+the corresponding figure cells are blank. Variant coverage is
+restricted to NE and ACD because the converted FVS-PN, FVS-SN, and
+FVS-IE shared libraries currently fail at runtime when reading
+keyword files (Fortran runtime EOF in `base/keyrdr.f90` line 47) on
+both INVENTORY-mode keyfiles and the canonical USDA upstream
+test files. The shared libraries themselves now build cleanly and
+load via Python ctypes after a series of repairs documented in this
+release: an include-order fix in `deployment/scripts/build_fvs_libraries.sh`
+that resolves the `vwc/morts.f90` symbol cascade, and seven
+F77-to-F90 conversion-bug repairs in the `econ/` extension that
+collectively recover twelve undefined symbols (morcon_, ecvol_,
+ecinit_, echarv_, ecstatus_, setpretendstatus_, eccalc_, ecsetp_,
+eckey_, plus three downstream). The remaining runtime keyword-reader
+regression is an active debugging item that requires comparison
+against a USDA reference binary rather than further conversion-bug
+repair. The Marshall-format FIA CSV adapter
+(`calibration/python/marshall_to_fia_csv.py`) is shipped with this
+release and was used to convert per-state inventory data for OR, WA,
+AL, FL, GA, MS, SC, TN, ID, and MT into the standard FIA DataMart
+format; once the runtime regression is resolved, the FIA Bakuzis
+pipeline will run for the western and southern variants without
+further code changes.
 
 ## 5.5 Future work
 
@@ -862,7 +875,13 @@ using independent growth and yield data not used in model fitting
 would provide complementary assessment of model performance. Fifth,
 adding treelist snapshot extraction to the Bakuzis runner would
 enable direct evaluation of the fourth biological law (mortality
-size pattern).
+size pattern). Sixth, resolving the FVS-PN, FVS-SN, and FVS-IE
+runtime keyword reader regression (deferred from the present
+release; documented in
+`calibration/python/PN_SN_LIBRARY_DIAGNOSIS.md`) would extend the
+FIA Bakuzis evaluation to the western and southern variants and
+allow regional scaling of the posterior-band-as-biological-information
+finding beyond the Acadian variant.
 
 # 6. Conclusion
 
