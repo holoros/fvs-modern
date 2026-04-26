@@ -6,6 +6,67 @@ project adheres to calendar-based versioning (YYYY.MM).
 
 ## [Unreleased]
 
+## [2026.05.1] — 2026-04-26
+
+### Added
+- FIA-derived stand generator (`calibration/python/fia_stand_generator.py`)
+  for Bakuzis matrix scenarios. Stratified random sample of FIA condition
+  pairs by site index band and basal area band, returning up to five real
+  plots per (variant, species_group, site_class, density_class) cell.
+  Variant-to-state coverage for NE (CT MA ME NH NY RI VT) and ACD
+  (ME NH VT). Inventory year forced to a canonical 2000 so all sampled
+  plots project from the same calendar baseline.
+- INVENTORY-mode keyfile generator (`calibration/python/inventory_keyfile.py`)
+  for non-eastern variants whose DBS readers do not handle Maine-style
+  state-county fields. Generates self-contained keyfiles with embedded
+  TREEDATA records in fixed-width format.
+- `--use-fia` and `--fia-n-plots` flags wired into
+  `calibration/python/bakuzis_uncertainty_comparison.py`. The runner
+  iterates over `(stand_id, stand_df, tree_df, replicate_idx)` tuples
+  and adds a `replicate` column to ensemble output.
+- Variant-specific species groups (`SPECIES_GROUPS_PN`,
+  `SPECIES_GROUPS_SN`, `SPECIES_GROUPS_IE`) and per-variant location
+  defaults in the Bakuzis runner.
+- `calibration/python/run_bakuzis_post_array.sh` post-array wrapper for
+  Cardinal that runs the aggregator, prints law compliance, and creates
+  a tarball for fast scp pull.
+- `calibration/python/marshall_to_fia_csv.py` adapter that converts
+  Marshall-format FIA CSVs to standard FIA DataMart format. Ready for
+  PN/SN/IE Bakuzis extension once the FVS-PN/SN library load issues
+  are resolved.
+- `calibration/python/PN_SN_LIBRARY_DIAGNOSIS.md` documenting the
+  undefined `morcon_` symbol in FVS-PN/SN shared libraries (PN missing
+  morts.f90 source entirely; SN missing it from the link line).
+- Per-variant figure rendering in
+  `calibration/python/bakuzis_uncertainty_figures.py`. NE and ACD
+  trajectory, divergence, and band-growth panels are now produced
+  automatically for every variant present in the summary.
+
+### Changed
+- `calibration/python/bakuzis_uncertainty_aggregate.py` extended for
+  the FIA replicate dimension. Default and calibrated MAP rows are
+  aggregated across replicates so each cell yields a single median
+  plus an SD across plots. Posterior rows are pooled across the cross
+  product of draws and replicates so the credible band reflects both
+  parameter and stand-to-stand uncertainty.
+- The aggregator now computes horizon from each replicate's own start
+  year and quantizes to the nearest 5-year cycle. This aligns plots
+  with different FIA INVYRs cleanly on a 0 to 100 year axis and
+  removes the sawtooth pattern that would otherwise appear when
+  plots with different inventory years are mixed by calendar year.
+- Manuscript section 4.6 rewritten with FIA-derived numbers (33 of 36
+  cells populated per variant, 3 unfilled where FIA bins lacked
+  plots). ACD posterior achieves 50 percent Eichhorn compliance
+  versus 20 percent point estimates, corroborating the synthetic-stand
+  finding on real stands. NE Sukachev 0 percent now confirmed as a
+  variant property, not synthetic artifact.
+- Manuscript section 3.3 methods describes the FIA stratified sampling
+  path (state coverage by variant, fixed inv_year baseline, five
+  replicates per cell).
+- Manuscript section 5.4 limitations updated to reflect 33-of-36 cell
+  coverage per variant and the open path to extend to PN/SN/IE
+  pending per-state CSV availability and shared library fixes.
+
 ### Fixed
 - `docs/getting_started.md` Step 7: corrected the calibrated config
   filename from `config/calibrated/ne_calibrated.json` (does not exist)
