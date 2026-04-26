@@ -2,6 +2,7 @@
 
 [![CI](https://github.com/holoros/fvs-modern/actions/workflows/ci.yml/badge.svg)](https://github.com/holoros/fvs-modern/actions/workflows/ci.yml)
 [![Docker](https://github.com/holoros/fvs-modern/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/holoros/fvs-modern/actions/workflows/docker-publish.yml)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19802673.svg)](https://doi.org/10.5281/zenodo.19802673)
 
 A community maintained fork of the USDA Forest Vegetation Simulator, modernized for contemporary computing environments and designed for ease of deployment, variant creation, and calibration.
 

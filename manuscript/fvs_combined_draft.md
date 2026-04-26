@@ -68,7 +68,7 @@ matrix; FIA remeasurement
 # Software availability
 
 - **Name:** fvs-modern
-- **Version described:** 2026.04.7
+- **Version described:** 2026.05.3
 - **Repository:** https://github.com/holoros/fvs-modern
 - **License:** Dual licensed. Fortran source inherited from the USDA
   Forest Service is CC0-1.0 (public domain); Python, R, and
@@ -80,8 +80,10 @@ matrix; FIA remeasurement
   (Homebrew gfortran), Windows (WSL2 only).
 - **Documentation:** https://github.com/holoros/fvs-modern and
   CALIBRATION.md in the repository root.
-- **DOI:** to be minted on first Zenodo ingestion; concept DOI will be
-  persistent across future versions.
+- **DOI:** [10.5281/zenodo.19802673](https://doi.org/10.5281/zenodo.19802673)
+  (this version, v2026.05.3). The Zenodo concept DOI persists across
+  future versions; latest version is always resolvable through the
+  same record.
 
 # 1. Introduction
 
@@ -931,12 +933,12 @@ All source code, calibrated parameter files, posterior draw
 archives, continuous integration configuration, and benchmarking
 scripts are available at https://github.com/holoros/fvs-modern under
 the dual CC0-1.0 / MIT licensing specified in the repository. The
-specific version described in this paper is v2026.04.7 (April 21,
-2026). A concept DOI will be minted through Zenodo upon ingestion
-of the first tagged release after webhook activation. Forest
-Inventory and Analysis data used for calibration and benchmarking
-are publicly available through the U.S. Forest Service FIA DataMart
-at https://apps.fs.usda.gov/fia/datamart/.
+specific version described in this paper is v2026.05.3 (April 26,
+2026), archived at Zenodo with DOI
+[10.5281/zenodo.19802673](https://doi.org/10.5281/zenodo.19802673).
+Forest Inventory and Analysis data used for calibration and
+benchmarking are publicly available through the U.S. Forest Service
+FIA DataMart at https://apps.fs.usda.gov/fia/datamart/.
 
 # CRediT author contributions
 

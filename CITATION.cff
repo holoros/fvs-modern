@@ -11,6 +11,10 @@ repository-code: "https://github.com/holoros/fvs-modern"
 license: MIT
 version: "2026.05.3"
 date-released: "2026-04-26"
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.19802673
+    description: "Zenodo archive for v2026.05.3"
 # Repository is dual-licensed: MIT for original Python, R, and deployment
 # code; CC0-1.0 for the USDA FVS Fortran source inherited from upstream.
 # See the LICENSE file for the split. A single SPDX identifier is used
