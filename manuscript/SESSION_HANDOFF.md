@@ -1,6 +1,23 @@
-# Session Handoff — 2026-04-26 15:05 EDT
+# Session Handoff — 2026-04-26 15:25 EDT
 
-## Status: FVS-PN/SN/IE libraries fully load via ctypes; runtime EOF is the remaining blocker
+## Status: v2026.05.2 tagged; PN/SN/IE libraries load but runtime EOF persists
+
+Two releases this session: v2026.05.1 (FIA Bakuzis revision) and
+v2026.05.2 (PN/SN/IE library build recovery). Both tagged and pushed
+to origin/main.
+
+```
+59612ab Release prep v2026.05.2: PN/SN/IE library build infrastructure recovery
+4da5168 Strengthen sections 5.4 and 5.5 with PN/SN/IE infrastructure work
+d017700 Session wrap-up: FVS-PN/SN/IE all load, runtime EOF is final blocker
+07ef4a8 Repair eccalc.f90 and ecin.f90 conversion bugs - FVSpn.so now loads via ctypes
+98b9fb6 Repair more econ F77->F90 conversion bugs (echarv, ecstatus, eccalc, ecsetp)
+8faf40b Fix FVS-PN library load: build include order + econ conversion bugs
+245875d Release prep v2026.05.1: FIA-stand Bakuzis revision and post-review artifacts
+```
+
+Tags v2026.05.1 (commit 13f617c) and v2026.05.2 (commit c5f3643) both
+verified on origin via git ls-remote.
 
 PN library symbols all recovered (12 in total). SN and IE libraries
 build cleanly with the same fixes. All three load via Python ctypes
