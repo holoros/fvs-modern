@@ -225,11 +225,15 @@ jobs:
           curl -sL "https://github.com/USDAForestService/ForestVegetationSimulator-Interface/archive/refs/heads/main.zip" -o iface.zip
           unzip -q iface.zip
 
-          # Install rFVS with corrected NAMESPACE
+          # Install rFVS with corrected NAMESPACE. Use sudo because the
+          # earlier "Install R packages" step put libraries in
+          # /usr/local/lib/R/site-library (a root-owned path) and a
+          # non-sudo R CMD INSTALL fails with "no permission to install
+          # to directory '/usr/local/lib/R/site-library'".
           cp ../deployment/config/rFVS_NAMESPACE ForestVegetationSimulator-Interface-main/rFVS/NAMESPACE
           mkdir -p ForestVegetationSimulator-Interface-main/rFVS/man
           printf '\name{rFVS-package}\n\alias{rFVS}\n\docType{package}\n\title{rFVS}\n\description{R interface to FVS.}\n\author{Nicholas Crookston}\n' > ForestVegetationSimulator-Interface-main/rFVS/man/rFVS-package.Rd
-          R CMD INSTALL ForestVegetationSimulator-Interface-main/rFVS
+          sudo R CMD INSTALL ForestVegetationSimulator-Interface-main/rFVS
 
           # Load test
           R --no-save -e "
