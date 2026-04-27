@@ -201,9 +201,15 @@ jobs:
           sed -i "s/A10'/A10,'/g" vbase/initre.f
           sed -i "s/I3' TARGETED/I3, ' TARGETED/g" vbase/initre.f
 
-          # Build IE variant
+          # Build IE variant. Upstream USDA does not ship a root-level
+          # Makefile; the makefile lives under bin/ and expects to be
+          # invoked from there. The previous workflow ran "make FVSie.so"
+          # from the repo root and failed with "No rule to make target
+          # 'FVSie.so'". Run make from bin/ instead.
+          cd bin
           OSTYPE=linux-gnu make FVSie.so
-          ls -la bin/FVSie.so
+          ls -la FVSie.so
+          cd ..
 
       - name: Test IE variant loads via rFVS
         run: |
