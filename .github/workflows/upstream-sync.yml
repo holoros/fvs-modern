@@ -232,7 +232,22 @@ jobs:
           # to directory '/usr/local/lib/R/site-library'".
           cp ../deployment/config/rFVS_NAMESPACE ForestVegetationSimulator-Interface-main/rFVS/NAMESPACE
           mkdir -p ForestVegetationSimulator-Interface-main/rFVS/man
-          printf '\name{rFVS-package}\n\alias{rFVS}\n\docType{package}\n\title{rFVS}\n\description{R interface to FVS.}\n\author{Nicholas Crookston}\n' > ForestVegetationSimulator-Interface-main/rFVS/man/rFVS-package.Rd
+          # Write rFVS-package.Rd via a quoted heredoc rather than printf:
+          # printf interprets \a (BEL), \t (TAB), \n (newline) inside the
+          # format string, which mangles the Rd macros (\alias, \title,
+          # \name) and yields "Sections \title, and \name must exist"
+          # during R CMD INSTALL.
+          cat > ForestVegetationSimulator-Interface-main/rFVS/man/rFVS-package.Rd <<'RDEOF'
+          \name{rFVS-package}
+          \alias{rFVS}
+          \docType{package}
+          \title{rFVS}
+          \description{R interface to FVS.}
+          \author{Nicholas Crookston}
+          RDEOF
+          # Strip the leading 10-space indent that the YAML pipe block
+          # preserves so the Rd parser sees column-zero macros.
+          sed -i 's/^          //' ForestVegetationSimulator-Interface-main/rFVS/man/rFVS-package.Rd
           sudo R CMD INSTALL ForestVegetationSimulator-Interface-main/rFVS
 
           # Load test
