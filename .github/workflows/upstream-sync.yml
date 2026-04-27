@@ -112,9 +112,29 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          # Configure git identity for the bot commit (required for commits in
+          # GitHub Actions; without this, git commit fails with
+          # "fatal: empty ident name not allowed" and exit code 128).
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+
           BRANCH="upstream-sync/$(date +%Y%m%d)"
+          # If a branch with today's date already exists from a prior run, pick
+          # a unique suffix rather than failing on git checkout -b.
+          if git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null 2>&1; then
+            BRANCH="${BRANCH}-$(date +%H%M)"
+          fi
+
           git checkout -b "$BRANCH"
           git add docs/upstream_report.md
+
+          # Skip the rest of this step gracefully if there is nothing staged
+          # (e.g., the report content is byte-identical to a prior commit).
+          if git diff --cached --quiet; then
+            echo "No new content in upstream_report.md; skipping PR creation."
+            exit 0
+          fi
+
           git commit -m "chore: upstream change report $(date +%Y-%m-%d)
 
           FVS core: ${{ steps.check.outputs.fvs_count }} new commits
@@ -123,6 +143,11 @@ jobs:
           Review docs/upstream_report.md for details."
 
           git push origin "$BRANCH"
+
+          # Ensure the upstream-sync label exists; create it on first run.
+          gh label create "upstream-sync" \
+            --description "Auto generated upstream sync report" \
+            --color "0E8A16" 2>/dev/null || true
 
           gh pr create \
             --title "Upstream changes detected ($(date +%Y-%m-%d))" \
