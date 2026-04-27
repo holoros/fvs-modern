@@ -191,9 +191,16 @@ jobs:
 
       - name: Build IE variant (smoke test)
         run: |
-          # Download latest USFS source
-          curl -sL "https://github.com/USDAForestService/ForestVegetationSimulator/archive/refs/heads/main.zip" -o fvs.zip
-          unzip -q fvs.zip
+          # Clone the latest USFS source. We use git clone with
+          # --recurse-submodules rather than the previous zip download
+          # because upstream now treats volume/NVEL as a git submodule
+          # (pointing at FMSC-Measurements/VolumeLibrary). Source
+          # archive zip downloads do not include submodule contents,
+          # so the previous workflow failed with
+          # "No rule to make target '../volume/NVEL/begInfo.inc'".
+          git clone --depth 1 --recurse-submodules --shallow-submodules \
+            https://github.com/USDAForestService/ForestVegetationSimulator.git \
+            ForestVegetationSimulator-main
           cd ForestVegetationSimulator-main
 
           # Apply FORMAT patches
