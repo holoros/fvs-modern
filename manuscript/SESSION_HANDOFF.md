@@ -1,12 +1,14 @@
-# Session Handoff — 2026-04-26 16:15 EDT
+# Session Handoff — 2026-04-26 (final update)
 
-## Status: Manuscript submission-ready. DOI minted.
+## Status: Manuscript submission-ready. DOI minted. v3 self-review complete.
 
-Three releases shipped this session, one DOI minted, manuscript
-fully updated with the citable archive. Local main and origin/main
-both at commit `d91227a`.
+Three releases shipped this session, one DOI minted, six targeted
+manuscript revisions applied during v3 self-review, manuscript fully
+updated with the citable archive. Local main at commit `4c8ec62`.
 
 ```
+4c8ec62 Manuscript review v3: six targeted revisions plus self-review docx
+c1b430f Update SESSION_HANDOFF for submission-ready state with DOI minted
 d91227a Insert minted Zenodo DOI 10.5281/zenodo.19802673 across artifacts
 9ba70af Simplify .zenodo.json to fix Zenodo InvenioRDM ingestion
 6a71a67 Update SESSION_HANDOFF with v2026.05.2 tag
@@ -65,8 +67,9 @@ variant property (not synthetic artifact).
    in `fia_stand_generator.py`.
 
 2. **Manuscript section 4.6 rewritten** with FIA numbers; sections
-   3.3, 5.4, 5.5 updated to match. 7,255 → 7,399 words. v2 self-
-   review re-scored 3.7 → 4.5; recommendation Minor Revision → Accept.
+   3.3, 5.4, 5.5 updated to match. 7,255 → 7,617 words (after v3
+   revisions). v2 self-review re-scored 3.7 → 4.5; v3 self-review
+   scored 4.7/5.0 with recommendation Accept.
 
 3. **FVS-PN/SN/IE library symbol resolution**: build script
    include-order fix in `deployment/scripts/build_fvs_libraries.sh`
@@ -85,6 +88,15 @@ variant property (not synthetic artifact).
    `creators[].orcid` translation. Simplified `.zenodo.json` to
    minimal valid metadata (no orcid, no related_identifiers).
    Result: DOI minted on first try.
+
+6. **v3 self-review with six targeted revisions** (commit `4c8ec62`):
+   R1: Abstract reframed "three of four" biological laws (not four).
+   R2: §2.2 added posterior draw subsampling rationale (500 from 4,000).
+   R3: §4.4 differentiated bootstrap envelope from posterior credible band.
+   R4: §5.3 distinguished synthetic vs FIA-mode Bakuzis compute costs.
+   R5: §3.1 added explicit site index treatment (SICOND, base age 50).
+   R6: §3.1 cited Reynolds (1984) for equivalence metric foundation.
+   v3 score: 4.7/5.0; recommendation: Accept.
 
 ## Open at the runtime layer
 
@@ -132,15 +144,23 @@ SSH key (GitHub):     /sessions/cool-epic-bardeen/mnt/uploads/id_ed25519
 - [x] Software availability with resolvable Zenodo DOI
 - [x] CITATION.cff with DOI identifier
 - [x] README with Zenodo badge
+- [x] Site index treatment specified (R5, v3)
+- [x] Posterior draw subsampling rationale (R2, v3)
+- [x] Bootstrap vs posterior uncertainty distinction (R3, v3)
+- [x] Synthetic vs FIA-mode compute cost distinction (R4, v3)
+- [x] Abstract biological law claim corrected to three of four (R1, v3)
+- [x] Reynolds (1984) cited in body (R6, v3)
+- [ ] Co-author final review (after distribution)
 
 Manuscript is ready for co-author distribution and EMS submission.
 
 ## Files of record
 
-- `manuscript/fvs_combined_draft.md` and `.docx` (7,399 words, 11 figures)
+- `manuscript/fvs_combined_draft.md` and `.docx` (7,617 words, 11 figures)
 - `manuscript/fvs_combined_SI.md` and `.docx`
-- `manuscript/20260426_ems_self-review_fvs-modern_v2.docx` (Module 5
-  v2 self-review at 4.5/5.0; recommendation Accept)
+- `manuscript/20260426_ems_self-review_fvs-modern_v3.md` and `.docx`
+  (v3 self-review at 4.7/5.0; recommendation Accept; six revisions applied)
+- `manuscript/20260426_ems_self-review_fvs-modern_v2.docx` (v2 self-review, superseded)
 - `RELEASE_NOTES_v2026.05.1.md`
 - `RELEASE_NOTES_v2026.05.2.md`
 - `calibration/python/PN_SN_LIBRARY_DIAGNOSIS.md`
