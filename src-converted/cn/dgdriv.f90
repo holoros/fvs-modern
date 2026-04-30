@@ -150,14 +150,22 @@ DO 50 ISPC=1,MAXSP
 !----------
 !  COMPUTE SERIAL CORRELATION ADJUSTED FPR PERIOD LENGTH.
 !----------
+! CN-variant guard: default VARDG when uninitialized for this species.
+! Without this, VARDG=0 produces SIG1=0, SSIGMA=0, RHO=0/0=NaN, which
+! propagates NaN into DDS and every downstream tree statistic.
+IF (VARDG(ISPC) <= 0.0) VARDG(ISPC) = 0.05
 VARYP1=VARDG(ISPC)*PVMLT
 EVARP1=(SQRT(1.0+4.0*VARYP1)+1.0)/2.0
 SIG1=SQRT(ALOG(EVARP1))
 VARYP2=VARDG(ISPC)*VMLT
 EVARP2=(SQRT(1.0+4.0*VARYP2)+1.0)/2.0
 SSIGMA=SQRT(ALOG(EVARP2))
-RHO=ALOG(1.0+CORR*SQRT((EVARP1-1.0)*(EVARP2-1.0)))/ &
-            (SIG1*SSIGMA)
+IF (SIG1*SSIGMA < 1.0E-12) THEN
+  RHO = 0.0
+ELSE
+  RHO=ALOG(1.0+CORR*SQRT((EVARP1-1.0)*(EVARP2-1.0)))/ &
+              (SIG1*SSIGMA)
+END IF
 RHOCP=SQRT(1.0-RHO*RHO)
 XDGROW=ALOG(XDMULT(ISPC))
 !----------
