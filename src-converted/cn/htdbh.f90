@@ -40,50 +40,55 @@ SUBROUTINE HTDBH (IFOR, ISPC, D, H, MODE)
 
   ! CN_HD COMMON block populated from cn.json by RCON
   ! HDB0(MAXSP), HDB1(MAXSP) per-species; LHDOK(MAXSP) flags species presence.
-  REAL    HDB0, HDB1
+  REAL    HDB0, HDB1, HDB2
   LOGICAL LHDOK
-  COMMON /CN_HD/ HDB0(MAXSP), HDB1(MAXSP), LHDOK(MAXSP)
+  COMMON /CN_HD/ HDB0(MAXSP), HDB1(MAXSP), HDB2(MAXSP), LHDOK(MAXSP)
 
-  REAL :: B0, B1, ARG
+  REAL :: B0, B1, B2, ARG
 
   ! ---------- coefficient selection -------------------------------------------
   IF (ISPC < 1 .OR. ISPC > MAXSP) THEN
-    ! Out-of-range species: pooled CONUS fallback
+    ! Out-of-range species: pooled CONUS fallback (Curtis form)
     B0 = 4.5
     B1 = -6.5
+    B2 = -0.3
   ELSE IF (.NOT. LHDOK(ISPC)) THEN
     ! Species exists but no HD fit: pooled fallback
     B0 = 4.5
     B1 = -6.5
+    B2 = -0.3
   ELSE
     B0 = HDB0(ISPC)
     B1 = HDB1(ISPC)
+    B2 = HDB2(ISPC)
+    IF (ABS(B2) < 1.0E-6) B2 = -0.3
   END IF
 
   ! ---------- forward (D -> H) or inverse (H -> D) ---------------------------
   IF (MODE == 0) THEN
-    ! H = 4.5 + exp(B0 + B1 / (D + 1))
+    ! H = 4.5 + exp(B0 + B1 * D**B2)  (3-parameter Curtis form, matches cn.json)
     IF (D <= 0.0) THEN
       H = 4.5
       RETURN
     END IF
-    ARG = B0 + B1 / (D + 1.0)
+    ARG = B0 + B1 * (D**B2)
     ! protect against extreme arguments
     IF (ARG > 12.0)  ARG = 12.0
     IF (ARG < -3.0)  ARG = -3.0
     H = 4.5 + EXP(ARG)
   ELSE
-    ! D = 1 / ((log(H - 4.5) - B0)/B1) - 1
+    ! D = ((LOG(H - 4.5) - B0) / B1) ** (1/B2)  (Curtis inverse)
     IF (H <= 4.5) THEN
       D = 0.1
       RETURN
     END IF
-    ARG = LOG(H - 4.5) - B0
-    IF (ABS(ARG) < 1.0E-6) THEN
-      D = 100.0    ! asymptotic
+    ARG = (LOG(H - 4.5) - B0) / B1
+    IF (ARG <= 0.0) THEN
+      D = 0.1
     ELSE
-      D = B1 / ARG - 1.0
+      D = ARG ** (1.0 / B2)
       IF (D < 0.1) D = 0.1
+      IF (D > 200.0) D = 200.0
     END IF
   END IF
 
