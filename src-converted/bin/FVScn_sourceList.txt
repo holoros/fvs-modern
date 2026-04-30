@@ -62,6 +62,7 @@
 ../cn/dgf.f90
 ../cn/cn_coeffs_data.f90
 ../cn/cons_stubs.f90
+../cn/cn_clim_stash.f90
 ../cn/load_cn_json.f90
 ../cn/dubscr.f90
 ../cn/dunn.f90
