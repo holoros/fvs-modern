@@ -78,6 +78,15 @@ SUBROUTINE HTGF
     B1 = JHGB1(ISPC); B2 = JHGB2(ISPC); B3 = JHGB3(ISPC); B4 = JHGB4(ISPC)
     B5 = JHGB5(ISPC); B6 = JHGB6(ISPC); B7 = JHGB7(ISPC); B8 = JHGB8(ISPC)
 
+    ! CN-variant defensive defaults: when JHGB0 is zero or implausible,
+    ! the constrained refit didn't produce a usable fit for this species.
+    ! Use a generic conifer-shaped Chapman-Richards: max height ~120 ft,
+    ! site-rate parameter B1=0.04/yr, allometric coupling B2=1.5.
+    IF (HT_MAX < 30.0 .OR. HT_MAX > 250.0) HT_MAX = 120.0
+    IF (ABS(B1) < 1.0E-6) B1 = 0.04
+    IF (ABS(B2) < 1.0E-6) B2 = 1.5
+    IF (ABS(B3) < 1.0E-6) B3 = 0.5
+
     HT_C   = HT(I)
     CR_C   = REAL(ICR(I)) / 100.0
     IF (CR_C <= 0.0) CR_C = 0.05
@@ -96,7 +105,11 @@ SUBROUTINE HTGF
 
       FACTOR = HT_MAX * B1 * B2 * (CR_C**B3) * EXP(ARG) * (ONE_MINUS**(B2 - 1.0))
 
+      ! Cap height increment at 5 ft/year to prevent runaway growth from
+      ! pathological coefficient combinations. 5 ft/yr is at the extreme
+      ! end of biological growth (e.g. fast-grown plantation pine).
       INC = MAX(FACTOR, 0.0)
+      IF (INC > 5.0) INC = 5.0
       HTG(I) = HTG(I) + INC
       HT_C   = HT_C + INC
     END DO

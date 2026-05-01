@@ -82,11 +82,26 @@ SUBROUTINE MORTS
     IF (CR_FRAC > 1.00) CR_FRAC = 1.00
     BAL_USE = PTBAA(ITRE(I))
 
+    ! CN-variant B0 shift: ~117 of 202 fitted species (58%) in the
+    ! constrained refit have intercepts implying baseline mortality
+    ! 5-30%/year at zero covariates. FVS expects 0.5-2%/year typical.
+    ! Cap B0 at -3.49 (corresponds to ~3%/year baseline) so trees with
+    ! "average" state see at most ~3% baseline, while preserving the
+    ! species-specific covariate slopes for differentiation by tree state.
+    ! Audit: see outputs/cn_mortality_audit.md.
+    IF (B0 > -3.49) B0 = -3.49
+
     ETA_YR = B0 + B1*DBH_USE + B2*CR_FRAC + B3*BAL_USE
     IF (ETA_YR >  10.0) ETA_YR =  10.0
     IF (ETA_YR < -20.0) ETA_YR = -20.0
 
     PYR  = 1.0 - EXP( -EXP(ETA_YR) )
+
+    ! Belt-and-suspenders: also cap PYR at 5% to catch any covariate
+    ! combination that pushes ETA back into the implausible range
+    ! (e.g., very high BAL on a species with positive B3).
+    IF (PYR > 0.05) PYR = 0.05
+
     PCYC = 1.0 - (1.0 - PYR)**REAL(NPRD)
 
     IF (PCYC < 0.0) PCYC = 0.0

@@ -86,6 +86,20 @@ SUBROUTINE DGF(DIAM)
     B0 = JDGB0(ISPC); B1 = JDGB1(ISPC); B2 = JDGB2(ISPC); B3 = JDGB3(ISPC)
     B4 = JDGB4(ISPC); B5 = JDGB5(ISPC); B6 = JDGB6(ISPC)
 
+    ! CN-variant defensive defaults: when JDGB0 is exactly zero (no fit
+    ! for this species) use a generic Greg-Johnson-shaped pooled value.
+    ! These defaults give moderate annual diameter increment (~0.1 in/yr
+    ! at average tree state).
+    IF (ABS(B0) < 1.0E-6 .AND. ABS(B1) < 1.0E-6) THEN
+      B0 = -1.5
+      B1 = -0.6
+      B2 = -0.2
+      B3 = 1.5
+      B4 = 0.4
+      B5 = 0.0
+      B6 = 0.0
+    END IF
+
     ! Initialise per-tree state from input
     DBH_C = DIAM(I)
     HT_C  = HT(I)
@@ -112,6 +126,12 @@ SUBROUTINE DGF(DIAM)
       BAL_TERM = (MAX(BAL_C, 0.0)**B4) / BAL_DEN
 
       INC = EXP(B0 + B1 * SIZE_LOG + B2 * BAL_TERM + B5 * ELEV + B6 * CN_EMT_LOC)
+
+      ! Cap per-year diameter increment at 1.0 inch/year. Even fast-grown
+      ! plantation pine rarely exceeds 0.6 in/yr; 1.0 is a defensive ceiling
+      ! against pathological coefficient combinations producing inf.
+      IF (INC > 1.0) INC = 1.0
+      IF (INC < 0.0) INC = 0.0
 
       ! Accumulate change-in-squared-diameter (legacy DDS)
       DDS_TOT = DDS_TOT + (DBH_C + INC)**2 - DBH_C**2
