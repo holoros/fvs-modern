@@ -82,7 +82,11 @@ SUBROUTINE HTGF
     ! the constrained refit didn't produce a usable fit for this species.
     ! Use a generic conifer-shaped Chapman-Richards: max height ~120 ft,
     ! site-rate parameter B1=0.04/yr, allometric coupling B2=1.5.
-    IF (HT_MAX < 30.0 .OR. HT_MAX > 250.0) HT_MAX = 120.0
+    !
+    ! Window is [30, 400] ft to accommodate the genuinely tall species:
+    ! Doug-fir (325), redwood (~360), Sitka spruce (~310), giant sequoia
+    ! (~310). Anything above 400 ft is a refit failure.
+    IF (HT_MAX < 30.0 .OR. HT_MAX > 400.0) HT_MAX = 120.0
     IF (ABS(B1) < 1.0E-6) B1 = 0.04
     IF (ABS(B2) < 1.0E-6) B2 = 1.5
     IF (ABS(B3) < 1.0E-6) B3 = 0.5
