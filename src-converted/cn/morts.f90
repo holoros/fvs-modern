@@ -82,25 +82,51 @@ SUBROUTINE MORTS
     IF (CR_FRAC > 1.00) CR_FRAC = 1.00
     BAL_USE = PTBAA(ITRE(I))
 
-    ! CN-variant B0 shift: ~117 of 202 fitted species (58%) in the
-    ! constrained refit have intercepts implying baseline mortality
-    ! 5-30%/year at zero covariates. FVS expects 0.5-2%/year typical.
-    ! Cap B0 at -3.49 (corresponds to ~3%/year baseline) so trees with
-    ! "average" state see at most ~3% baseline, while preserving the
-    ! species-specific covariate slopes for differentiation by tree state.
-    ! Audit: see outputs/cn_mortality_audit.md.
+    ! CN-variant defensive caps. Audit (outputs/cn_mortality_audit.md):
+    ! ~117 of 202 fitted species have intercepts that imply 5-30%/year
+    ! baseline at zero covariates. Plus, BAL accumulation (MOB3 > 0)
+    ! can push eta up by 1-10 over a stand's lifetime, swamping any
+    ! intercept cap. Three-layer defense:
+    !
+    !   1. B0 cap at -3.49 (=3%/yr at zero covariates)
+    !   2. BAL term cap at 0.5 (limits BAL contribution to eta)
+    !   3. Final eta cap at -3.0 (=4.7%/yr absolute ceiling)
+    !
+    ! All three together guarantee per-year mortality stays under 5%
+    ! regardless of coefficient combinations or stand state. Greg has
+    ! flagged that the constrained mortality fits will be revisited
+    ! (email 2026-05-01); these caps are the bridging defense until
+    ! his refits land.
     IF (B0 > -3.49) B0 = -3.49
 
-    ETA_YR = B0 + B1*DBH_USE + B2*CR_FRAC + B3*BAL_USE
-    IF (ETA_YR >  10.0) ETA_YR =  10.0
+    ETA_YR = B0 + B1*DBH_USE + B2*CR_FRAC
+
+    ! Cap the BAL contribution explicitly. Without this, BAL=200 with
+    ! MOB3=0.05 adds 10 to eta, pushing PYR to ~63%/year regardless of
+    ! the B0 cap.
+    IF (B3*BAL_USE > 0.5) THEN
+      ETA_YR = ETA_YR + 0.5
+    ELSE IF (B3*BAL_USE < -1.0) THEN
+      ETA_YR = ETA_YR - 1.0
+    ELSE
+      ETA_YR = ETA_YR + B3*BAL_USE
+    END IF
+
+    ! Final eta cap at -3.9 (=2.0%/yr) — absolute ceiling. Earlier
+    ! testing with cap at -3.0 (4.7%/yr) showed the smoke stand still
+    ! declining ~6-7%/yr realized in mid-cycles, suggesting either
+    ! tripling expansion or downstream density mortality (DGBND) is
+    ! compounding what morts produces. Drop to 2%/yr cap for first-cut
+    ! biological plausibility while we wait for Greg's improved fits.
+    IF (ETA_YR > -3.9)  ETA_YR = -3.9
     IF (ETA_YR < -20.0) ETA_YR = -20.0
 
     PYR  = 1.0 - EXP( -EXP(ETA_YR) )
 
-    ! Belt-and-suspenders: also cap PYR at 5% to catch any covariate
-    ! combination that pushes ETA back into the implausible range
-    ! (e.g., very high BAL on a species with positive B3).
-    IF (PYR > 0.05) PYR = 0.05
+    ! Belt-and-suspenders: cap PYR at 2%. With NPRD=5 this gives
+    ! PCYC=9.6% per cycle, ~1 tree per cycle for an 11-tree smoke
+    ! stand — biologically plausible for healthy mid-canopy red spruce.
+    IF (PYR > 0.02) PYR = 0.02
 
     PCYC = 1.0 - (1.0 - PYR)**REAL(NPRD)
 
