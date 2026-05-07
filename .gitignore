@@ -306,3 +306,7 @@ test_*.tre
 test_*.out
 test_*.key
 test_*.f90
+
+# Session-generated cleanup helpers (not committed)
+cardinal_cleanup_*.sh
+fvs-modern_quarantine_*/

@@ -436,7 +436,7 @@ if (sys.nframe() == 0) {
 
   ## Parse command-line arguments
   args <- commandArgs(trailingOnly = TRUE)
-  site_var <- if ("--bgi" %in% args) "bgi" else "climate_si"
+  site_var <- if ("--bgi" %in% args) "bgi" else if ("--site" %in% args) args[which(args == "--site") + 1] else "climate_si"
   method   <- if ("--annualized" %in% args) "annualized" else "direct"
 
   message("=== ORGANON DG CONUS-wide Model Fitting ===")
