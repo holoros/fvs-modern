@@ -310,3 +310,18 @@ test_*.f90
 # Session-generated cleanup helpers (not committed)
 cardinal_cleanup_*.sh
 fvs-modern_quarantine_*/
+
+# Additional 2026-05-06 patterns: perseus factorial outputs, compiled stan binaries, Fortran scratch
+calibration/output/perseus_hu_factorial/
+calibration/output/perseus_*/
+calibration/stan/*[^.]
+calibration/stan/dg_*
+calibration/stan/hg_*
+calibration/stan/hcb_*
+calibration/stan/ht_*
+calibration/stan/mort_*
+calibration/stan/cr_*
+calibration/stan/modifier_*
+!calibration/stan/*.stan
+!calibration/stan/*.md
+fort.[0-9]*
