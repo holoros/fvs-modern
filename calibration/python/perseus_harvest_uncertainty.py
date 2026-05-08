@@ -142,7 +142,7 @@ def run_fvs_scenario(
     calibration_keywords: str,
     harvest_cycles: list[int],
     inv_year: int,
-    current_ba: float | None,
+    current_ba: float | None = None,  # kept for forward compatibility
     num_cycles: int = NUM_CYCLES,
     cycle_length: int = CYCLE_LENGTH,
 ) -> dict:
@@ -163,8 +163,13 @@ def run_fvs_scenario(
         tree_init_df.to_sql("fvs_treeinit", conn, if_exists="replace", index=False)
         conn.close()
 
+        # generate_harvest_keywords signature on Cardinal (post-rollback of
+        # 4/27 absolute-residual patch) does not accept current_ba. Match the
+        # live signature; the existing -0.50 retain-50pct behavior is what
+        # the existing factorial in the workbook is already running with, so
+        # this is the right thing for adding posterior bands on top.
         harvest_kw = generate_harvest_keywords(
-            harvest_cycles, inv_year, cycle_length, current_ba=current_ba
+            harvest_cycles, inv_year, cycle_length
         )
 
         keyfile_content = HARVEST_KEYFILE_TEMPLATE.format(
@@ -322,7 +327,6 @@ def process_plot_scenario(
                     stand_df, tree_df, stand_id, variant,
                     calibration_keywords=cfg_kw,
                     harvest_cycles=harvest_cycles, inv_year=inv_year,
-                    current_ba=current_ba,
                 )
                 for cycle_year, treelist in sorted(res["treelists"].items()):
                     proj_year = cycle_year - inv_year
@@ -355,7 +359,11 @@ def process_plot_scenario(
             draw_keywords = engine.generate_keywords_for_draw(
                 draw, default_cfg, draw_idx=int(draw_idx)
             )
-            # GROWMULT keywords trigger FVS STOP 20; filter (canonical fix)
+            # Engine now emits BAIMULT (a real top-level FVS keyword, per
+            # base/keywds.f90 TABLE position 58) instead of GROWMULT (which is
+            # a CLIMATE-extension sub-keyword that triggers STOP 20 at the
+            # outer level). The legacy GROWMULT filter is no longer needed.
+            # Defensive: still strip any stray GROWMULT lines if present.
             draw_keywords = "\n".join(
                 line for line in draw_keywords.splitlines()
                 if not line.startswith("GROWMULT")
@@ -375,7 +383,6 @@ def process_plot_scenario(
                     stand_df, tree_df, stand_id, variant,
                     calibration_keywords=draw_keywords,
                     harvest_cycles=harvest_cycles, inv_year=inv_year,
-                    current_ba=current_ba,
                 )
                 for cycle_year, treelist in sorted(res["treelists"].items()):
                     proj_year = cycle_year - inv_year
