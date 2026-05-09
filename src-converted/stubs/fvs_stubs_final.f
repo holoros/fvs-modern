@@ -71,3 +71,11 @@ C     NVB volume initialization
       ENDDO
       RETURN
       END
+
+      SUBROUTINE VARVER(VERS)
+C     Stub for variant version reporter
+      IMPLICIT NONE
+      CHARACTER*(*) VERS
+      VERS = " "
+      RETURN
+      END
