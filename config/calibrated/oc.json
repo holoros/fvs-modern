@@ -946,7 +946,7 @@
     }
   },
   "calibration": {
-    "date": "2026-03-31",
+    "date": "2026-04-08",
     "method": "Bayesian MCMC (CmdStanR + brms) and quantile regression",
     "fia_data_source": "rFIA package",
     "r_version": "4.4.0",
@@ -954,13 +954,12 @@
     "components_updated": [
       "diameter_growth",
       "height_diameter",
+      "height_increment",
       "mortality",
       "crown_ratio",
       "sdimax"
     ],
-    "components_skipped": [
-      "height_increment"
-    ],
-    "notes": "Calibration based on FIA data. 5 of 7 component models integrated (tree: DG, H-D, HG, mortality, CR; stand: SDIMAX, BAMAX)."
+    "components_skipped": [],
+    "notes": "Calibration based on FIA data. 6 of 7 component models integrated (tree: DG, H-D, HG, mortality, CR; stand: SDIMAX, BAMAX)."
   }
 }
