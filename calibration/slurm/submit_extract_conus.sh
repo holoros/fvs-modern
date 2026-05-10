@@ -29,6 +29,8 @@
 
 set -uo pipefail
 source /etc/profile.d/lmod.sh
+# R/4.4.0 requires gcc/12.3.0 to be loaded first (per `module spider R/4.4.0`)
+module load gcc/12.3.0
 module load R/4.4.0
 
 COMPONENT="${COMPONENT:-hg}"
