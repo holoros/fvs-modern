@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=fvs_dg_kue_sf_b1_pilot
-#SBATCH --time=24:00:00
+#SBATCH --time=12:00:00
 #SBATCH --mem=64G
 #SBATCH --cpus-per-task=4
 #SBATCH --account=PUOM0008
