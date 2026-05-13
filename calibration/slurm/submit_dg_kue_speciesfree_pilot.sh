@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=fvs_dg_kue_sf_b1_pilot
-#SBATCH --time=12:00:00
+#SBATCH --time=18:00:00
 #SBATCH --mem=64G
 #SBATCH --cpus-per-task=4
 #SBATCH --account=PUOM0008
@@ -31,4 +31,4 @@ Rscript --vanilla calibration/R/32_fit_dg_kuehne_speciesfree.R \
   --stan_file=calibration/stan/dg_kuehne2022_speciesfree.stan \
   --outdir=calibration/output/conus/dg/speciesfree_pilot \
   --outname=dg_kuehne_cspi_traits1_b1 \
-  --subsample=200000
+  --subsample=100000
