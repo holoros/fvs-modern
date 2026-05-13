@@ -38,12 +38,12 @@ trait_labels <- c(
 )
 
 models_with_traits <- tribble(
-  ~model,         ~variant,            ~path,
-  "HG",           "B2 species-aware",  "calibration/output/conus/hg/hg_organon_fixedK_cspi_traits1_summary.csv",
-  "HG",           "B1 species-free",   "calibration/output/conus/hg/speciesfree_pilot/hg_organon_fixedK_cspi_traits1_summary.csv",
-  "HT-DBH",       "B2 species-aware",  "calibration/output/conus/ht_dbh/htdbh_wykoff_lognormal_cspi_traits1_summary.csv",
-  "DG Kuehne",    "B2 species-aware",  "calibration/output/conus/dg/dg_kuehne_cspi_traits1_summary.csv",
-  "DG Kuehne",    "B1 species-free",   "calibration/output/conus/dg/speciesfree_pilot/dg_kuehne_cspi_traits1_b1_summary.csv"
+  ~model,        ~variant,            ~path,
+  "HG",          "B2 species-aware",  "calibration/output/evaluation/summaries/hg_b2_eval_summary.csv",
+  "HG",          "B1 species-free",   "calibration/output/evaluation/summaries/hg_b1_eval_summary.csv",
+  "HT-DBH",      "B2 species-aware",  "calibration/output/evaluation/summaries/htdbh_b2_eval_summary.csv",
+  "DG Kuehne",   "B2 species-aware",  "calibration/output/evaluation/summaries/dg_kue_b2_eval_summary.csv",
+  "DG Kuehne",   "B1 species-free",   "calibration/output/evaluation/summaries/dg_kue_b1_eval_summary.csv"
 ) %>%
   mutate(full_path = file.path(PROJ_ROOT, path))
 

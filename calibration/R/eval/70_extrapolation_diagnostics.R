@@ -129,32 +129,33 @@ cart$n_oor_covariates <- rowSums(cart[, paste0("oor_", names(spec$cov_specs))])
 predict_eta <- function(draws, trait_eff, cart) {
   N_pred  <- nrow(cart)
   N_draws <- nrow(draws)
-  b0 <- draws[, 1]
+  as_v <- function(mat, col) as.numeric(mat[, col])
+  b0 <- as_v(draws, 1)
   eta_mat <- matrix(b0 + trait_eff, nrow = N_draws, ncol = N_pred)
   if (MODEL == "dg_kue") {
     eta_mat <- eta_mat +
-      outer(draws[, 2], log(cart$dbh))            +
-      outer(draws[, 3], cart$dbh)                 +
-      outer(draws[, 4], cart$ln_cr_adj)           +
-      outer(draws[, 5], cart$ln_bal_sw_adj)       +
-      outer(draws[, 6], cart$bal_hw)              +
-      outer(draws[, 7], cart$ln_csi)              +
-      outer(draws[, 8], cart$ba_x_rd)             +
-      outer(draws[, 9], cart$bal_x_rd)
+      outer(as_v(draws, 2), log(cart$dbh))            +
+      outer(as_v(draws, 3), cart$dbh)                 +
+      outer(as_v(draws, 4), cart$ln_cr_adj)           +
+      outer(as_v(draws, 5), cart$ln_bal_sw_adj)       +
+      outer(as_v(draws, 6), cart$bal_hw)              +
+      outer(as_v(draws, 7), cart$ln_csi)              +
+      outer(as_v(draws, 8), cart$ba_x_rd)             +
+      outer(as_v(draws, 9), cart$bal_x_rd)
   } else if (MODEL == "hg") {
     eta_mat <- eta_mat +
-      outer(draws[, 2], log(cart$dbh))  +
-      outer(draws[, 3], cart$dbh)       +
-      outer(draws[, 4], cart$ln_cr_adj) +
-      outer(draws[, 5], cart$bal)       +
-      outer(draws[, 6], cart$cspi)
+      outer(as_v(draws, 2), log(cart$dbh))  +
+      outer(as_v(draws, 3), cart$dbh)       +
+      outer(as_v(draws, 4), cart$ln_cr_adj) +
+      outer(as_v(draws, 5), cart$bal)       +
+      outer(as_v(draws, 6), cart$cspi)
   }
   eta_mat
 }
 
 cat("Predicting across", nrow(cart), "grid cells with", nrow(draws), "draws ...\n")
 eta_mat <- predict_eta(draws, trait_avg, cart)
-sigma_draws <- draws[, "sigma"]
+sigma_draws <- as.numeric(draws[, "sigma"])
 pred_mat <- exp(eta_mat + matrix(sigma_draws^2 / 2,
                                   nrow = nrow(eta_mat), ncol = ncol(eta_mat)))
 

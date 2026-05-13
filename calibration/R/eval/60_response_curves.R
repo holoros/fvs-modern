@@ -146,29 +146,28 @@ predict_eta <- function(draws_sel, trait_eff, covariate_grid) {
   N_pred  <- nrow(covariate_grid)
   N_draws <- nrow(draws_sel)
   eta_mat <- matrix(0, nrow = N_draws, ncol = N_pred)
-  # b0/a0 + trait
-  b0_draws <- draws_sel[, 1]
+  # Coerce each posterior column to a plain numeric vector. draws_matrix
+  # subsetting returns a draws_matrix not a vector, which breaks outer().
+  as_v <- function(mat, col) as.numeric(mat[, col])
+  b0_draws <- as_v(draws_sel, 1)
   eta_mat <- eta_mat + matrix(b0_draws + trait_eff, nrow = N_draws, ncol = N_pred)
   if (MODEL == "dg_kue") {
     eta_mat <- eta_mat +
-      outer(draws_sel[, 2], log(covariate_grid$dbh))      +
-      outer(draws_sel[, 3], covariate_grid$dbh)           +
-      outer(draws_sel[, 4], covariate_grid$ln_cr_adj)     +
-      outer(draws_sel[, 5], covariate_grid$ln_bal_sw_adj) +
-      outer(draws_sel[, 6], covariate_grid$bal_hw)        +
-      outer(draws_sel[, 7], covariate_grid$ln_csi)        +
-      outer(draws_sel[, 8], covariate_grid$ba_x_rd)       +
-      outer(draws_sel[, 9], covariate_grid$bal_x_rd)
+      outer(as_v(draws_sel, 2), log(covariate_grid$dbh))      +
+      outer(as_v(draws_sel, 3), covariate_grid$dbh)           +
+      outer(as_v(draws_sel, 4), covariate_grid$ln_cr_adj)     +
+      outer(as_v(draws_sel, 5), covariate_grid$ln_bal_sw_adj) +
+      outer(as_v(draws_sel, 6), covariate_grid$bal_hw)        +
+      outer(as_v(draws_sel, 7), covariate_grid$ln_csi)        +
+      outer(as_v(draws_sel, 8), covariate_grid$ba_x_rd)       +
+      outer(as_v(draws_sel, 9), covariate_grid$bal_x_rd)
   } else if (MODEL == "hg") {
-    # HG ORGANON form: a1..a8 are model-specific. The canonical mapping is
-    # to ln(dbh), CR, BAL, CSPI, plus interaction terms. For safety here,
-    # check the actual layout when calling.
     eta_mat <- eta_mat +
-      outer(draws_sel[, 2], log(covariate_grid$dbh))  +
-      outer(draws_sel[, 3], covariate_grid$dbh)       +
-      outer(draws_sel[, 4], covariate_grid$ln_cr_adj) +
-      outer(draws_sel[, 5], covariate_grid$bal)       +
-      outer(draws_sel[, 6], covariate_grid$cspi)
+      outer(as_v(draws_sel, 2), log(covariate_grid$dbh))  +
+      outer(as_v(draws_sel, 3), covariate_grid$dbh)       +
+      outer(as_v(draws_sel, 4), covariate_grid$ln_cr_adj) +
+      outer(as_v(draws_sel, 5), covariate_grid$bal)       +
+      outer(as_v(draws_sel, 6), covariate_grid$cspi)
   }
   eta_mat
 }
@@ -207,7 +206,7 @@ for (cov_name in names(spec$cov_specs)) {
 
   # Lognormal back-transform: mean = exp(mu + sigma^2/2). For visualization,
   # we plot on the natural response scale.
-  sigma_draws <- draws_sel[, "sigma"]
+  sigma_draws <- as.numeric(draws_sel[, "sigma"])
   mu_pred <- eta_mat
   pred_mat <- exp(mu_pred + matrix(sigma_draws^2 / 2,
                                     nrow = nrow(mu_pred), ncol = ncol(mu_pred)))
