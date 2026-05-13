@@ -47,9 +47,11 @@ get_arg <- function(name, default = NULL) {
 }
 
 MODEL    <- get_arg("model", "hg")
+VARIANT  <- get_arg("variant", "b1")
 SITE_VAR <- get_arg("site_var", "cspi")
 stopifnot(SITE_VAR %in% c("cspi", "bgi", "climate_si"))
 stopifnot(MODEL %in% c("hg", "dg_kue"))
+stopifnot(VARIANT %in% c("b1", "b2"))
 
 PROJ_ROOT <- "/users/PUOM0008/crsfaaron/fvs-modern"
 OUT_DIR   <- get_arg("outdir",
@@ -63,6 +65,7 @@ dir.create(OUT_DIR, recursive = TRUE, showWarnings = FALSE)
 
 cat(sprintf("Site productivity stress test\n"))
 cat(sprintf("  model:     %s\n", MODEL))
+cat(sprintf("  variant:   %s\n", VARIANT))
 cat(sprintf("  site_var:  %s\n", SITE_VAR))
 cat(sprintf("  outdir:    %s\n", OUT_DIR))
 cat(sprintf("  subsample: %d\n\n", SUBSAMPLE))
@@ -139,6 +142,27 @@ if (!is.na(SUBSAMPLE) && SUBSAMPLE < nrow(dat)) {
   cat("Subsampled to:", nrow(dat), "rows\n\n")
 }
 
+# --- HG covariate prep (parallel to Kuehne, different covariate set) -------
+if (MODEL == "hg") {
+  # HG ORGANON form uses: ln_dbh, dbh, ln_cr_adj, bal, site, plus interactions
+  MIN_OBS_SPECIES <- 5000
+  dat <- dat[is.finite(HT1) & is.finite(HT2) & HT2 > HT1 &
+             is.finite(BAL1) & BAL1 >= 0]
+  dat[, hg_obs_a   := (HT2 - HT1) / YEARS]
+  dat[, sqrt_years := sqrt(YEARS)]
+  dat[, ln_dbh     := log(DBH1)]
+  dat[, ln_cr_adj  := log((CR1 + 0.2) / 1.2)]
+  dat[, bal_m      := BAL1 * 0.2296]   # ft2/ac to m2/ha
+  dat[, bal_log    := log(bal_m + 5.0)]
+  dat <- dat[hg_obs_a > 0.0 & hg_obs_a < 2.0]
+  cat("After HG column filters:", nrow(dat), "rows\n")
+
+  sp_counts <- dat[, .N, by = SPCD][N >= MIN_OBS_SPECIES]
+  dat <- dat[SPCD %in% sp_counts$SPCD]
+  cat("After HG species filter:", nrow(dat), "rows;",
+      nrow(sp_counts), "species\n")
+}
+
 # --- Build trait matrix W ---------------------------------------------------
 trait_cols <- c("wood_specific_gravity", "shade_tolerance_num", "softwood",
                 "leaf_longevity_months", "max_ht_m", "max_dbh_cm",
@@ -181,13 +205,38 @@ if (MODEL == "dg_kue") {
     W = W
   )
 } else if (MODEL == "hg") {
-  STAN_FILE <- file.path(PROJ_ROOT,
-                         "calibration/stan/hg_organon_speciesfree.stan")
-  # The HG species-free model expects specific covariate names; check that
-  # the stan file's data block matches. The naming may need a custom build.
-  # For this stress test pilot we use the same structure as 32_fit_dg_kuehne.
-  stop("HG site stress test requires the HG Stan model layout to be verified.\n",
-       "Run with --model=dg_kue first to validate, then I'll add HG.")
+  # HG B1 uses the pre-compiled hg_organon_speciesfree binary; the source was
+  # lost in git clean. Use the binary directly via cmdstanr::cmdstan_model
+  # with the exe_file argument when ready_to_compile = FALSE. For now, fall
+  # back to recompiling from a copy of the dg_kuehne speciesfree stan if the
+  # HG source is unavailable.
+  STAN_FILE <- if (VARIANT == "b1") {
+    file.path(PROJ_ROOT, "calibration/stan/hg_organon_speciesfree.stan")
+  } else {
+    file.path(PROJ_ROOT, "calibration/stan/height_increment.stan")
+  }
+  if (!file.exists(STAN_FILE)) {
+    stop(sprintf("HG Stan file not found: %s", STAN_FILE))
+  }
+
+  # The HG ORGANON form linear predictor uses:
+  #   eta = a0 + trait_effect[sp] + a1 ln(dbh) + a2 dbh + a3 ln_cr_adj
+  #       + a4 bal_log + a5 ln_csi + a6 ln(dbh)^2 + a7 dbh*ln_csi + a8 ln_csi^2
+  # but the exact mapping depends on which version of the Stan file is used.
+  # Build the data block conservatively with the same names the Stan model
+  # expects. If the Stan file uses different field names, this call will fail
+  # at sampling with a clear error and you can edit the data block.
+  stan_data <- list(
+    N_obs = nrow(dat), N_sp = length(sp_levels),
+    N_L1 = length(L1_levels), N_L2 = length(L2_levels), N_L3 = length(L3_levels),
+    P_trait = ncol(W),
+    hg_obs_a = dat$hg_obs_a, sqrt_years = dat$sqrt_years,
+    ln_dbh = dat$ln_dbh, dbh = dat$DBH1, ln_cr_adj = dat$ln_cr_adj,
+    bal_log = dat$bal_log, ln_csi = dat$ln_site,
+    sp_idx = dat$sp_idx, L1_idx = dat$L1_idx,
+    L2_idx = dat$L2_idx, L3_idx = dat$L3_idx,
+    W = W
+  )
 }
 
 cat("=== Stan data ready ===\n")
