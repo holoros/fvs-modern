@@ -302,9 +302,36 @@
         -0.0432
       ],
       "DGEL2": [0, 0, 0, 0, -0.0007, 0, 0, -0.0007, -0, 0.0006, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-      "HGHC": [2.0303, 1.7222, 1.1973, 1.8176, 2.1478, 1.77, 2.211, 1.7409],
-      "HGLDD": [0.6214, 1.0237, 0.8549, 0.7576, 0.4624, 0.4964, 0.3704, 0.34],
-      "HGH2": [-0.0001, -0, -0, -0, -0.0001, -0, -0, -0],
+      "HGHC": [
+        1.7476,
+        1.6668,
+        1.3196,
+        1.4377,
+        2.1391,
+        1.7844,
+        2.2121,
+        1.732
+      ],
+      "HGLDD": [
+        -0.0288,
+        -0.0109,
+        0.0148,
+        -0.0332,
+        0.4624,
+        0.4964,
+        0.3704,
+        0.34
+      ],
+      "HGH2": [
+        -1.1006,
+        -1.1006,
+        -1.1006,
+        -1.1006,
+        -1.1006,
+        -1.1006,
+        -1.1006,
+        -1.1006
+      ],
       "BAMAXA": [
         232,
         220,
@@ -394,7 +421,7 @@
     }
   },
   "calibration": {
-    "date": "2026-03-31",
+    "date": "2026-04-08",
     "method": "Bayesian MCMC (CmdStanR + brms) and quantile regression",
     "fia_data_source": "rFIA package",
     "r_version": "4.4.0",
@@ -402,14 +429,13 @@
     "components_updated": [
       "diameter_growth",
       "height_diameter",
+      "height_increment",
       "mortality",
       "crown_ratio",
       "sdimax",
       "bamax"
     ],
-    "components_skipped": [
-      "height_increment"
-    ],
-    "notes": "Calibration based on FIA data. 6 of 7 component models integrated (tree: DG, H-D, HG, mortality, CR; stand: SDIMAX, BAMAX)."
+    "components_skipped": [],
+    "notes": "Calibration based on FIA data. 7 of 7 component models integrated (tree: DG, H-D, HG, mortality, CR; stand: SDIMAX, BAMAX)."
   }
 }
