@@ -28,6 +28,25 @@ LOGICAL LOPEN
 LOGICAL LPT
 DATA LPT/.TRUE./
 !----------
+!  2026-05-16 holoros fork: ensure FVS unit numbers have their canonical
+!  values before the OPEN calls below. The BLOCK DATA in <variant>/blkdat.f90
+!  sets `DATA IREAD,ISTDAT,JOLIST,JOSTND,JOSUM,JOTREE/15,2,3,16,4,8/` but
+!  those initializers are not applied at executable load time in this fork
+!  (verified by `objdump -j .data`: the /CONTRL/ region is zero-filled).
+!  Without the canonical values the OPEN(UNIT=IREAD,...) below opens unit 0
+!  rather than unit 15, and subsequent READ(15,...) calls in keyrdr.f90
+!  hit immediate EOF -- the long-standing "FVS02 ERROR: NO STOP RECORD"
+!  cited in calibration/python/PN_SN_LIBRARY_DIAGNOSIS.md. Same guard is
+!  duplicated at the top of SUBROUTINE FVS for any callers that bypass
+!  filopn.
+!----------
+IF (IREAD  .EQ. 0) IREAD  = 15
+IF (ISTDAT .EQ. 0) ISTDAT = 2
+IF (JOLIST .EQ. 0) JOLIST = 3
+IF (JOSTND .EQ. 0) JOSTND = 16
+IF (JOSUM  .EQ. 0) JOSUM  = 4
+IF (JOTREE .EQ. 0) JOTREE = 8
+!----------
 !  KEYWORD and OUTPUT FILES.
 !----------
 KWDFIL=' '
