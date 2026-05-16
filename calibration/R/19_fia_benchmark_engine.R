@@ -1469,6 +1469,41 @@ if (!is.null(raster_lookup)) {
   cat("\n")
 }
 
+# ------------------------------------------------------------------------------
+# Optional NE -> ACD relabel.
+#
+# ACD (Acadian) is a subvariant of NE: it uses the NE binary plus a regionally
+# calibrated parameter set. When FVS_ACD_RELABEL=TRUE, NE-tagged conditions
+# whose STATECD falls in the Acadian footprint (ME=23, NH=33, VT=50) are
+# retagged as ACD so the variants loop projects them with ACD parameters.
+# Other NE plots (e.g., MA, CT, RI, southern NY) remain NE.
+#
+# The plot footprint set is intentionally conservative; widening it to NY
+# Adirondacks requires a county-level filter and is left as a follow-up.
+# ------------------------------------------------------------------------------
+ACD_RELABEL_ENABLED <- toupper(Sys.getenv("FVS_ACD_RELABEL", "FALSE")) == "TRUE"
+if (ACD_RELABEL_ENABLED) {
+  ACD_FOOTPRINT_STATES <- as.integer(strsplit(
+    Sys.getenv("FVS_ACD_FOOTPRINT_STATES", "23,33,50"), ",")[[1]])
+  cat("ACD relabel enabled; footprint states (STATECD):",
+      paste(ACD_FOOTPRINT_STATES, collapse = ", "), "\n")
+
+  # Pull STATECD for each PLT_CN_t1 (already loaded as part of `plots`).
+  statecd_lookup <- unique(plots[, .(PLT_CN_t1 = CN, STATECD)])
+  matched <- merge(matched, statecd_lookup, by = "PLT_CN_t1", all.x = TRUE)
+
+  acd_eligible <- matched$VARIANT == "NE" & matched$STATECD %in% ACD_FOOTPRINT_STATES
+  n_relabel <- sum(acd_eligible, na.rm = TRUE)
+  if (n_relabel > 0) {
+    matched[acd_eligible, VARIANT := "ACD"]
+    cat("  Relabeled", n_relabel, "NE plots as ACD (subvariant of NE);",
+        sum(matched$VARIANT == "NE", na.rm = TRUE), "NE plots retained\n\n")
+  } else {
+    cat("  No NE plots in the Acadian footprint; relabel had no effect\n\n")
+  }
+  matched[, STATECD := NULL]  # cleanup helper column
+}
+
 # Save observed changes
 fwrite(matched, file.path(output_root, "intermediate/observed_changes.csv"))
 
@@ -1493,7 +1528,14 @@ for (var in variants_in_data) {
   n_var <- length(var_rows)
   cat("  Projecting", toupper(var), ":", n_var, "conditions... ")
 
+  # Bridge guard rail: variant_params is keyed by toupper(name) and may be
+  # missing for subvariants. ACD shares the NE binary, so when ACD params are
+  # absent we fall back to NE rather than skipping all 30k+ Acadian plots.
   params <- variant_params[[var]]
+  if (is.null(params) && var == "ACD" && !is.null(variant_params[["NE"]])) {
+    params <- variant_params[["NE"]]
+    cat("[ACD <- NE params fallback] ")
+  }
   if (is.null(params)) {
     cat("SKIP (no params)\n")
     failed <- failed + n_var
