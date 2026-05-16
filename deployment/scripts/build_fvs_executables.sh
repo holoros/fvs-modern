@@ -31,8 +31,13 @@ if [ ${#VARIANTS[@]} -eq 0 ]; then
     VARIANTS=(ne acd)
 fi
 
-# Compiler settings (match build_fvs_libraries.sh)
-FC="${FC:-gfortran}"
+# Compiler settings (match build_fvs_libraries.sh).
+# gfortran is the only supported Fortran compiler. See the header comment in
+# build_fvs_libraries.sh for the !DEC$ ATTRIBUTES ALIAS rationale.
+if [ "${FC:-gfortran}" != "gfortran" ]; then
+    echo "WARNING: FC=$FC is not supported. Reverting to gfortran." >&2
+fi
+FC="gfortran"
 CC="${CC:-gcc}"
 CXX="${CXX:-g++}"
 # Note: no -fPIC needed for executables, but it doesn't hurt
@@ -255,7 +260,8 @@ for var in "${VARIANTS[@]}"; do
 
     # Compile stubs for subroutines that cannot compile on GCC
     # (Windows DLL imports, missing region-specific volume routines, etc.)
-    for stub_src in "$SRC_ROOT/base/fvs_stubs.f90" "$SRC_ROOT/econ/econ_stubs.f90"; do
+    # base/fvs_stubs.f90 is unconditional (stubs Windows DLL imports).
+    for stub_src in "$SRC_ROOT/base/fvs_stubs.f90"; do
         [ -f "$stub_src" ] || continue
         stub_obj="$VARDIR/$(basename ${stub_src%.*}).o"
         if compile_file "$stub_src" "$stub_obj" "$INCDIRS" 2>/dev/null && [ -f "$stub_obj" ]; then
@@ -276,6 +282,41 @@ for var in "${VARIANTS[@]}"; do
         stub_obj="$VARDIR/fmcfmd_stub.o"
         if compile_file "$SRC_ROOT/fire/vbase/fmcfmd_stub.f90" "$stub_obj" "$INCDIRS" 2>/dev/null && [ -f "$stub_obj" ]; then
             OBJECTS+=("$stub_obj")
+        fi
+    fi
+
+    # Conditional econ stubs (2026-05-16): same pattern as fmcfmd. The real
+    # econ implementation (econ/ecin.f90, ecstatus.f90, eccalc.f90, etc.)
+    # compiles cleanly under GCC for the ACD/NE/CS/LS/SN variants, so
+    # econ_stubs.f90 would produce duplicate-symbol link errors when both
+    # are present (eckey_ from ecin.f90:656 vs econ_stubs.f90:43;
+    # getispretendactive_ from ecstatus.f90:80 vs econ_stubs.f90:48).
+    # Only add the stubs file when the real econ objects are missing
+    # (e.g., minimal-variant builds that exclude the econ tree).
+    HAS_ECIN=0
+    HAS_ECSTATUS=0
+    for obj in "${OBJECTS[@]}"; do
+        bobj=$(basename "$obj" .o)
+        case "$bobj" in
+            ecin|econ_ecin)         HAS_ECIN=1 ;;
+            ecstatus|econ_ecstatus) HAS_ECSTATUS=1 ;;
+        esac
+    done
+    if [ "$HAS_ECIN" -eq 0 ] && [ "$HAS_ECSTATUS" -eq 0 ] && [ -f "$SRC_ROOT/econ/econ_stubs.f90" ]; then
+        stub_obj="$VARDIR/econ_stubs.o"
+        if compile_file "$SRC_ROOT/econ/econ_stubs.f90" "$stub_obj" "$INCDIRS" 2>/dev/null && [ -f "$stub_obj" ]; then
+            OBJECTS+=("$stub_obj")
+        fi
+    else
+        # When econ_stubs.f90 is skipped (because real econ provides ecin /
+        # ecstatus), we still need VARVER. It is called from variant code
+        # (e.g. acd/dgdriv.f90:295, acd/morts.f90:139) but no upstream
+        # variant actually defines it. Provide a tiny stub.
+        if [ -f "$SRC_ROOT/base/varver_stub.f90" ]; then
+            stub_obj="$VARDIR/varver_stub.o"
+            if compile_file "$SRC_ROOT/base/varver_stub.f90" "$stub_obj" "$INCDIRS" 2>/dev/null && [ -f "$stub_obj" ]; then
+                OBJECTS+=("$stub_obj")
+            fi
         fi
     fi
 
