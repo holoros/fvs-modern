@@ -83,6 +83,24 @@ if (KWDFIL.ne.' ') then
   ! with nonstop runs: they are blocked into multi-stand sets
   ! based on the stop point(s).
 
+  ! 2026-05-16 holoros fork: open ISTDAT with <keyfile_basename>.tre when
+  ! the non-interactive path is taken. Without this, the tree-input reader
+  ! intree.f90 attempts READ(ISTDAT,...) on an unopened unit and aborts.
+  ! Matches the upstream FVS convention demonstrated by the FVSne test
+  ! makefile (net01.key paired with net01.tre). When no companion .tre
+  ! file exists, leave ISTDAT closed -- decks with inline TREEDATA blocks
+  ! that read from IREAD will still work; decks that reference an external
+  ! tree file will emit a clear "file does not exist" error.
+  if (i.eq.0) then
+    cname = KWDFIL(:lenkey)//".tre"
+    inquire(file=trim(cname),exist=LOPEN)
+    if (LOPEN) then
+      inquire(unit=ISTDAT,opened=LOPEN)
+      if (LOPEN) close(unit=ISTDAT)
+      open(unit=ISTDAT,file=trim(cname),status="old",err=103)
+    endif
+  endif
+
   if (i.eq.0) then
     cname = KWDFIL(:lenkey)//".trl"
     inquire(unit=JOLIST,opened=LOPEN)
@@ -121,6 +139,10 @@ if (KWDFIL.ne.' ') then
   return
 102   continue
   print *,"File open error on: ",trim(cname)
+  call fvsSetRtnCode(1)
+  return
+103   continue
+  print *,"Tree data file open error on: ",trim(cname)
   call fvsSetRtnCode(1)
   return
 endif
