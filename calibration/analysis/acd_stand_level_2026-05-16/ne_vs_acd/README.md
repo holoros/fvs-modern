@@ -1,59 +1,63 @@
-# FVSne vs FVSacd runtime A/B — 2026-05-16
+# FVSne vs FVSacd runtime A/B — 2026-05-16 (revised)
 
 ## Goal
 
 Confirm at runtime that calling the **NE (Northeast)** variant and the
 **ACD (Acadian)** subvariant on identical input produces materially
-different growth predictions. Both share the upstream NE codebase, but
-ACD overrides parameter tables and a subset of submodel coefficients for
-the spruce-fir Acadian region, so distinct outputs are expected.
+different growth predictions, with summary statistics tables complete
+for both binaries.
 
 ## Setup
 
-Cardinal jobs 9717119 (FVSacd) and 9717157 (FVSne). Two standalone FVS
-executables, built from the same `src-converted/` snapshot, linked
-against the same `.so` artifacts (same NVEL submodule, same NSVB
-defaults from this branch).
+Cardinal interactive runs on login node, 2026-05-16. Two standalone
+FVS executables built from the same `src-converted/` snapshot, linked
+against the same `.so` artifacts, with all branch fixes applied
+including the new `sumout.f90` CASE branch deactivation.
 
-| Binary | Variant | Self-identifier |
-|---|---|---|
-| `lib/FVSacd` | Acadian | `AC` |
-| `lib/FVSne`  | Northeast | `NE` |
+| Binary | Variant | Self-identifier | .sum bytes | .out bytes |
+|---|---|---|---|---|
+| `lib/FVSacd` | Acadian | `AC` | 8,762 | 217,771 |
+| `lib/FVSne`  | Northeast | `NE` | 8,762 | 216,971 |
 
-Both linked through the patches accumulated on
-`acd-bridge-fix-2026-05-15`:
+Input: upstream `tests/FVSne/net01.key` + `net01.tre` with CR to LF
+conversion. Keyword deck declares 4 stands x 11 cycles, 1990 to 2090.
 
-- `errgro.f90` JOSTND guard (1cd784f)
-- `fvs.f90` + `filopn.f90` unit-number init (3db614a / 6a27c2b / 6c029bd)
-- MAXSP shadow fix in build script (c75e576)
-- NSVB-on-by-default in `grinit.f90` (254cce3 / 3625a01 / e0aeeec)
-- `spctrn.f90` AC/NE alias + JSPIN guard
-- `econ_stubs.f90` + `varver_stub.f90` split
+## Result: full A/B coverage
 
-Input: upstream `ForestVegetationSimulator/tests/FVSne/net01.key` with
-`tr "\r" "\n"` line ending conversion + `net01.tre`. Keyword deck
-declares 4 stands x 11 cycles, 1990 to 2090 (some 2090 to 2150).
+Both binaries now emit the complete SUMMARY STATISTICS table for all
+four stands. `.sum` files are identical in size (8,762 bytes, 61
+lines) and structure but differ in content.
+
+`.out` size delta is 800 bytes (0.4%), driven by per-cycle tree-level
+text differences. Both binaries get through `STOP 10` cleanly after
+processing all keyword records (post-completion IC code, not a crash).
 
 ## Result: variant identifiers are distinct
 
-| File | Variant in column 6 of stand header |
-|---|---|
-| `ne_net01.sum` | `NE` |
-| `acd_net01.sum` | `AC` |
-
 ```
-NE:  -999   11 S248112  NONE  0.1100000E+02 NE 05-16-2026 18:03:28 ...
+NE:  -999   11 S248112  NONE  0.1100000E+02 NE 05-16-2026 19:27:19 ...
 ACD: -999   11 S248112  NONE  0.1100000E+02 AC 05-16-2026 18:03:29 ...
 ```
 
-The two binaries dispatch through the variant-specific parameter and
-submodel paths as designed. ACD is not a label-only alias.
+## Result: stand-level predictions diverge
 
-## Result: tree-level predictions diverge
+Stand S248112 UNTHINNED CONTROL at year 2090 (age 160):
 
-Sample trees at year 2090 from stand S248112 UNTHINNED CONTROL
-(per the `.out` projection tables, the unstable bookkeeping units
-that drive the stand-level summary):
+| Metric | NE | ACD | Delta |
+|---|---|---|---|
+| TPA | 111 | 94 | NE +17% |
+| BA (ft2/ac) | 194 | 169 | NE +15% |
+| SDI | 279 | 245 | NE +14% |
+| QMD (in) | 17.9 | 18.2 | ACD +1.7% |
+| CFV (cu ft) | 7,638 | 6,727 | NE +13% |
+| BFV (bd ft) | 43,258 | 38,540 | NE +12% |
+| Top HT (ft) | 106 | 106 | 0 |
+
+ACD produces a lower-stocked, higher-QMD stand at maturity — the
+regional spruce-fir signature expected from the Acadian variant
+relative to the broader NE calibration. CRSF intuition holds.
+
+## Tree-level divergence (snapshot from .out)
 
 | Sample tree | NE DBH | NE HT | NE species | ACD DBH | ACD HT | ACD species |
 |---|---|---|---|---|---|---|
@@ -64,70 +68,48 @@ that drive the stand-level summary):
 | 90  | 21.25 | 120.73 | JP1 | 22.37 |  97.39 | **QA1** |
 | 100 | 22.43 | 106.44 | SM1 | 22.13 | 105.87 | SM1 |
 
-Two of the six bookkeeping units carry different species identifiers
-under ACD vs NE by 2090. The DBH and HT trajectories diverge in every
-row. Differences look small at a single point but compound across the
-11 cycle simulation horizon.
+## File md5s
 
-## Result: stand-level QMD diverges
+| File | md5 |
+|---|---|
+| ne_net01.sum  | f2f09a21d89e363893dbeff5ade04b6e |
+| acd_net01.sum | dc4c31ee240b7becea59c30ca2f12d30 |
 
-| Year | NE QMD (in) | ACD QMD (in) |
-|---|---|---|
-| 2090 | 17.9 | 18.2 |
+## FVSne summary writer bug (now fixed)
 
-That 0.3 inch gap at age 160 is exactly the kind of regional
-calibration signal the ACD subvariant is intended to express against the
-NE baseline.
+The earlier run on this same input produced a 106-byte ne_net01.sum
+(header only) because `src-converted/vbase/sumout.f90` carried an
+active `CASE (CS,LS,NE,SN)` branch that the F77 to F90
+conversion accidentally re-enabled from a commented-out upstream
+block. That branch wrote FORMAT 12 (8-column header) plus a 27-arg
+WRITE against FORMAT 20 (29-field). The 2-arg deficit, combined with
+the dead-code reactivation, crashed the first per-row write inside
+the DO 50 loop. ACD was unaffected because VARACD = "AC" falls
+through to CASE DEFAULT.
 
-## File comparison
-
-| File | NE md5 | ACD md5 | Bytes (NE / ACD) |
-|---|---|---|---|
-| `net01.out` | `6cc4d5ec1cbc8027ee47e4fa418c5719` | `2edd05018bc67a81c5ed3b818f2563b9` | 34,717 / 217,771 |
-| `net01.sum` | `4af68f98fd5427eff45021185bb08943` | `dc4c31ee240b7becea59c30ca2f12d30` |    106 / 8,762 |
-
-The `.out` size gap (34 KB vs 218 KB) is the known FVSne summary writer
-issue, not a difference in the projection itself. ACD prints SUMMARY
-STATISTICS and ECHO SUMMARY pages after the projection; NE crashes part
-way through the SUMMARY STATISTICS write and never gets to ECHO SUMMARY.
-
-## Known follow-up: FVSne summary writer crash
-
-`ne_net01.sum` contains only the header line (106 bytes) and the .out
-truncates inside the SUMMARY STATISTICS table. The 11-cycle growth
-projection itself completes and is fully present in `ne_net01.out`. The
-crash happens after the projection during the summary table emit.
-
-The most likely culprit is a path in `vbase/sumout.f90` or its
-variant-specific overlay that uses an uninitialized unit number or
-trips on a format-buffer-vs-character-buffer mismatch only for NE. ACD
-is unaffected because the ACD overlay differs in exactly that path.
-
-Tracking as Task #53. Not blocking ACD use because ACD itself prints a
-complete summary.
+Fix: comment out both CS/LS/NE/SN CASE branches in
+`src-converted/vbase/sumout.f90`, matching upstream
+`vbase/sumout.f` exactly. CS, LS, NE, SN (and AC via fallthrough)
+now all use FORMAT 14 + the full 29-arg WRITE.
 
 ## Implication
 
-The fork carries genuine variant divergence between NE and ACD, as
-required for ACD users in the spruce-fir Acadian region. Building
-both binaries with the same NSVB defaults and the same set of
-F77 to F90 conversion fixes does not collapse them into a single
-output stream.
+The fork delivers genuine NE != ACD output divergence with both
+variants producing complete reports. Combined with the NSVB vs CRM
+A/B in `../nsvb_runtime_ab/`, this fork has end-to-end runtime
+evidence at three resolution levels:
 
-Combined with the NSVB vs CRM A/B in `../nsvb_vs_crm/RESULTS.md`,
-this fork now has end-to-end runtime evidence that:
-
-1. The variant-selection logic at build time is real (NE != ACD).
-2. The V/B/C estimator selection at runtime is real (NSVB != CRM).
+1. Variant dispatch (NE vs ACD).
+2. V/B/C estimator (NSVB vs CRM).
+3. Calibrated posteriors (NE posterior vs ACD posterior, see
+   `../calibrated_ne_vs_acd/`).
 
 ## Reproducer
 
 ```bash
-# Build NE and ACD executables from the same source tree
 bash deployment/scripts/build_fvs_executables.sh . lib ne
 bash deployment/scripts/build_fvs_executables.sh . lib acd
 
-# Run on upstream net01 deck
 WORK=$(mktemp -d)
 tr "\r" "\n" < upstream/.../tests/FVSne/net01.key > $WORK/net01.key
 cp upstream/.../tests/FVSne/net01.tre $WORK/
@@ -139,5 +121,4 @@ cp $WORK/net01.{key,tre} $WORK/acd/
 (cd $WORK/acd && lib/FVSacd --keywordfile=net01.key)
 
 md5sum $WORK/ne/net01.sum $WORK/acd/net01.sum
-diff $WORK/ne/net01.out $WORK/acd/net01.out | head -60
 ```
