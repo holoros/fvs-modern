@@ -740,3 +740,74 @@ Once 9855401 completes:
   — snapshot of the round-5 refit posterior (62 MB, kept for
   reproducibility)
 
+## Autopilot round 11 — 2026-05-17 (early evening)
+
+### A/B chain v3 in flight
+
+SLURM job 9855401 is RUNNING with all round-10 fixes in place. At
+the 20:16 elapsed mark it had completed step 4 projections for:
+
+```
+ACD: 15429 conditions in 306.1 sec
+AK :    56 conditions in   0.8 sec
+BM : 3369 conditions in  33.3 sec
+CA :  603 conditions in   6.5 sec
+EC : 2792 conditions in  28.3 sec
+IE :  650 conditions in   7.5 sec
+LS :26746 conditions in 271.1 sec
+NC :  418 conditions in   4.3 sec
+NE :14717 conditions in 153.2 sec
+PN : 2822 conditions in  29.5 sec
+SN :36945 conditions in (in progress, ~6 min expected)
+```
+
+ACD projected at 50 cond/sec (vs other variants at 96-100), which
+is consistent with the engine reconstructing 67 species intercepts
+per draw via the new z_b0 codepath — slower per condition because
+of the extra arithmetic but functionally correct.
+
+### Estimated time to chain completion
+
+- Remaining pass 1 step 4: SN (3-4 min) + SO + WC (small)
+- Pass 1 step 5: validation stats (~2 min)
+- Pass 1 step 6: figures (may crash, tolerated)
+- Pass 1 save tagged CSV: instant
+- Pass 2 + pass 3: ~25 min combined
+
+Total wall: ~35 minutes from round-11 close.
+
+### Expected output when chain completes
+
+Three tagged CSVs in `calibration/output/comparisons/manuscript_tables/`:
+
+- `fia_benchmark_pctrmse_refit_only.csv`
+- `fia_benchmark_pctrmse_refit_postpass_pop.csv`
+- `fia_benchmark_pctrmse_refit_postpass_strat_ny.csv`
+
+Plus matching `_results_*.csv` versions.
+
+Then `Rscript calibration/R/compare_post_refit_ab.R` will produce
+`calibration/analysis/acd_stand_level_2026-05-16/post_refit_comparison/comparison.md`
+with the side-by-side table comparing baseline + refit + postpass +
+stratified+NY.
+
+### Outstanding question for the next round
+
+Will ACD %RMSE under the converged posterior beat NE's 23.19? The
+expected effect of σ_b0 dropping 3.5x is tighter shrinkage on the
+species effects, which should reduce ACD bias. The unknown is
+whether the bias reduction is large enough to drop %RMSE below NE.
+
+If ACD %RMSE lands below NE: opens PR from
+`acd-bridge-fix-2026-05-15` into main with the calibrated A/B story
+as headline.
+
+If ACD %RMSE stays above NE but is meaningfully better than 28.52
+(the round-3 baseline): document the improvement, refine the
+posterior further, then merge.
+
+If ACD %RMSE stays at 28.52 levels: investigate why the converged
+posterior did not improve predictive performance — likely the
+calibration is hitting a different bottleneck (data coverage,
+post-pass factors).
+
