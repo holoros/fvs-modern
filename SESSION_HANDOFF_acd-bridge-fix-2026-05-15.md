@@ -287,3 +287,72 @@ files vs the pre-refit ACD baseline (28.52%).
 5. Open a PR from `acd-bridge-fix-2026-05-15` to main if the
    converged-posterior + post-pass results are sufficient.
 
+## Autopilot round 6 — 2026-05-17 (early)
+
+Round 5 launched two long-running SLURM jobs (HMC 9812192 and the
+A/B chain 9812377). Round 6 hardens what runs after them and
+adds a tooling pass.
+
+1. **Smoke test for the per-stratum post-pass.**
+   `calibration/R/smoke_postpass.R` builds a synthetic 15-row
+   `validation_data` covering all stratum combinations including
+   NA FORTYPCD and NA SICOND edge cases, runs the per-stratum
+   block in isolation, and asserts:
+   - NE rows untouched (exact equality on all four pred columns)
+   - All ACD rows modified (BA not equal to baseline)
+   - No NAs introduced
+   - All four multipliers finite
+
+   PASSED on Cardinal. Mean multipliers across the synthetic ACD
+   subset: BAPH 1.0292, TPA 1.0194, QMD 1.0083, TOPHT 1.0143
+   (each ~0.5-1.5 pp different from the population-level constants,
+   confirming stratification contributes signal).
+
+2. **Post-A/B comparison reporter.**
+   `calibration/R/compare_post_refit_ab.R` reads up to four CSVs
+   (`baseline` + `refit_only` + `refit_postpass_pop` +
+   `refit_postpass_strat_ny`), filters to ACD/NE rows, prints a
+   side-by-side table to stdout, and writes a markdown summary at
+   `calibration/analysis/acd_stand_level_2026-05-16/post_refit_comparison/comparison.md`.
+   Gracefully skips missing inputs so it is useful before all four
+   passes complete.
+
+3. **Hardened HMC fallback.**
+   `calibration/slurm/refit_acd_dg_hard.sh` ready to submit if
+   9812192 finishes with rhat > 1.05. Uses warmup=2500,
+   sampling=1500, adapt_delta=0.995, max_treedepth=13,
+   walltime=24h. Snapshots the current posterior before overwrite
+   under a distinct prefix (`hard_pre_*`) to avoid colliding with
+   the round-5 snapshot naming.
+
+## Decision tree for what happens next
+
+```
+9812192 (HMC re-fit) finishes
+  |
+  +-- if SUCCESS (rhat < 1.05):
+  |     9812377 (A/B chain) auto-fires
+  |       |
+  |       +-- writes 6 tagged CSVs
+  |       +-- run compare_post_refit_ab.R
+  |       +-- if best ACD pctRMSE <= NE pctRMSE: open PR to main
+  |       +-- else: tune post-pass multipliers or add per-row factors
+  |
+  +-- if SUCCESS but rhat 1.05 - 1.10:
+  |     accept and proceed (chains mixed enough for practical use)
+  |
+  +-- if rhat > 1.10:
+  |     cancel 9812377 (scancel)
+  |     sbatch refit_acd_dg_hard.sh
+  |     re-queue A/B chain depending on the new job
+  |
+  +-- if TIMEOUT / FAIL:
+        same fallback path
+```
+
+## Job state at handoff
+
+- HMC 9812192: RUNNING, ~7 minutes elapsed of 12-hour budget
+- A/B chain 9812377: PENDING (Dependency afterok:9812192)
+- Hardened fallback 9812192h: NOT submitted (will fire if needed)
+
