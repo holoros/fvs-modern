@@ -1,0 +1,19 @@
+STOP 20
+
+                  CR-SP FVS VARIANT -- RV:20260401  
+
+
+        STAND = 1101_1030                   MANAGEMENT CODE = NONE
+
+                                  DB I/O Test
+
+               SUMMARY STATISTICS (BASED ON TOTAL STAND AREA)
+----------------------------------------------------------------------------
+       START OF SIMULATION PERIOD    REMOVALS/ACRE    AFTER TREATMENT GROWTH
+     ---------------------------- ----------------- ---------------- CU FT
+     TREES         TOP      TOTAL TREES TOTAL MERCH         TOP      PER YR
+YEAR /ACRE  BA SDI  HT  QMD CU FT /ACRE CU FT BD FT  BA SDI  HT  QMD ACC MOR
+---- ----- --- --- --- ---- ----- ----- ----- ----- --- --- --- ---- --- ---
+2014     0   0   0   0  0.0     0     0     0     0   0   0   0  0.0   0   0
+2024     0   0   0   0  0.0     0     0     0     0   0   0   0  0.0   0   0
+2034     0   0   0   0  0.0     0     0     0     0   0   0   0  0.0   0   0

@@ -442,3 +442,82 @@ show.
 - Hardened HMC fallback: ready, not submitted
 - Integration test (9813234): COMPLETED 18/23 strict, 23/23 functional
 
+## Autopilot round 8 — 2026-05-17 (mid-day)
+
+Round 7 confirmed the fork builds and runs all 7 Eastern variants
+but flagged 5 as rc=20 because the v1 test used NE's net01 deck for
+all variants. Round 8 dug in.
+
+### Root cause of round-7 rc=20 (closed)
+
+CS/LS/SN/KT/EM returning rc=20 was **expected behavior**, not a
+variant bug. Running NE's deck on a non-NE variant trips:
+
+- **FVS03 WARNING**: forest location code 922 outside the variant range
+- **FVS04 ERROR**: keyword parameter missing (NE-shaped DESIGN record)
+- **FVS43 WARNING**: ECODIVISION not recognized in target variant
+- Multiple species code substitutions (JP, OT, YB not in target species)
+
+`errgro.f90` escalates ICCODE to 2 on the FVS04 ERROR class.
+`main.f90` translates ICCODE=2 to STOP 20. The runs still produced
+complete 8,762-byte .sum files because the variants fall back to
+defaults rather than aborting. The fix is to use variant-specific
+decks, not to suppress the warnings.
+
+### STOP_CODES.md added at repo root
+
+Reference doc maps STOP 0/10/20/30/40/50 to ICCODE meanings, documents
+the three FVS warning/error classes (FVS03/04/43 most common), and
+explains how the v2 rubric distinguishes input-mismatch from real
+variant bugs. Future tests should grep `.out` for `FVS\d\d ERROR`
+to attribute exit codes.
+
+### Integration test v2 (SLURM 9815174, 9:52 walltime)
+
+Extended to 12 variants (7 Eastern + 5 Western: WC, OP, CA, BM, CR).
+Each runs against its own upstream test deck where available.
+
+**Builds: 12/12 PASS** (sizes 8.1-9.3 MB). The build pipeline is
+solid across Eastern + Western variants.
+
+**Runs**:
+- Clean PASS (rc=10): ACD (via NE deck), NE, EM (emt01), OP (opt01) — 4 variants
+- Partial output (rc=20): CR with 547-byte .sum — output truncated
+- **FAIL (rc=2)**: CS, LS, SN, KT, WC, CA, BM — **all crash at
+  `intree.f90:188` with "Unexpected end of format string"**
+
+The intree.f90:188 crash is the **next concrete F77→F90 conversion
+bug to chase**. It is *not* the same MAXSP shadow problem that round 4
+fixed — these variants build cleanly with the new build script — but
+something in the format-string parser still trips on TREEFMT records
+in the upstream test decks for CS/LS/SN/KT/WC/CA/BM. ACD/NE/EM/OP/CR
+have decks the parser tolerates, so the bug is data-shape-specific.
+
+### Files added
+
+- `STOP_CODES.md` (root of repo) — FVS exit code reference
+- `calibration/slurm/integration_test_v2.sh` — refined test harness
+- `INTEGRATION_TEST_REPORT_v2.md` (root of repo) — 12-variant report
+- `calibration/analysis/acd_stand_level_2026-05-16/integration_test_v2/`
+  — build/run logs and results
+
+### Pipeline status at handoff (round 8 close)
+
+- HMC re-fit (9812192): still RUNNING, ~30+ min elapsed of 12h budget
+- A/B chain (9812377): PENDING (Dependency afterok:9812192)
+- Integration test v1 (9813234): COMPLETED, 23/23 functional (round 7)
+- Integration test v2 (9815174): COMPLETED, 23 PASS / 7 FAIL / 7 SKIP
+  - All FAILs are the intree.f90:188 crash, a single known bug class
+
+### Next round priorities
+
+1. Diagnose intree.f90:188 across the 7 affected variants. The line
+   reads the TREEFMT record; the conversion may have lost a Hollerith
+   constant or a trailing space spec. Compare against upstream
+   `base/intree.f` at the matching line.
+2. Wait for HMC 9812192; chain will fire 9812377 automatically.
+3. When 9812377 lands, run `compare_post_refit_ab.R` to get the
+   ACD-vs-NE comparison artifact under the converged posterior.
+4. If steps 1 and 3 both succeed, open a PR from
+   `acd-bridge-fix-2026-05-15` into main.
+
