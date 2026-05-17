@@ -164,3 +164,59 @@ mixing.
    fvsGetICCode. Low priority; doesn't affect output.
 5. Consider merging acd-bridge-fix-2026-05-15 into main after the
    ACD HMC re-fit completes.
+
+## Autopilot round 4 — 2026-05-16 (later)
+
+Three follow-ups from this handoff's prioritized list landed in
+commit 8510b6f:
+
+1. **HMC sampler is env-tunable.** 02c_fit_dg_hmc_small.R now
+   reads `FVS_HMC_WARMUP`, `FVS_HMC_SAMPLING`, `FVS_HMC_ADAPT_DELTA`,
+   `FVS_HMC_TREEDEPTH`, `FVS_HMC_CHAINS`. The `project_root` resolver
+   is now robust to non-interactive Rscript invocation (the prior
+   sys.frame(1) failure mode is fixed).
+
+2. **NY Adirondack footprint added.** 19_fia_benchmark_engine.R
+   reads `FVS_ACD_NY_COUNTIES` (default: FIPS COUNTYCD 19, 31, 33,
+   35, 41, 49, 89, 115 — the 8-county Adirondack Park footprint)
+   and joins COUNTYCD into the plots lookup. When relabel is on, NY
+   plots in those counties are now retagged as ACD alongside ME/NH/VT.
+
+3. **ACD post-pass factors wired in.** Setting `FVS_ACD_POSTPASS=TRUE`
+   in 19_fia_benchmark_engine.R applies population-level multipliers
+   (BAPH 1.0168, QMD 1.0071, TOPHT 1.0117, TPA 1.0147) to calibrated
+   ACD predictions before metrics. Multipliers individually
+   overridable via FVS_ACD_POSTPASS_BAPH/QMD/TOPHT/TPA. Per-stratum
+   factors (the 81-row table) are still a follow-up.
+
+4. **Longer ACD HMC re-fit running.** SLURM job 9733825 launched at
+   2026-05-16 20:14 UTC with warmup=2000, sampling=1500,
+   adapt_delta=0.99, max_treedepth=12, max_obs=10000. Target:
+   rhat < 1.05 for diameter_growth_posterior. Expected runtime
+   ~4 to 6 hours. Result will land at
+   calibration/output/variants/acd/diameter_growth_posterior.csv;
+   prior posterior is snapshotted as
+   diameter_growth_posterior.csv.refit_pre_*.
+
+5. **STOP 10 at end of standalone runs is expected.** errgro.f90
+   sets ICCODE=1 whenever a non-fatal note is logged (e.g.,
+   "INPUT SPECIES CODE (WH) WAS SET TO (HI)" species substitutions
+   in net01.key). main.f90 translates that to STOP 10 at exit. Not
+   a bug. Closed.
+
+## Next round priorities
+
+1. Wait for HMC job 9733825 to finish; verify rhat < 1.05; if not,
+   try adapt_delta=0.995 and warmup=3000.
+2. Once ACD posterior is converged, rerun the calibrated A/B with
+   FVS_ACD_RELABEL=TRUE and the new posteriors. Expect ACD %RMSE to
+   drop closer to NE's 23.19.
+3. Same run with `FVS_ACD_POSTPASS=TRUE` to see the combined effect
+   of converged posterior + population multipliers.
+4. With NY-county filter (`FVS_ACD_NY_COUNTIES` default) the next
+   relabel run will pull in additional Adirondack plots —
+   re-baseline the Acadian-footprint metrics.
+5. Build out per-stratum FVS_ACD_POSTPASS variant that looks up the
+   correct row in acd_calibration_factors.csv by FT_GROUP / SI_class
+   / BA_t1_class / interval_class. Estimated +10 lines of dplyr.
+
