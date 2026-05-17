@@ -230,8 +230,12 @@ load_variant_params <- function(v) {
         betas = sapply(paste0("b", 1:13), get_hi), sigma = dg_sigma_med,
         sigma_shift = +1.28 * dg_sigma_med  # 80% CI upper tail on residuals
       )
-      # Reconstructed species intercepts: b0[i] already in posterior
+      # Reconstructed species intercepts: prefer b0[i] (centered), fall back
+      # to z_b0[i] (non-centered, as produced by some HMC re-fits like the
+      # 2026-05-17 ACD refit). For z_b0, the centered intercept is
+      # b0[i] = mu_b0 + sigma_b0 * z_b0[i] (per-draw reconstruction).
       b0_cols <- names(d)[grepl("^b0\\[\\d+\\]$", names(d))]
+      zb0_cols <- names(d)[grepl("^z_b0\\[\\d+\\]$", names(d))]
       if (length(b0_cols) > 0) {
         b0_medians <- sapply(b0_cols, function(x) median(d[[x]], na.rm = TRUE))
         b0_lo <- sapply(b0_cols, function(x) quantile(d[[x]], CI_LO, na.rm = TRUE))
@@ -239,6 +243,16 @@ load_variant_params <- function(v) {
         params$dg$sp_b0_vals <- b0_medians
         params$dg_lo$sp_b0_vals <- b0_lo
         params$dg_hi$sp_b0_vals <- b0_hi
+      } else if (length(zb0_cols) > 0 && "mu_b0" %in% names(d) && "sigma_b0" %in% names(d)) {
+        # Non-centered parameterization: reconstruct per-draw then summarize.
+        b0_draws <- sapply(zb0_cols, function(z) {
+          d$mu_b0 + d$sigma_b0 * d[[z]]
+        })
+        params$dg$sp_b0_vals    <- apply(b0_draws, 2, median, na.rm = TRUE)
+        params$dg_lo$sp_b0_vals <- apply(b0_draws, 2, quantile, probs = CI_LO, na.rm = TRUE)
+        params$dg_hi$sp_b0_vals <- apply(b0_draws, 2, quantile, probs = CI_HI, na.rm = TRUE)
+        cat(sprintf("  [%s] reconstructed %d species intercepts from z_b0 (non-centered)\n",
+                    v, length(zb0_cols)))
       }
 
       # Build SPCD -> species_index mapping from training data

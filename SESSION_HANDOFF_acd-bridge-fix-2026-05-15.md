@@ -669,3 +669,74 @@ inputs. Outcome will guide the next debugging step.
 3. Re-do the calibrated NE vs ACD A/B with valid validation pairs.
 4. After 1-3, open PR from acd-bridge-fix-2026-05-15 into main.
 
+## Autopilot round 10 — 2026-05-17 (late afternoon)
+
+### Root cause of round-9 validation_pairs=0
+
+After the round-5 HMC re-fit, ACD got a `diameter_growth_samples.rds`
+file (62 MB) it had not had before. The engine`s `load_variant_params`
+function reads species-level intercepts from this file using the
+regex `^b0\[\d+\]$`. But the HMC fit in `02c_fit_dg_hmc_small.R`
+produces non-centered parameterization columns named `z_b0[i]`, not
+`b0[i]`.
+
+Result: `b0_cols` was length 0 → `params$dg$sp_b0_vals` never set →
+projection_condition_calibrated returned NA for every ACD tree →
+matched merge dropped all ACD rows → "Validation pairs: 0".
+
+### Fix
+
+`load_variant_params` now handles both parameterizations:
+
+```r
+b0_cols  <- grepl("^b0\[\d+\]$",  names(d))    # centered
+zb0_cols <- grepl("^z_b0\[\d+\]$", names(d))   # non-centered
+
+if (length(b0_cols) > 0) {
+  # use b0[i] directly
+} else if (length(zb0_cols) > 0 && "mu_b0" %in% names(d)) {
+  # reconstruct per-draw: b0[i] = mu_b0 + sigma_b0 * z_b0[i]
+  b0_draws <- sapply(zb0_cols, function(z) d$mu_b0 + d$sigma_b0 * d[[z]])
+  params$dg$sp_b0_vals <- apply(b0_draws, 2, median, na.rm=TRUE)
+}
+```
+
+### Verification
+
+SLURM job 9855401 with the patched engine loads ACD as:
+
+```
+Loading ACD ... [67 spp mapped] DG+Mort
+```
+
+The "[67 spp mapped]" confirms 67 species-level intercepts were
+successfully reconstructed from `z_b0[i]` via the
+b0[i] = mu_b0 + sigma_b0 * z_b0[i] formula. DG+Mort means both the
+diameter-growth and mortality params loaded for ACD (previously
+only the NE fallback's Mort would have loaded).
+
+Pre-patch state: ACD samples.rds was moved aside as a snapshot
+named `diameter_growth_samples.refit_z_b0.rds` while diagnosing.
+Post-patch: restored to its canonical name so the patched loader
+can consume it.
+
+### Pipeline status at round-10 close
+
+- Round-9 v2 integration test (9818553): 38/38 PASS
+- HMC re-fit (9812192): COMPLETED, sigma_b0 = 0.184 (down 3.5x)
+- A/B chain v3 (9855401): RUNNING with patched loader, ACD now
+  using its real refit posterior
+
+Once 9855401 completes:
+- refit_only pass produces fia_benchmark_pctrmse_refit_only.csv
+  with non-zero ACD row
+- refit_postpass_pop adds population multipliers
+- refit_postpass_strat_ny adds stratified multipliers + NY counties
+- compare_post_refit_ab.R produces the comparison markdown
+
+### Files added
+
+- `calibration/output/variants/acd/diameter_growth_samples.refit_z_b0.rds`
+  — snapshot of the round-5 refit posterior (62 MB, kept for
+  reproducibility)
+
