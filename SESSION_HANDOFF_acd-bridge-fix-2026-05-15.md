@@ -811,3 +811,93 @@ posterior did not improve predictive performance — likely the
 calibration is hitting a different bottleneck (data coverage,
 post-pass factors).
 
+## Autopilot round 12 — 2026-05-17 (evening, close)
+
+### Outputs review at round-11 close
+
+SLURM 9855401 finished at 23:51 with this state:
+
+```
+Projections completed: 111777 successful, 0 failed
+Validation pairs: 0
+```
+
+Same symptom as round 9. The z_b0 patch successfully loaded 67
+species intercepts for ACD (verified via "[67 spp mapped] DG+Mort"
+on param load), all 111,777 projections returned without error, but
+the validation merge then produced 0 rows.
+
+### Two ways the z_b0 path can produce NA predictions silently
+
+1. **Species coverage gap.** The new refit posterior mapped 67 species
+   intercepts. The FIA Acadian dataset includes more species than that.
+   Trees with SPCD not in the 67-species map likely get NA for their
+   diameter growth contribution. When aggregated to stand BA at t2,
+   NA propagates and the row gets filtered out by
+   `validation_data <- validation_data[!is.na(BA_pred_calib)]`.
+
+2. **Scale mismatch from non-centered reconstruction.** When 02c HMC
+   produces z_b0 with mu_b0 + sigma_b0 * z_b0 in a standardized scale,
+   while the previous centered b0 was on the unstandardized scale,
+   then mixed units leak NA through the linear predictor.
+
+Both are diagnosable; neither is fixed in this autopilot run.
+
+### Round-12 action: revert ACD samples.rds for working A/B baseline
+
+Moved `diameter_growth_samples.rds` aside as `.zb0_refit.rds` (a
+preserved snapshot). With no samples.rds, `load_variant_params`
+skips the dg block for ACD, the engine falls back to NE params via
+the ACD-uses-NE-params guard at line 1541-1543. That is the
+round-5/6 path that produced the canonical 28.52% RMSE ACD result.
+
+Submitted job 9912896 with this fallback to re-establish a working
+calibrated A/B baseline.
+
+### Task list reconciliation
+
+Pending tasks closed or restructured:
+
+- Old #93 "Open PR if pipeline state warrants" deleted (premature
+  until calibrated A/B numbers land).
+- Old #100, #101 deleted (rolled into round-13 work).
+- New #104 tracks the z_b0 silent-NA bug for a future round.
+
+### Pipeline status at round-12 close
+
+- v2 integration test: 12/12 build + 12/12 run + 38/38 PASS
+  (committed, frozen)
+- HMC re-fit: completed, sigma_b0 down 3.5x (committed)
+- A/B chain v3 (9855401): FAILED with validation_pairs=0
+- A/B chain v4 (9912896): SUBMITTED with NE-fallback path,
+  expected to reproduce the round-5/6 ACD %RMSE of ~28.52%
+
+### Headline for the branch as it stands
+
+The fork now demonstrably:
+
+1. Builds and runs 12 of 12 variants on canonical test decks
+2. Produces variant-distinct output across the full Eastern + Western
+   parameter space (12 unique .sum md5s)
+3. Defaults to NSVB V/B/C estimators across all 7 Eastern variants
+4. Has a tighter ACD diameter-growth HMC posterior (sigma_b0 = 0.184
+   vs 0.656 pre-refit) **but does not yet feed into the calibrated
+   A/B because of the z_b0 silent-NA issue**
+5. Includes test infrastructure (integration_test_v2.sh,
+   smoke_postpass.R, compare_post_refit_ab.R) and STOP code reference
+
+### Next round priorities (for a fresh session)
+
+1. Read 9912896 result; confirm we get a non-zero ACD row in the
+   calibrated benchmark with the NE-fallback path.
+2. Investigate the z_b0 silent-NA bug: most likely the standardization
+   parameters file `standardization_params.rds` for ACD does not
+   match what the refit posterior assumes. Check `02c` writes
+   matching standardization params, or update `load_variant_params`
+   to recompute z-scores from the new posterior.
+3. Once 9912896 lands, run `compare_post_refit_ab.R` and decide PR
+   strategy based on whether the ACD numbers improved.
+4. Open PR from acd-bridge-fix-2026-05-15 into main with the v2
+   integration test as the headline result and the calibrated A/B
+   as supporting evidence.
+
