@@ -1273,3 +1273,82 @@ all 3 tagged CSVs — the round-16 result (12 variants + OVERALL,
 6.4% RMSE improvement) is already in the calibrated_ne_vs_acd_v2/
 artifact directory. Round 18 just adds ACD to that picture and
 re-runs through the postpass configurations.
+
+## Autopilot round 19 — 2026-05-20 (final close)
+
+### Chain 10022214 still mid-flight
+
+At 17:01 elapsed, chain is in pass 1 step 4 LS projection (the
+second-largest variant). Total wall remaining: ~60-70 min more for
+all three passes. Beyond this session is autopilot-blocked on time.
+
+The two round-17 patches are in place and committed. The chain
+will fire all three pass configurations (refit_only,
+postpass_pop, postpass_strat_ny) and produce three tagged CSVs
+when complete.
+
+### What to do when 10022214 finishes (next session)
+
+```bash
+ssh crsfaaron@cardinal.osc.edu
+cd ~/fvs-modern-acdbridge
+
+# Check chain finished cleanly
+sacct -j 10022214 --format=JobID,State,Elapsed,ExitCode -P
+
+# Verify all three tagged CSVs exist
+ls calibration/output/comparisons/manuscript_tables/fia_benchmark_results_refit_*.csv
+
+# Snapshot to v2 artifact directory
+ART=calibration/analysis/acd_stand_level_2026-05-16/calibrated_ne_vs_acd_v3
+mkdir -p $ART
+cp calibration/output/comparisons/manuscript_tables/fia_benchmark_results_refit_*.csv $ART/
+
+# Run comparison reporter
+module load gcc/12.3.0 R/4.4.0
+Rscript calibration/R/compare_post_refit_ab.R
+
+# Commit final results
+git add $ART/ calibration/analysis/acd_stand_level_2026-05-16/post_refit_comparison/
+git commit -m "Round 19 final: three-config calibrated A/B shipped"
+git push origin acd-bridge-fix-2026-05-15
+
+# Open PR on GitHub using PR_DESCRIPTION_acd_bridge.md as the body
+```
+
+### Branch state at end-of-autopilot
+
+- **29 commits** ahead of base
+- **18 documented autopilot rounds** in this SESSION_HANDOFF
+- **740+ lines** of handoff documentation
+- **Build/runtime side**: 12/12 variants ship, 38/38 tests PASS
+- **Calibrated A/B**: round 16 already shipped 12-variant table with
+  6.4% OVERALL RMSE improvement; round 18-19 adds ACD-row inclusion
+  via the round-17 patches
+- **PR description**: drafted at repo root as
+  PR_DESCRIPTION_acd_bridge.md
+- **No outstanding code patches needed for PR**
+
+### Suggested PR title
+
+`ACD bridge: F77→F90 build fixes + NSVB defaults + calibrated A/B (12 variants)`
+
+### Reviewer guidance to include in PR
+
+This is a large branch spanning fork-modernization, build-pipeline,
+and calibration-validation work. The diagnostic story is in
+SESSION_HANDOFF_acd-bridge-fix-2026-05-15.md (rounds 1-18). The
+headline deliverables are in:
+
+- INTEGRATION_TEST_REPORT_v2.md (12 variants, 38/38 PASS)
+- calibration/analysis/acd_stand_level_2026-05-16/
+  - calibrated_ne_vs_acd_v2/ (round 16 results)
+  - ne_vs_acd/ (runtime A/B)
+  - nsvb_runtime_ab/ (NSVB vs CRM A/B)
+- STOP_CODES.md (FVS exit code reference)
+
+Code touchpoints concentrate in src-converted/ (F77/F90 fixes),
+deployment/scripts/build_fvs_executables.sh (MAXSP shadow),
+calibration/R/19_fia_benchmark_engine.R (relabel, post-pass,
+ACD fallbacks, z_b0 loader), and calibration/slurm/* (test +
+verification harnesses).
