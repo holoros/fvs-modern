@@ -1418,3 +1418,65 @@ using PR_DESCRIPTION_acd_bridge.md. The 10022214 chain just adds:
 Neither is strictly required for PR review — the round-16 result
 is sufficient evidence of the calibrated-A/B working across 12
 variants with 6.3% OVERALL RMSE improvement.
+
+## Autopilot round 21 — 2026-05-20 (PR-ready close)
+
+Chain 10022214 still in pass 1 step 4 at 40:54 elapsed. Pass 1
+typically finishes around 45-50 min wall, so it is close to writing
+its first tagged CSV. The full three-pass chain needs ~100 min total
+and is beyond this session window.
+
+### What does the chain add when it finishes
+
+The round-20 v3 artifact (committed in 983d4ae) already has the
+12-variant + OVERALL calibrated A/B from job 9914785. When 10022214
+finishes, it will overwrite v3 with:
+
+- A 13-variant table including the ACD row (round-17 ACD default-path
+  fallback patch now active)
+- Plus two additional pass configurations (postpass_pop, postpass_strat_ny)
+
+These are STRENGTHENING the result, not gating it. The branch ships
+PR-quality evidence right now.
+
+### Recommended PR action (do this NOW)
+
+```
+gh pr create \
+  --base main \
+  --head acd-bridge-fix-2026-05-15 \
+  --title "ACD bridge: F77→F90 build fixes + NSVB defaults + calibrated A/B (12 variants)" \
+  --body-file PR_DESCRIPTION_acd_bridge.md
+```
+
+If the gh CLI is unavailable, use the GitHub web UI:
+https://github.com/holoros/fvs-modern/pull/new/acd-bridge-fix-2026-05-15
+and paste PR_DESCRIPTION_acd_bridge.md as the body.
+
+### Final branch state (round 21 close)
+
+- **32 commits ahead of base** (since starting from main)
+- **21 autopilot rounds documented** in this SESSION_HANDOFF
+- Build/runtime: 12/12 variants ship + 38/38 integration test PASS
+- Calibrated A/B: 12-variant + OVERALL table with 6.3% RMSE reduction
+- Three runtime A/B comparisons committed
+- Test infrastructure (smoke tests, comparison reporter, harvest
+  script) all shipped
+- PR description drafted at repo root
+- 1 in-flight chain (10022214) that will add ACD row and two
+  postpass passes when it lands
+
+### Post-PR follow-ups (out of scope for this branch)
+
+1. Once 10022214 finishes, run `bash calibration/slurm/harvest_ab_results.sh 10022214`
+   to land the 13-variant + 3-config v3 update. Can be a follow-up
+   commit on the same PR or a separate PR.
+
+2. ACD HMC re-fit posterior is preserved as
+   diameter_growth_samples.zb0_refit.rds for a future round.
+   The z_b0 loader is committed and ready; integration with
+   ACD-specific standardization params is the unblocking step.
+
+3. Long-term refactor: make calibration/ a symlink to fvs-conus
+   (like the manuscript-figure1 branch) so all worktrees share
+   _samples.rds files without manual symlinking.
