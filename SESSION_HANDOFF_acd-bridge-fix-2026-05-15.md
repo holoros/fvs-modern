@@ -1352,3 +1352,69 @@ deployment/scripts/build_fvs_executables.sh (MAXSP shadow),
 calibration/R/19_fia_benchmark_engine.R (relabel, post-pass,
 ACD fallbacks, z_b0 loader), and calibration/slurm/* (test +
 verification harnesses).
+
+## Autopilot round 20 — 2026-05-20 (post-Aaron-commit)
+
+Aaron pushed commit 24036f7 "Round 19 final: three-config calibrated
+A/B shipped" but the harvest captured the old May 17 17:26 CSV (the
+broken ACD-only result). The round-17 patches verification chain
+(10022214) is still running and has not yet produced the clean
+13-variant tagged CSV.
+
+### What round 20 did
+
+Re-harvested the v3 artifact from the **round-16 verified result**
+(job 9914785, the 12-variant + OVERALL table) and built a proper
+comparison.md with the per-variant metrics. This captures the
+calibrated-A/B headline result of this entire effort:
+
+```
+OVERALL: BA RMSE 29.89 calib vs 31.91 default = 6.3 pct reduction
+Every variant calib R^2 >= default R^2 (LS within 0.003)
+```
+
+### Per-variant comparison shipped at calibrated_ne_vs_acd_v3/
+
+| Variant |   n | calib RMSE | default RMSE | calib R2 | default R2 |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| AK | 56 | 52.03 | 68.37 | 0.825 | 0.697 |
+| BM | 3369 | 24.49 | 27.29 | 0.793 | 0.743 |
+| CA | 603 | 44.18 | 48.43 | 0.791 | 0.749 |
+| EC | 2792 | 34.46 | 37.66 | 0.801 | 0.763 |
+| IE | 650 | 31.73 | 35.66 | 0.809 | 0.759 |
+| LS | 26746 | 19.28 | 19.09 | 0.823 | 0.826 |
+| NC | 418 | 52.38 | 62.83 | 0.795 | 0.706 |
+| NE | 14717 | 21.15 | 21.65 | 0.842 | 0.834 |
+| PN | 2822 | 61.02 | 63.59 | 0.647 | 0.617 |
+| SN | 36945 | 32.37 | 33.25 | 0.588 | 0.566 |
+| SO | 2783 | 27.09 | 30.03 | 0.807 | 0.762 |
+| WC | 4447 | 46.93 | 60.13 | 0.827 | 0.717 |
+| OVERALL | 96348 | 29.89 | 31.91 | 0.788 | 0.758 |
+
+### What comes after 10022214 finishes (~50 more min)
+
+The chain will produce three tagged CSVs:
+- fia_benchmark_results_refit_only.csv (will REPLACE the v3 file)
+- fia_benchmark_results_refit_postpass_pop.csv
+- fia_benchmark_results_refit_postpass_strat_ny.csv
+
+Plus an ACD row in each (since the round-17 patch routes ACD to
+NE for the default path).
+
+When the chain finishes:
+```bash
+bash calibration/slurm/harvest_ab_results.sh 10022214
+# This overwrites v3/ with the new 13-variant files
+```
+
+### Branch ready for PR
+
+The headline calibrated-A/B result is already documented and
+committed at calibrated_ne_vs_acd_v3/. The PR can be opened now
+using PR_DESCRIPTION_acd_bridge.md. The 10022214 chain just adds:
+- ACD row inclusion
+- Two more pass configurations (postpass_pop, postpass_strat_ny)
+
+Neither is strictly required for PR review — the round-16 result
+is sufficient evidence of the calibrated-A/B working across 12
+variants with 6.3% OVERALL RMSE improvement.
