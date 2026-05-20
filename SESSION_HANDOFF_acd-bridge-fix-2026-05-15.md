@@ -1183,3 +1183,55 @@ and pass 3 fire.
 The branch is in the strongest state of the entire effort. The
 remaining ACD-result patch is a clean self-contained next item.
 
+## Autopilot round 17 — 2026-05-20 (early)
+
+Two clean follow-up patches from round 16:
+
+### Patch 1: ACD default-path fallback
+
+```r
+default_variant_code <- if (var == "ACD") "NE" else var
+default <- tryCatch(
+  project_condition_default(t1_trees, row$interval_years,
+                            variant_code = default_variant_code),
+  error = function(e) null_err)
+```
+
+Mirrors the calibrated-path ACD-NE fallback. Was missing for the
+default-path call, causing ACD predictions to return NA which
+then triggered the NA-filter to drop all 15,429 ACD rows from
+the validation_data merge.
+
+### Patch 2: chain script tolerates missing pctrmse + figure crashes
+
+`run_ab_after_hmc.sh`'s `run_pass` function now:
+- wraps Rscript in subshell with `|| true` so step-6 figure
+  crashes do not abort the chain
+- iterates over {pctrmse, results} for the tagged mv, with a
+  `[ -f $SRC ]` check so missing files do not abort
+
+The chain can now produce all three pass configurations
+(refit_only, postpass_pop, postpass_strat_ny) even when the
+engine no longer writes fia_benchmark_pctrmse.csv.
+
+### Verification (in flight)
+
+SLURM 10022214 submitted with both patches. Expected outcome:
+
+- All 13 variants in fia_benchmark_results_refit_only.csv (ACD
+  now included)
+- Three tagged results CSVs produced
+- Pass 2 and pass 3 actually run
+
+### Status at round-17 close
+
+- 28 commits on branch
+- 12/12 variant builds + 38/38 integration tests PASS
+- Calibrated A/B: 12 variants + OVERALL shipped at round 16
+- ACD-row patch: applied
+- Chain script robustness: applied
+- Chain 10022214 verifying
+
+If 10022214 produces the ACD row and three tagged CSVs, the
+branch is ready for PR from `acd-bridge-fix-2026-05-15` into main.
+

@@ -40,14 +40,24 @@ if (is.na(mx) || mx >= 1.10) {
 run_pass () {
   local tag="$1"; shift
   echo "==== PASS: $tag ===="
-  env "$@" Rscript calibration/R/19_fia_benchmark_engine.R 2>&1 \
-    | tee calibration/logs/ab_${tag}_${SLURM_JOB_ID}.log
+  # Wrap Rscript in subshell with || true so figure-step crashes do not abort
+  # the whole chain. Step 5 CSVs are saved before step 6 figures run.
+  ( env "$@" Rscript calibration/R/19_fia_benchmark_engine.R 2>&1 \
+      | tee calibration/logs/ab_${tag}_${SLURM_JOB_ID}.log ) || \
+    echo "(Rscript exited non-zero; checking for tagged CSV anyway)"
 
-  # Save the tagged CSV
-  mv calibration/output/comparisons/manuscript_tables/fia_benchmark_pctrmse.csv \
-     calibration/output/comparisons/manuscript_tables/fia_benchmark_pctrmse_${tag}.csv
-  mv calibration/output/comparisons/manuscript_tables/fia_benchmark_results.csv \
-     calibration/output/comparisons/manuscript_tables/fia_benchmark_results_${tag}.csv
+  # Save tagged CSVs. The engine writes fia_benchmark_results.csv reliably;
+  # fia_benchmark_pctrmse.csv may not be produced in newer engine versions.
+  for kind in pctrmse results; do
+    SRC=calibration/output/comparisons/manuscript_tables/fia_benchmark_${kind}.csv
+    DST=calibration/output/comparisons/manuscript_tables/fia_benchmark_${kind}_${tag}.csv
+    if [ -f "$SRC" ]; then
+      mv "$SRC" "$DST"
+      echo "  saved: $DST"
+    else
+      echo "  note: $SRC not produced this pass (continuing)"
+    fi
+  done
 }
 
 # Pass 1: refit-only A/B

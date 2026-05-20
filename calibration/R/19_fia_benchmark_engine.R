@@ -1674,8 +1674,12 @@ for (var in variants_in_data) {
                        error = function(e) null_err)
 
     # Default projection
+    # ACD is a subvariant of NE; the FVS default-path lookup does not know
+    # "ACD" as a native variant code, so route to NE for ACD-tagged rows.
+    default_variant_code <- if (var == "ACD") "NE" else var
     default <- tryCatch(
-      project_condition_default(t1_trees, row$interval_years, variant_code = var),
+      project_condition_default(t1_trees, row$interval_years,
+                                variant_code = default_variant_code),
       error = function(e) null_err)
 
     # CI bracket projections (Q10/Q90 parameter swap)
