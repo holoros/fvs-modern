@@ -2,47 +2,82 @@
 
 `acd_annual_calibration.csv` holds annual diameter increment multipliers
 (`dDBH.mult`) for the Acadian model, fit against real ACD FIA remeasurement.
-This is the table the bridge patch reads in place of the FVS-NE `baimult`.
+This is the table the bridge reads in place of the FVS-NE `baimult`.
 
-## Method
+## Method (v3, current)
 
-`fit_acd_annual_calibration.R` reads the ACD remeasurement records
-(`fvs-conus/data/processed/acd/diameter_growth.csv`, 565,776 usable trees,
-5 year remeasurement). For each tree it iterates the real Acadian `dDBH_fun`
-annually over the tree's interval and finds the per species annual multiplier
-that minimizes squared error between predicted and observed periodic diameter
-growth. Species random effects come from `ddbh.fun.spp` in `AcadianGY.R`.
+`fit_acd_annual_calibration_v3.R` reads the ACD remeasurement records
+(`fvs-conus/data/processed/acd/diameter_growth.csv`, 575,461 trees, 17,326
+plots, 5 year remeasurement). For each tree it iterates the real Acadian
+`dDBH_fun` annually over the tree's interval and finds the per species annual
+multiplier that minimizes squared error between predicted and observed periodic
+diameter growth. Species random effects come from `ddbh.fun.spp` in
+`AcadianGY.R`.
+
+Two corrections versus the first pass:
+
+1. Units. The recorded BAL and BA columns are in ft2/acre (stand BA averages
+   118.8 ft2/acre, about 27 m2/ha), but `dDBH_fun` expects BAL in m2/ha. The
+   first pass fed ft2/acre straight in (about 4.35x too high), which over
+   suppressed growth and inflated the multipliers. v3 converts recorded BAL to
+   m2/ha (median 15.5) before fitting.
+
+2. Competition split. The larger tree basal area is split into BAL.SW and
+   BAL.HW using a per tree larger tree softwood fraction (softwood = SPCD < 300)
+   reconstructed from the plot records, then applied to the converted BAL. This
+   replaces the earlier total BAL as BAL.SW approximation.
 
 ## Result
 
-34 Acadian species fitted (the remaining valid codes are filled with 1.0 so the
-bridge always finds a row). Mean diameter growth RMSE drops from 1.108 cm to
-1.015 cm, an 8.4 percent reduction. Most multipliers are above 1, because the
-uncalibrated Acadian equations under predict annual diameter growth on these
-plots (for example balsam fir observed 1.30 vs predicted 0.97 cm per year, red
-oak 1.98 vs 1.00). This is the quantitative form of the mismatch you observed.
+34 Acadian species fitted; remaining valid codes filled with 1.0 so the bridge
+always finds a row. Diameter growth RMSE drops from 1.081 cm to 1.008 cm, a 6.8
+percent reduction. With the corrected competition scale, the uncalibrated
+Acadian equations under predict annual diameter growth modestly for most species
+(balsam fir multiplier 1.14, red spruce 1.12, eastern hemlock 1.22, white pine
+1.10) with larger corrections for fast growing hardwoods (red oak 1.92, red
+maple 1.50, quaking aspen 1.48, bigtooth aspen 1.61, American beech 1.47). A few
+sit below 1 (silver maple 0.74, butternut 0.65, black oak 0.94, white oak 0.95).
+Multiplier range 0.65 to 1.92.
 
-## Assumptions and caveats (read before shipping)
+## Height (provisional) and mortality
 
-1. Competition split: the records carry total `BAL` only, so the larger softwood
-   term `BAL.SW` was set to total BAL and `BAL.HW` to zero. The `BAL.HW`
-   coefficient is small (b5 = -0.0177), but for hardwoods this slightly inflates
-   modeled competition and pushes their multipliers upward. With a proper
-   softwood and hardwood split the hardwood multipliers would come down somewhat.
-2. Climate site index was mapped from FVS site index in feet using the same
-   piecewise map the bridge uses, defaulting to 12 when missing.
-3. Competition is held at the start of period value across the interval, which
-   matches how the model applies within period competition; it does not evolve
-   BAL year to year inside this fit.
+`dHt.mult` is now fitted from MEASURED `HT_t1`/`HT_t2` by `fit_acd_height.R`,
+using a ratio of trimmed means per species rather than a least squares fit. This
+is necessary because the measured height growth is very noisy: about 23 percent
+of records show negative growth (top breakage, inconsistent height protocols
+between visits), which saturated the earlier least squares attempt. The ratio of
+trimmed means is insensitive to that symmetric noise. Range 0.30 to 2.28, median
+about 1.14; the model over predicts height growth for some species (white cedar
+0.46, striped maple 0.60, white oak 0.56) and under predicts for others (white
+ash 1.53, yellow birch 1.48, white pine 1.39). Treat `dHt.mult` as provisional
+given the data quality; `acd_annual_calibration_height_fit.csv` carries the per
+species fraction of negative growth records as a quality flag.
+
+`mort.mult` is shipped as 1.0, and importantly it is currently a no-op in the
+model. In AcadianGY 12.3.5 `mort.mult` is built in `make_fvs_calib` and carried
+in `rtnVars` (lines 1369, 1392, 1393, 1885) but is never applied anywhere in
+`AcadianGYOneStand`, unlike `dDBH.mult` (line 2232) and `dHt.mult` (line 2268).
+So enabling mortality calibration takes two steps: first wire `mort.mult` into
+the mortality step in the model, then fit it. The Acadian mortality is stand
+level (allocated by a Sward index), not a clean per tree probability, so the fit
+needs a survival model on `STATUSCD` rather than the diameter machinery.
+
+## Assumptions and caveats
+
+1. Competition is held at the start of period value across the interval, matching
+   how the model applies within period competition; BAL does not evolve year to
+   year inside the fit.
+2. The softwood fraction is weighted by `DBH^2 * TPA`; the absolute TPA scale is
+   unreliable in these records but cancels in the fraction.
+3. Climate site index is mapped from FVS site index in feet using the bridge map,
+   defaulting to 12 when missing.
 4. These are bridge calibration factors under the stated assumptions, not new
-   biological parameters. Treat them as a working table to remove the level and
-   species bias, and refine once a softwood and hardwood BAL split is available.
-5. Height (`dHt.mult`) and mortality (`mort.mult`) are left at 1. Fit them with
-   the same machinery on `HT_t1/HT_t2` and on `STATUSCD` survival when needed.
+   biological parameters.
 
 ## How the bridge consumes it
 
-Per `bridge_patch_baimult_scale.md`, `make_fvs_calib()` reads this CSV and sets
-`dDBH.mult`, `dHt.mult`, `mort.mult` from it (keyed on the Acadian alpha code
-`SP`), keeping only the size caps from FVS. This decouples Acadian calibration
-from the FVS-NE multipliers.
+`make_acd_calib_from_table.R` (tested, base R) reads this CSV and builds the
+calib.spp data frame the model expects (SP, dDBH.mult, dHt.mult, mort.mult,
+max.dbh, max.height), keeping the size caps from FVS. It defaults species absent
+from the table to multiplier 1. See `bridge_patch_baimult_scale.md` for where it
+slots into `make_fvs_calib()`.
