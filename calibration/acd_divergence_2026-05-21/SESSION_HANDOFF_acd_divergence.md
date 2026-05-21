@@ -91,8 +91,11 @@ Four commits on acd-bridge-followup-2026-05-20, all pushed:
    model reads acd_annual_calibration.csv instead of FVS baimult, then run the
    real customRun on a few stands to confirm R and FVS-ACD now agree.
 
-3. Fit mort.mult on STATUSCD survival (the Acadian mortality is stand level, so
-   this needs a survival model rather than the diameter machinery). Diameter and
+3. Mortality calibration takes two steps. First wire mort.mult into the model:
+   in AcadianGY 12.3.5 mort.mult is plumbed through make_fvs_calib and rtnVars
+   but never applied in AcadianGYOneStand (unlike dDBH.mult and dHt.mult), so it
+   is currently a no-op. Then fit it on STATUSCD survival (stand level Acadian
+   mortality needs a survival model, not the diameter machinery). Diameter and
    height multipliers are both in the table now; height is provisional given the
    noisy measured height data.
 

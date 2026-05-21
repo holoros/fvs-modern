@@ -53,9 +53,14 @@ ash 1.53, yellow birch 1.48, white pine 1.39). Treat `dHt.mult` as provisional
 given the data quality; `acd_annual_calibration_height_fit.csv` carries the per
 species fraction of negative growth records as a quality flag.
 
-`mort.mult` is shipped as 1.0. The Acadian mortality is stand level (allocated
-by a Sward index), not a clean per tree probability, so a survival fit on
-`STATUSCD` is a separate effort and is flagged as the next refinement.
+`mort.mult` is shipped as 1.0, and importantly it is currently a no-op in the
+model. In AcadianGY 12.3.5 `mort.mult` is built in `make_fvs_calib` and carried
+in `rtnVars` (lines 1369, 1392, 1393, 1885) but is never applied anywhere in
+`AcadianGYOneStand`, unlike `dDBH.mult` (line 2232) and `dHt.mult` (line 2268).
+So enabling mortality calibration takes two steps: first wire `mort.mult` into
+the mortality step in the model, then fit it. The Acadian mortality is stand
+level (allocated by a Sward index), not a clean per tree probability, so the fit
+needs a survival model on `STATUSCD` rather than the diameter machinery.
 
 ## Assumptions and caveats
 
