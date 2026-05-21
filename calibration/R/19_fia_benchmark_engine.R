@@ -1955,6 +1955,29 @@ if (ACD_POSTPASS_ENABLED && "ACD" %in% validation_data$VARIANT) {
   }
 }
 
+# ---- ACD NA diagnostic (gated by FVS_ACD_DEBUG) ----
+if (toupper(Sys.getenv("FVS_ACD_DEBUG", "FALSE")) == "TRUE" &&
+    "ACD" %in% validation_data$VARIANT) {
+  acd_vd <- validation_data[VARIANT == "ACD"]
+  cat("\n[ACD DEBUG] ACD rows in validation_data pre-filter:", nrow(acd_vd), "\n")
+  for (col in c("BA_pred_calib","BA_pred_default","TPA_pred_calib",
+                "TPA_pred_default","QMD_pred_calib","BA_t2","TPA_t2")) {
+    if (col %in% names(acd_vd)) {
+      n_na <- sum(is.na(acd_vd[[col]]))
+      cat(sprintf("[ACD DEBUG]   %-20s NA: %d / %d\n", col, n_na, nrow(acd_vd)))
+    }
+  }
+  # Sample one ACD row to see the actual values
+  if (nrow(acd_vd) > 0) {
+    r1 <- acd_vd[1]
+    cat("[ACD DEBUG] sample row:",
+        "BA_pred_calib=", r1$BA_pred_calib,
+        "BA_pred_default=", r1$BA_pred_default,
+        "BA_t2=", r1$BA_t2, "\n")
+  }
+  cat("\n")
+}
+
 # Remove NAs
 validation_data <- validation_data[!is.na(BA_pred_calib) & !is.na(BA_pred_default)]
 cat("Validation pairs:", nrow(validation_data), "\n")

@@ -354,3 +354,8 @@ lib_pre_rebuild_*/
 
 # FORTRAN scratch files at root
 /fort.*
+
+# Variant posterior sample symlinks (created by link_variant_samples.sh,
+# point to fvs-conus absolute paths; never commit these)
+calibration/output/variants/*/*_samples.rds
+calibration/output/variants/*/standardization_params.rds
