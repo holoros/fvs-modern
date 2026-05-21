@@ -1,101 +1,74 @@
-# Fortran FVS-NE/ACD on Canadian MAGPlot: blocker diagnosis
+# Fortran FVS-NE/ACD on Canadian MAGPlot: diagnosis and RESOLUTION
 
 2026-05-21. Goal: run the Fortran FVS engine (FVS-NE and FVS-ACD, default and
-calibrated) on Canadian (New Brunswick) MAGPlot tree lists. The user reported
-this as "blocked by the fvs2py inventory issue." Here is the full diagnosis.
+calibrated) on Canadian (New Brunswick) MAGPlot tree lists. Reported as "blocked
+by the fvs2py inventory issue."
 
-## Context: the R path already works
+## RESOLVED
 
-The R AcadianGY path on MAGPlot succeeds. SLURM job 10129046 (2026-05-20)
-projected 262 NB plots ten years and validated against observed remeasurement:
-BA bias about 0 percent, R squared 0.88, QMD +9 percent, TPH -7 percent. So the
-Acadian model itself ingests and runs MAGPlot fine. The blocker is specific to
-the Fortran engine path through fvs2py.
+MAGPlot tree lists now ingest and project through the Fortran FVS engine. The
+working route is the standalone FVS binary (`lib/FVSne`, `lib/FVSacd`) with a
+DATABASE/STANDSQL keyfile and a SQLite inventory DB, ONE stand per subprocess.
+`magplot_fvs_runner.py` implements it and was validated on NB stands:
 
-## The blocker is a chain of three issues
+    [magplot] NB initial live trees 479,100  crosswalk coverage 100.0%
+      30300001 ne/default : 63 trees  BA 34.9->62.0   TPA 1548->1526
+      30300001 acd/default: 63 trees  BA 34.9->96.0   TPA 1548->1504
+      30300002 ne/default : 56 trees  BA 23.9->38.0   TPA 830->818
+      30300002 acd/default: 56 trees  BA 23.9->59.3   TPA 830->806
+      30300003 ne/default : 55 trees  BA 30.8->48.0
+      30300003 acd/default: 55 trees  BA 30.8->71.7
+      30300004 ne/default : 69 trees  BA 46.7->70.0
+      30300004 acd/default: 69 trees  BA 46.7->101.8
 
-### 1. fvs2py does not import on the cluster default Python (root cause)
+Species crosswalk coverage is 100 percent of NB stems. FVS-NE and FVS-ACD produce
+clearly different projections (for example stand 30300001 horizon BA 62.0 vs 96.0),
+which is the NE vs ACD divergence showing up on Canadian data.
 
-The cluster default `python3` is 3.9.21. fvs2py uses `enum.StrEnum` (added in
-3.11) and `typing.ParamSpec` (added in 3.10), so the import fails before any
-inventory can be read:
+## Why the fvs2py route was blocked (background)
 
-    ImportError: cannot import name 'StrEnum' from 'enum'
-    ImportError: cannot import name 'ParamSpec' from 'typing'
+The original attempt used the fvs2py Python wrapper, which has three problems:
 
-This is the surface "fvs2py inventory issue": fvs2py never loads, so nothing can
-be ingested. FIX (confirmed): run under `module load python/3.12`. Under 3.12,
-`from fvs2py import FVS` succeeds and `FVSne.so` loads. A version guard was added
-to `magplot_fvs_runner.py` so this fails fast with guidance instead of a cryptic
-import error. (A StrEnum-only shim was tried and reverted, because ParamSpec also
-fails on 3.9; backporting fvs2py to 3.9 is not worth it.)
+1. fvs2py does not import on the cluster default Python 3.9 (it uses
+   `enum.StrEnum`, 3.11+, and `typing.ParamSpec`, 3.10+). It imports under
+   `module load python/3.12`.
+2. Even under 3.12, fvs2py's `run()` did not drive a DATABASE keyfile run to
+   completion: `restart_code` stayed 0 and no output tables were written, even
+   for a clean synthetic stand. So the engine never produced results via fvs2py.
+3. Multiple fvs2py runs in one process crash at `keyrdr.f90:47`
+   ("Sequential READ after EOF") because FVS keeps unit 15 open across runs.
 
-### 2. The DATABASE keyfile run produces no output (the deeper issue)
+The standalone binary sidesteps all three: it needs no fvs2py (so no Python
+version constraint), it drives itself to completion and writes the output DB, and
+one stand per subprocess is always a fresh process. The known cosmetic STOP
+traceback at the end of a standalone run does not affect the written results.
 
-Under python/3.12, fvs2py loads FVSne.so and reads the keyword file, but a
-DATABASE/STANDSQL keyfile run (the proven bakuzis/silc pattern) does not execute
-the projection:
+## The converter
 
-- `restart_code` stays 0 across repeated `run()` calls (never reaches 100, the
-  stand-complete state).
-- The output SQLite DB contains only the two input tables `fvs_standinit` and
-  `fvs_treeinit`; no `FVS_Summary`, `FVS_TreeList`, or `FVS_Cases` are written.
-- `fvs.summary` is empty.
+`magplot_fvs_runner.py` (needs only sqlite3 + pandas + the FVS binaries):
 
-This is NOT MAGPlot-specific. A clean synthetic 3-tree stand with valid FIA SPCD
-(12, 97, 316) through the same `run_one` DATABASE path produces the same empty
-result. So the SQLite DATABASE inventory ingestion / run loop is non-functional
-in the current FVSne.so + fvs2py stack, for any input. This is the real engine
-blocker and needs engine-level work (see next steps).
-
-### 3. Multiple runs in one process hard-crash on the keyword unit
-
-Running more than one stand in a single Python process aborts with:
-
-    At line 47 of file ./src-converted/bin/../base/keyrdr.f90 (unit = 15, file = 'fort.15')
-    Fortran runtime error: Sequential READ or WRITE not allowed after EOF marker
-
-FVS keeps Fortran global state and unit 15 (the keyword scratch file) open across
-runs; the dynamic loader caches the `.so`, so the second run reads past the prior
-run's EOF marker. A single run per fresh process does not crash. So any batch
-runner must isolate each stand in its own process (subprocess, or multiprocessing
-with maxtasksperchild=1), or keyrdr.f90 must REWIND/handle EOF on re-entry.
-
-## What was built and is ready
-
-`magplot_fvs_runner.py` converts MAGPlot NB tree lists into the FVS inventory
-schema and runs them through the engine, reusing the proven `run_one` path:
-
-- species crosswalk: MAGPlot botanical genus.species (e.g. ABIE.BAL, PICE.RUB)
-  to FIA SPCD, covering the NB species (balsam fir, black/red/white spruce, red
-  maple, paper/yellow birch, aspen, cedar, beech, pines, etc.); generics and
-  unknowns map to FVS "other" buckets.
-- units: dbh cm to inches, height m to feet, `stem_ha` to trees per acre.
+- species crosswalk: MAGPlot botanical genus.species (ABIE.BAL, PICE.RUB, ...) to
+  FIA SPCD, covering the NB species; generics and unknowns map to FVS "other".
+- units: dbh cm to inches, height m to feet, stem/ha to trees per acre.
 - initial measurement (meas_num 0), live trees only.
+- builds a SQLite DB (fvs_standinit + fvs_treeinit), writes a DATABASE keyfile,
+  runs `FVS{variant}` standalone per stand, reads FVS_Summary2 from the output DB.
+- supports variants ne, acd and configs default, calibrated (the calibrated
+  config injects FvsConfigLoader keywords before PROCESS).
 
-The converter is correct; it will produce results as soon as issue 2 is fixed.
-It currently surfaces issue 2 (empty summary) and, when looping, issue 3.
+## Run it (works on the cluster default Python 3.9)
 
-## Recommended next steps, in priority
-
-1. Confirm the DBS (SQLite DATABASE) extension status in FVSne.so. The clean
-   synthetic stand producing no output indicates the DATABASE input or the run
-   loop is broken in this build. Check whether the DBS extension is compiled in
-   and whether `fvs.run()` needs to be driven to completion differently (the
-   docstring says run() returns per stand and sets restart_code 100 when done; it
-   never advanced here). This likely needs a focused look at fvs2py's run loop
-   and/or the FVS DBS/keyrdr Fortran with a rebuild.
-2. If DBS is the broken piece, fall back to FVS plain-text inventory: write a
-   classic keyword file plus a fixed-format `.tre` tree file (TREEDATA) and run
-   that, bypassing SQLite entirely.
-3. For batch, run one stand per fresh process (subprocess or multiprocessing
-   maxtasksperchild=1), or fix keyrdr.f90 to handle the unit-15 reuse.
-
-## Reproduction (on Cardinal)
-
-    module load python/3.12
     export FVS_PROJECT_ROOT=/users/PUOM0008/crsfaaron/fvs-modern
     export FVS_LIB_DIR=/users/PUOM0008/crsfaaron/fvs-modern/lib
-    python3 magplot_fvs_runner.py --nstands 1 --min-trees 15
-    # single stand: loads + runs, empty summary (issue 2)
-    # --nstands > 1: keyrdr.f90 EOF crash (issue 3)
+    python3 magplot_fvs_runner.py --nstands 5 --variants ne,acd --configs default,calibrated
+
+## Remaining polish (not blockers)
+
+- Validate the calibrated configs actually load FvsConfigLoader keywords for
+  ne/acd and that default vs calibrated diverge as expected on MAGPlot.
+- Decide the plot unit (this run grouped by magp_site_id; switch to the finer
+  site+plot key and per-plot meas_plot_size if per-plot stands are wanted).
+- Set per-stand site index and elevation from magp_sites_nb_ns.csv instead of the
+  current Acadian-region defaults (lat 46.5, lon -66.5, SI 45, elev ~200 m).
+- The FVS-ACD run reported one extra summary cycle vs FVS-NE; confirm the cycle
+  alignment when comparing default vs calibrated.
