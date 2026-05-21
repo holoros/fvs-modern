@@ -56,13 +56,19 @@ factors for the R model on an annual rather than periodic basis.
   (read the Acadian annual table instead of FVS baimult; convert baimult through
   basal area if honored; align options; CSI and dubbing notes) with a base R
   proof that the legacy linear application is off by at most about 1.5 percent.
-- fit_acd_annual_calibration.R and acd_annual_calibration.csv: ANNUAL per
-  species diameter multipliers fit against 565,776 real ACD FIA remeasurement
-  records by iterating the real Acadian dDBH_fun. 34 species fitted; diameter
-  growth RMSE 1.108 to 1.015 cm (8.4 percent reduction). Most multipliers exceed
-  1 because the uncalibrated Acadian equations under predict growth on these
-  plots (balsam fir 1.30 vs 0.97, red oak 1.98 vs 1.00 cm per year).
-- acd_annual_calibration_NOTES.md: method, assumptions, caveats.
+- fit_acd_annual_calibration_v3.R and acd_annual_calibration.csv: ANNUAL per
+  species diameter multipliers fit against 575,461 real ACD FIA remeasurement
+  records (17,326 plots) by iterating the real Acadian dDBH_fun. v3 corrects a
+  units bug (recorded BAL is ft2/acre but dDBH_fun expects m2/ha; the first pass
+  fed it in about 4.35x too high) and splits competition into BAL.SW and BAL.HW.
+  34 species fitted; diameter growth RMSE 1.081 to 1.008 cm (6.8 percent
+  reduction). With the corrected scale most multipliers are modestly above 1
+  (balsam fir 1.14, red spruce 1.12, white pine 1.10) with larger corrections
+  for fast hardwoods (red oak 1.92, red maple 1.50, aspen 1.48). dHt.mult and
+  mort.mult shipped as 1.0 (height fit attempted but not trustworthy; see notes).
+- make_acd_calib_from_table.R: tested base R helper that builds the bridge
+  calib.spp table from the CSV (keeps FVS size caps), so the patch is concrete.
+- acd_annual_calibration_NOTES.md: method, the units correction, assumptions.
 
 ## Git state
 
@@ -82,10 +88,9 @@ Four commits on acd-bridge-followup-2026-05-20, all pushed:
    model reads acd_annual_calibration.csv instead of FVS baimult, then run the
    real customRun on a few stands to confirm R and FVS-ACD now agree.
 
-3. Refine the calibration table once a softwood and hardwood BAL split is
-   available in the processed data (current fit uses total BAL as BAL.SW, which
-   nudges hardwood multipliers up). Then fit dHt.mult on HT_t1/HT_t2 and
-   mort.mult on STATUSCD survival with the same machinery.
+3. Fit dHt.mult on measured HT_t1/HT_t2 (not the noisy HT_annual) with outlier
+   handling, and mort.mult on STATUSCD survival, using the same machinery. The
+   diameter table is in good shape after the v3 units fix and BAL split.
 
 4. Decide CSI once (push Acadian CSI into the Event Monitor) and re-enable the
    Acadian HT and CR dubbing once the stop point 7 issue is resolved.
