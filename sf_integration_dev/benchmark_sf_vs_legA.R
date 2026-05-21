@@ -3,29 +3,30 @@
 # benchmark_sf_vs_legA.R
 #
 # Operational benchmark: pure species-free vs hybrid (per-species where Leg A
-# is reliable) vs Leg-A-style coverage, on a held-out test set. Answers what
-# the hybrid default buys over pure species-free, especially where Leg A covers
-# only a handful of species.
+# is reliable) vs Leg-A-style coverage, on a held-out test set, with point
+# accuracy AND predictive-interval calibration.
 #
-# DESIGN (valid across components and despite any base-predictor approximation):
-#   All arms share ONE consistent base linear predictor from the species-free
-#   bundle:  base_eta = intercept + trait_effect[sp] + z_L1+z_L2+z_L3+z_FT
-#            + sum(covariate fixed effects).
-#   On the link scale g(): the per-species empirical intercept is
-#       delta[sp] = mean_train( g(resp) - (base_eta - trait_effect[sp]) ).
-#   Arms differ only in the species term; prediction is h(eta) (inverse link):
-#       pure_sf    : species term = trait_effect[sp]
-#       hybrid     : delta[sp] if sp Leg-A-reliable, else trait_effect[sp]
-#       legA_style : delta[sp] if sp Leg-A-reliable, else 0
-#       global_only: 0 for all (reference floor)
-#   The comparison is internally consistent and robust to the base predictor's
-#   absolute accuracy (e.g., HG's BGI site-slope omitted from the base).
+# DESIGN: all arms share one consistent base linear predictor from the
+# species-free bundle:
+#   base_eta = intercept + trait_effect[sp] + z_L1+z_L2+z_L3+z_FT + sum(covariates)
+# Arms differ only in the species-level term. On the link scale g(), the
+# per-species empirical intercept is delta[sp] = mean_train(g(resp) - non_sp_eta).
+#   pure_sf    : trait_effect[sp]            (Leg B for all)
+#   hybrid     : delta[sp] if Leg-A-reliable, else trait_effect[sp]
+#   legA_style : delta[sp] if Leg-A-reliable, else 0
+#   global_only: 0 for all
 #
-# Per-component link / response / covariates are registered in PREP below:
-#   hg     log link, resp = annualized height increment
-#   cr     identity link, resp = annualized crown-ratio change
-#   hcb    logit/beta link, resp = HCB ratio (1 - CR)
-#   htdbh  Wykoff log link, resp = total height (m)
+# CALIBRATION (added per ECOMOD-26-561 relevance, 2026-05-21): each component
+# carries an observation-level predictive interval from its residual scale
+# parameter (sigma for the lognormal HG/HT-DBH responses, phi for the HCB beta
+# response). From it we report:
+#   PICP_95   coverage of the nominal 95% predictive interval (target 0.95;
+#             values near 1.0 mean intervals are too wide)
+#   mwidth    mean interval width on the response scale (sharpness)
+#   wr2       uncertainty-weighted R2 (Zhan et al. 2026 definition, width-cap
+#             at the median width) penalizing wide intervals
+# These use the residual predictive interval (the dominant component); adding
+# parameter posterior uncertainty would widen intervals slightly.
 #
 # DEV/TEST ONLY. Reads bundles + variant JSON; writes metrics CSVs. Never
 # writes production configs.
@@ -61,11 +62,11 @@ ln_csi_of <- function(dat){
   } else if("CSPI" %in% names(dat)){ med<-median(dat$CSPI,na.rm=TRUE)
     dat[!is.finite(CSPI), CSPI:=med]; log(pmax(dat$CSPI,0.1)) } else rep(0,nrow(dat)) }
 
-# ---- per-component registry: response, covariates, link, filter ------------
+# ---- per-component registry: response, covariates, link, interval ----------
 prep_hg <- function(dat){
   dat[, resp:=(HT2-HT1)/YEARS]; dat[, ln_dbh:=log(DBH1)]
   dat[, ln_ht:=log(pmax(HT1,1.5))]; dat[, ln_cr_adj:=log((CR1+0.2)/1.2)]
-  dat[, bal_log:=log((BAL_SW1+BAL_HW1)+5)]
+  dat[, bal_log:=log((BAL_SW1+BAL_HW1)+5)]; dat[, sqrt_years:=sqrt(YEARS)]
   if(!"SLOPE"%in%names(dat))dat[,SLOPE:=0]; if(!"ASPECT"%in%names(dat))dat[,ASPECT:=0]
   dat[!is.finite(SLOPE),SLOPE:=0]; dat[!is.finite(ASPECT),ASPECT:=0]
   dat[, slope_pct:=as.numeric(SLOPE)]; dat[, cos_aspect:=cos(as.numeric(ASPECT)*pi/180)]
@@ -81,7 +82,9 @@ prep_hg <- function(dat){
        valid=function(y)y>0.001,
        cov=function(d,f) f[["a1"]]*d$ln_dbh+f[["a2"]]*d$ln_ht+f[["a3"]]*d$ln_cr_adj+
          f[["a4"]]*d$bgi+f[["a5"]]*d$bal_log+f[["a6"]]*d$ba_metric+
-         f[["a7"]]*d$slope_pct+f[["a8"]]*d$cos_aspect)
+         f[["a7"]]*d$slope_pct+f[["a8"]]*d$cos_aspect,
+       interval=function(e,d,f){ s<-f[["sigma"]]/d$sqrt_years
+         list(l=exp(pmin(e-1.96*s,20)), u=exp(pmin(e+1.96*s,20))) })
 }
 prep_cr <- function(dat){
   dat[, resp:=(CR2-CR1)/YEARS]; dat[, dbh:=DBH1]; dat[, dbh_sq:=DBH1^2]
@@ -95,7 +98,8 @@ prep_cr <- function(dat){
     resp>-0.5 & resp<0.5]
   list(dat=dat, gfun=function(y)y, hfun=function(e)e, valid=function(y)rep(TRUE,length(y)),
        cov=function(d,f) f[["b1"]]*d$dbh+f[["b2"]]*d$dbh_sq+f[["b3"]]*d$ba_metric+
-         f[["b4"]]*d$bal_metric+f[["b5"]]*d$cr_init+f[["b6"]]*d$ln_csi)
+         f[["b4"]]*d$bal_metric+f[["b5"]]*d$cr_init+f[["b6"]]*d$ln_csi,
+       interval=function(e,d,f){ s<-f[["sigma"]]; list(l=e-1.96*s, u=e+1.96*s) })
 }
 prep_hcb <- function(dat){
   dat[, resp:=1-CR1]; dat[, ln_ht:=log(pmax(HT1,1.5))]; dat[, ln_dbh:=log(DBH1)]
@@ -111,7 +115,9 @@ prep_hcb <- function(dat){
        hfun=function(e) 0.001+0.998*inv_logit(e),
        valid=function(y) y>0.01 & y<0.99,
        cov=function(d,f) f[["h1"]]*d$ln_ht+f[["h2"]]*d$ln_dbh+
-         f[["h3"]]*d$bal_over_ht+f[["h4"]]*d$sqrt_ba+f[["h5"]]*d$ln_cspi_shift)
+         f[["h3"]]*d$bal_over_ht+f[["h4"]]*d$sqrt_ba+f[["h5"]]*d$ln_cspi_shift,
+       interval=function(e,d,f){ phi<-f[["phi"]]; mu<-0.001+0.998*inv_logit(e)
+         list(l=qbeta(0.025,mu*phi,(1-mu)*phi), u=qbeta(0.975,mu*phi,(1-mu)*phi)) })
 }
 prep_htdbh <- function(dat){
   dat[, resp:=HT1]; dat[, bal:=BAL_SW1+BAL_HW1]; dat[, sqrt_ba:=sqrt(BA1*0.2296)]
@@ -126,7 +132,9 @@ prep_htdbh <- function(dat){
   list(dat=dat, gfun=function(y)log(pmax(y-1.37,0.01)), hfun=function(e)1.37+exp(pmin(e,20)),
        valid=function(y)y>1.37,
        cov=function(d,f) f[["a_bal"]]*d$bal+f[["a_ba"]]*d$sqrt_ba+f[["a_cspi"]]*d$ln_cspi_shift+
-         f[["a_bard"]]*d$ba_x_rd+f[["a_blrd"]]*d$bal_x_rd+f[["b1"]]*(1/(d$dbh+1)))
+         f[["a_bard"]]*d$ba_x_rd+f[["a_blrd"]]*d$bal_x_rd+f[["b1"]]*(1/(d$dbh+1)),
+       interval=function(e,d,f){ s<-f[["sigma"]]
+         list(l=1.37+exp(pmin(e-1.96*s,20)), u=1.37+exp(pmin(e+1.96*s,20))) })
 }
 PREP <- list(hg=prep_hg, cr=prep_cr, hcb=prep_hcb, htdbh=prep_htdbh)
 if(is.null(PREP[[COMPONENT]])) stop("No predictor registered for '",COMPONENT,"'")
@@ -177,29 +185,38 @@ trv <- train[pr$valid(resp)]; trv[, spr:=pr$gfun(resp)-non_sp_eta]
 dl <- trv[, .(delta=mean(spr)), by=SPCD]; dmap<-setNames(dl$delta, as.integer(dl$SPCD))
 dget <- function(s) ifelse(as.integer(s)%in%names(dmap), dmap[as.character(s)], 0)
 
-# ---- predict + metrics ------------------------------------------------------
+# ---- predict + metrics (point + interval calibration) -----------------------
 ev <- test[pr$valid(resp)]; spc<-as.integer(ev$SPCD); isA<-spc%in%legA; ds<-as.numeric(dget(spc))
-arms <- list(pure_sf=pr$hfun(ev$base_eta),
-             hybrid=pr$hfun(ev$non_sp_eta+ifelse(isA,ds,ev$te_sp)),
-             legA_style=pr$hfun(ev$non_sp_eta+ifelse(isA,ds,0)),
-             global_only=pr$hfun(ev$non_sp_eta))
+arm_eta <- list(pure_sf=ev$base_eta,
+                hybrid=ev$non_sp_eta+ifelse(isA,ds,ev$te_sp),
+                legA_style=ev$non_sp_eta+ifelse(isA,ds,0),
+                global_only=ev$non_sp_eta)
+arms <- lapply(arm_eta, pr$hfun)
+ints <- lapply(arm_eta, function(e) pr$interval(e, ev, fx))
 obs <- ev$resp
-met <- function(p,idx){o<-obs[idx];q<-p[idx];e<-q-o
-  data.frame(n=length(o),rmse=sqrt(mean(e^2)),bias=mean(e),r2=1-sum(e^2)/sum((o-mean(o))^2))}
+met <- function(pred, lo, hi, idx){
+  o<-obs[idx]; p<-pred[idx]; l<-lo[idx]; u<-hi[idx]; e<-p-o
+  w <- pmin(u-l, median(u-l, na.rm=TRUE)) + 1e-9
+  data.frame(n=length(o), rmse=sqrt(mean(e^2)), bias=mean(e),
+             r2=1-sum(e^2)/sum((o-mean(o))^2),
+             picp=mean(o>=l & o<=u), mwidth=mean(u-l),
+             wr2=1 - mean(e^2/w)/var(o))
+}
 east <- ev$EPA_L1_CODE %in% c("5","8")
 subs <- list(all=rep(TRUE,nrow(ev)),east=east,legA_species=isA,legA_species_east=isA&east)
 rows<-list()
 for(s in names(subs)) for(a in names(arms)){ idx<-subs[[s]]; if(sum(idx)<5)next
-  m<-met(arms[[a]],idx); m$subset<-s; m$arm<-a; rows[[paste(s,a)]]<-m }
-res <- rbindlist(rows)[, .(component=COMPONENT,subset,arm,n,rmse,bias,r2)]
+  m<-met(arms[[a]], ints[[a]]$l, ints[[a]]$u, idx); m$subset<-s; m$arm<-a; rows[[paste(s,a)]]<-m }
+res <- rbindlist(rows)[, .(component=COMPONENT,subset,arm,n,rmse,bias,r2,picp,mwidth,wr2)]
 fwrite(res, file.path(OUTDIR, paste0(PREFIX,"_benchmark.csv")))
 lev <- data.table(scope=c("all","east"), n=c(nrow(ev),sum(east)),
   legA_species_share=c(mean(isA), if(sum(east))mean(isA[east]) else NA))
 fwrite(lev, file.path(OUTDIR, paste0(PREFIX,"_leverage.csv")))
 
 cat("\n=== LEVERAGE (share of test trees in the",length(legA),"Leg-A species) ===\n"); print(lev)
-cat("\n=== THREE-WAY METRICS (lower RMSE better) ===\n"); print(res[order(subset,arm)])
-hb<-res[subset=="all"&arm=="hybrid"]; sf<-res[subset=="all"&arm=="pure_sf"]
-if(nrow(hb)&&nrow(sf)) cat(sprintf("\n[%s] hybrid vs pure_sf (all): RMSE %.4f vs %.4f (%+.2f%%)\n",
-  COMPONENT, hb$rmse, sf$rmse, 100*(hb$rmse-sf$rmse)/sf$rmse))
+cat("\n=== METRICS (rmse lower better; picp target 0.95; mwidth = sharpness) ===\n")
+print(res[order(subset,arm)])
+ps<-res[subset=="all"&arm=="pure_sf"]
+if(nrow(ps)) cat(sprintf("\n[%s] pure_sf (all): RMSE %.4f  R2 %.3f  PICP %.3f  mean width %.3f\n",
+  COMPONENT, ps$rmse, ps$r2, ps$picp, ps$mwidth))
 cat("\nDone. Output:", OUTDIR, "\n"); quit(save="no", status=0)
