@@ -46,7 +46,7 @@ dat    <- as.data.table(readRDS(DATA_FILE))
 traits <- as.data.table(readRDS(TRAITS_FILE))
 cat(" done. Rows:", nrow(dat), "\n\n")
 
-MIN_OBS_SPECIES <- 5000
+MIN_OBS_SPECIES <- as.integer(get_arg("min_sp", "5000"))  # lower for full species coverage under unified z_sp
 
 # ln(climate site index), shifted, coalesce NA to median
 if ("climate_si" %in% names(dat)) {

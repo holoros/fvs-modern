@@ -32,7 +32,7 @@ dat    <- as.data.table(readRDS(DATA_FILE))
 traits <- as.data.table(readRDS(TRAITS_FILE))
 cat(" done. Rows:", nrow(dat), "\n\n")
 
-MIN_OBS_SPECIES <- 5000
+MIN_OBS_SPECIES <- as.integer(get_arg("min_sp", "5000"))  # lower for full species coverage under unified z_sp
 
 # Derive HCB/HT ratio = 1 - CR (since HCB = HT * (1 - CR))
 # Use t1 measurement (cross-sectional)
